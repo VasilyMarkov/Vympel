@@ -3,7 +3,6 @@ import numpy as np
 import numpy.fft as fft
 import matplotlib.pyplot as plt
 import time
-import sys
 import os
 
 
@@ -12,7 +11,7 @@ def time_measure(f):
         start = time.time()
         ret = f(*args, **kwargs)
         end = time.time()
-        print(f'Time execute: {(round(end-start, 5)*1000)} ms')
+        print(f'Time execute: {(round((end-start)*1000, 3))} ms')
         return ret 
     return decorated
 
@@ -31,15 +30,17 @@ def cutFrame(cap, numFrame):
 
 
 
-def vido_proc(cap, alg):
+def vido_proc(cap, alg, scale = 1):
     while cap.isOpened():
         ret, frame = cap.read()
         grey = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        grey = grey[..., :np.min(grey.shape)]
-        cv.imshow('img', grey)
-        cv.imshow('alg', (alg(frame)))
+        # grey = grey[..., :np.min(grey.shape)]
+        result = alg(grey, scale = scale)
+        cv.imshow('edges', result[0])
+        cv.imshow('fft', result[1])
         if cv.waitKey(1) == ord('q'):
-            break    
+            break  
+    cv.destroyAllWindows()
 
 
 
@@ -52,15 +53,15 @@ def fft_img(img):
 
 
 @time_measure
-def img_alg(img, gauss_gamma = 250):
-    img = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #3-channel img to 1-channel img
+def img_alg(img, gauss_gamma = 250, scale = 1):
     img = img[..., :np.min(img.shape)]
-    edges = cv.Canny(img, 100, 200)
+    img = cv.resize(img, (0,0), fx=scale, fy=scale) 
+    edges = cv.Canny(img, 100, 300)
     gaussian_window = cv.getGaussianKernel(img.shape[0], gauss_gamma)
     gaussian_window = gaussian_window*gaussian_window.T
     windowed_edges = edges*gaussian_window
     fft = fft_img(windowed_edges)
-    return fft
+    return edges, fft
 
 
 
@@ -75,14 +76,36 @@ def images_proc(path):
         axs[i].set_title(files[i])
 
 
-
 cap = cv.VideoCapture("decan.mp4") 
-img = cv.imread('img/decan/decan_50.png')
-
-
+img = cv.imread('img/decan/decan_050.png')
+img = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #3-channel img to 1-channel img
+# plt.imshow(img, cmap = 'gray')
 vido_proc(cap, img_alg)
 
-# images_proc('./img/decan/')
-# plt.imshow(img_alg(img), cmap = 'gray')
+def matching(img = None):   
+    img = np.pad(img, pad_width=8, mode='constant', constant_values=0) 
+    print(img.shape)
+    pattern = np.ones([3,3])
+    pattern = np.pad(pattern, pad_width=3, mode='constant', constant_values=0)
+    pat1 = np.ones([8,8])
+    a = img.shape[0]//2-pattern.shape[0]//2
+    b = img.shape[0]//2+pattern.shape[0]//2
+    steps = (img.shape[0]//2)//pattern.shape[0]
+    picks = np.zeros(steps)
+    # print(pat1.shape, steps)
+    for i in range(0, (img.shape[0]//2)-1, pat1.shape[0]):
+        # horizontal_window = img[a+step:b+step, a:b] * pattern
+        # vertical_window = img[a:b, a+step:b+step] * pattern
+        # print(img[a:b, a+i:b+i].shape, i)
+        # print(a+i, b+i)
+        # img[a:b, a+i:b+i] = pat1
+        picks[i] = np.average(img[a:b, a+i:b+i], weights=pattern)
+    return picks
+        
+
+# plt.imshow(pattern, cmap = 'gray')
+img = img[..., :np.min(img.shape)]
+# print(img.shape)
+matching(img)
 plt.show()
 cv.waitKey(0) 
