@@ -37,23 +37,33 @@ def fft_img(img):
     fft_normalized = np.log(1 + np.abs(fft_centered)) 
     return fft_normalized
 
-cap = cv.VideoCapture("decan.mp4")
-img = cv.cvtColor(cv.imread('img/decan/decan_150.png'), cv.COLOR_BGR2GRAY)
+def img_proc(path):
+    files = [f for f in os.listdir(path) if f.endswith(".png")]
+    fig, axs = plt.subplots(1,len(files))
+    files = sorted(files)
+    for i in range(len(files)):
+        img = cv.cvtColor(cv.imread(f'{path}{files[i]}'), cv.COLOR_BGR2GRAY) 
+        img = img[..., :np.min(img.shape)]
+        edges = cv.Canny(img, 100, 200)
+        gaussian_window = cv.getGaussianKernel(img.shape[0], 250)
+        gaussian_window = gaussian_window*gaussian_window.T
+        windowed_edges = edges*gaussian_window
+        fft = fft_img(windowed_edges)
+        axs[i].imshow(fft, cmap = 'gray')
+        axs[i].axis('off')
+        axs[i].set_title(files[i])
 
-# total = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
-# print(total)
-path = './img/decan/'
-files = [f for f in os.listdir(path)]
-fig, axs = plt.subplots(2, 3)
-files = sorted(files)
-print(files)
-fft_img(cv.cvtColor(cv.imread(f'{path}{files[0]}'), cv.COLOR_BGR2GRAY))
-axs[0, 0].imshow(fft_img(cv.cvtColor(cv.imread(f'{path}{files[0]}'), cv.COLOR_BGR2GRAY)), cmap = 'gray')
-axs[0, 1].imshow(fft_img(cv.cvtColor(cv.imread(f'{path}{files[1]}'), cv.COLOR_BGR2GRAY)), cmap = 'gray')
-axs[0, 2].imshow(fft_img(cv.cvtColor(cv.imread(f'{path}{files[2]}'), cv.COLOR_BGR2GRAY)), cmap = 'gray')
-axs[1, 0].imshow(fft_img(cv.cvtColor(cv.imread(f'{path}{files[3]}'), cv.COLOR_BGR2GRAY)), cmap = 'gray')
-axs[1, 1].imshow(fft_img(cv.cvtColor(cv.imread(f'{path}{files[4]}'), cv.COLOR_BGR2GRAY)), cmap = 'gray')
-# axs[0, 0].imshow(fft_img(img), cmap = 'gray')
-# plt.imshow(fft_img(img), cmap='gray')
+# decan_fft()
+
+cap = cv.VideoCapture("decan.mp4") 
+img = cv.imread('img/decan/decan_150.png')
+
+
+edges = cv.Canny(img, 100, 200)
+edges = cv.cvtColor(edges, cv.COLOR_BGR2RGB)
+
+img_proc('./img/decan/')
+# plt.imshow(edges)
+
 plt.show()
 cv.waitKey(0) 
