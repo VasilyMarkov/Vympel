@@ -16,6 +16,8 @@ def time_measure(f):
         return ret 
     return decorated
 
+
+
 def cutFrame(cap, numFrame):
     cnt = 0
     while cap.isOpened(): 
@@ -27,16 +29,15 @@ def cutFrame(cap, numFrame):
             break  
     return frame
 
-def fft_video(cap):
+
+
+def vido_proc(cap, alg):
     while cap.isOpened():
         ret, frame = cap.read()
-        start = time.time()
-        fft_frame = fft.fft2(frame)
-        fft_centered = np.fft.fftshift(fft_frame)
-        fft_normalized = np.log(1 + abs(fft_centered))
-        # cv.imshow('fft', abs(fft_frame))
-        end = time.time()
-        print(f'{end-start}, s')
+        grey = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        grey = grey[..., :np.min(grey.shape)]
+        cv.imshow('img', grey)
+        cv.imshow('alg', (alg(frame)))
         if cv.waitKey(1) == ord('q'):
             break    
 
@@ -48,8 +49,11 @@ def fft_img(img):
     fft_normalized = np.log(1 + np.abs(fft_centered)) 
     return fft_normalized
 
+
+
 @time_measure
 def img_alg(img, gauss_gamma = 250):
+    img = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #3-channel img to 1-channel img
     img = img[..., :np.min(img.shape)]
     edges = cv.Canny(img, 100, 200)
     gaussian_window = cv.getGaussianKernel(img.shape[0], gauss_gamma)
@@ -58,29 +62,27 @@ def img_alg(img, gauss_gamma = 250):
     fft = fft_img(windowed_edges)
     return fft
 
-def img_proc(path):
+
+
+def images_proc(path):
     files = [f for f in os.listdir(path) if f.endswith(".png")]
     fig, axs = plt.subplots(1,len(files))
     files = sorted(files)
     for i in range(len(files)):
-        img = cv.cvtColor(cv.imread(f'{path}{files[i]}'), cv.COLOR_BGR2GRAY) 
-        axs[i].imshow(img_alg(img, 250), cmap = 'gray')
+        img = cv.imread(f'{path}{files[i]}')
+        axs[i].imshow(img_alg(img), cmap = 'gray')
         axs[i].axis('off')
         axs[i].set_title(files[i])
 
 
 
-# decan_fft()
-
 cap = cv.VideoCapture("decan.mp4") 
-img = cv.imread('img/decan/decan_150.png')
+img = cv.imread('img/decan/decan_50.png')
 
 
-edges = cv.Canny(img, 100, 200)
-edges = cv.cvtColor(edges, cv.COLOR_BGR2RGB)
+vido_proc(cap, img_alg)
 
-img_proc('./img/decan/')
-# plt.imshow(edges)
-
+# images_proc('./img/decan/')
+# plt.imshow(img_alg(img), cmap = 'gray')
 plt.show()
 cv.waitKey(0) 
