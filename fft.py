@@ -7,6 +7,15 @@ import sys
 import os
 
 
+def time_measure(f):
+    def decorated(*args, **kwargs):
+        start = time.time()
+        ret = f(*args, **kwargs)
+        end = time.time()
+        print(f'Time execute: {(round(end-start, 5)*1000)} ms')
+        return ret 
+    return decorated
+
 def cutFrame(cap, numFrame):
     cnt = 0
     while cap.isOpened(): 
@@ -31,11 +40,23 @@ def fft_video(cap):
         if cv.waitKey(1) == ord('q'):
             break    
 
+
+
 def fft_img(img):
     fft_frame = fft.fft2(img)
     fft_centered = fft.fftshift(fft_frame)
     fft_normalized = np.log(1 + np.abs(fft_centered)) 
     return fft_normalized
+
+@time_measure
+def img_alg(img, gauss_gamma = 250):
+    img = img[..., :np.min(img.shape)]
+    edges = cv.Canny(img, 100, 200)
+    gaussian_window = cv.getGaussianKernel(img.shape[0], gauss_gamma)
+    gaussian_window = gaussian_window*gaussian_window.T
+    windowed_edges = edges*gaussian_window
+    fft = fft_img(windowed_edges)
+    return fft
 
 def img_proc(path):
     files = [f for f in os.listdir(path) if f.endswith(".png")]
@@ -43,15 +64,11 @@ def img_proc(path):
     files = sorted(files)
     for i in range(len(files)):
         img = cv.cvtColor(cv.imread(f'{path}{files[i]}'), cv.COLOR_BGR2GRAY) 
-        img = img[..., :np.min(img.shape)]
-        edges = cv.Canny(img, 100, 200)
-        gaussian_window = cv.getGaussianKernel(img.shape[0], 250)
-        gaussian_window = gaussian_window*gaussian_window.T
-        windowed_edges = edges*gaussian_window
-        fft = fft_img(windowed_edges)
-        axs[i].imshow(fft, cmap = 'gray')
+        axs[i].imshow(img_alg(img, 250), cmap = 'gray')
         axs[i].axis('off')
         axs[i].set_title(files[i])
+
+
 
 # decan_fft()
 
