@@ -1,9 +1,11 @@
 import cv2 as cv
+import logging
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.fft as fft
-import matplotlib.pyplot as plt
-import time
 import os
+import sys
+import time
 
 
 def time_measure(f):
@@ -31,17 +33,28 @@ def cutFrame(cap, numFrame):
 
 
 def vido_proc(cap, alg, scale = 1):
+    max = 0
     while cap.isOpened():
         ret, frame = cap.read()
+        if not ret:
+            cap.release()
+            cv.destroyAllWindows()
+            return max
         grey = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        # grey = grey[..., :np.min(grey.shape)]
         result = alg(grey, scale = scale)
+        h_window = result[2]
+        v_window = result[3]
+        weight = np.sum(h_window)+np.sum(v_window)
+        if weight > max:
+            max = weight
+        print(weight)
         cv.imshow('edges', result[0])
         cv.imshow('fft', result[1])
+        
         if cv.waitKey(1) == ord('q'):
             break  
-    cv.destroyAllWindows()
-
+    
+    return max
 
 
 def fft_img(img):
@@ -61,7 +74,10 @@ def img_alg(img, gauss_gamma = 250, scale = 1):
     gaussian_window = gaussian_window*gaussian_window.T
     windowed_edges = edges*gaussian_window
     fft = fft_img(windowed_edges)
-    return edges, fft
+    horizontal_window = fft[fft.shape[0]//2-10:fft.shape[0]//2+10, fft.shape[0]//2+240:fft.shape[0]-100]
+    vertical_window = fft[fft.shape[0]//2+240:fft.shape[0]-100, fft.shape[0]//2-10:fft.shape[0]//2+10]
+
+    return edges, fft, horizontal_window, vertical_window
 
 
 
@@ -75,12 +91,6 @@ def images_proc(path):
         axs[i].axis('off')
         axs[i].set_title(files[i])
 
-
-cap = cv.VideoCapture("decan.mp4") 
-img = cv.imread('img/decan/decan_050.png')
-img = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #3-channel img to 1-channel img
-# plt.imshow(img, cmap = 'gray')
-vido_proc(cap, img_alg)
 
 def matching(img = None):   
     img = np.pad(img, pad_width=8, mode='constant', constant_values=0) 
@@ -101,11 +111,25 @@ def matching(img = None):
         # img[a:b, a+i:b+i] = pat1
         picks[i] = np.average(img[a:b, a+i:b+i], weights=pattern)
     return picks
-        
 
-# plt.imshow(pattern, cmap = 'gray')
-img = img[..., :np.min(img.shape)]
-# print(img.shape)
-matching(img)
+
+cap1 = cv.VideoCapture("decan+hc.mp4") 
+img = cv.imread('img/decan/decan_050.png')
+img = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #3-channel img to 1-channel img
+# plt.imshow(img, cmap = 'gray')
+
+# print(f'Max: {max}')
+file = ''.join(sys.argv[1:])
+print(file)
+if not os.path.isfile(file):
+    print('File not exists')
+else:
+    cap = cv.VideoCapture(file)
+    max = vido_proc(cap, img_alg) 
+    logging.basicConfig(filename='results.log', format='%(asctime)s: %(levelname)s %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
+    logging.info(f'Run {file}, Max weight: {round(max, 2)}')
+
+
+# matching(img)
 plt.show()
 cv.waitKey(0) 
