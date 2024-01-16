@@ -18,7 +18,6 @@ def time_measure(f):
     return decorated
 
 
-
 def cutFrame(cap, numFrame):
     cnt = 0
     while cap.isOpened(): 
@@ -31,8 +30,7 @@ def cutFrame(cap, numFrame):
     return frame
 
 
-
-def vido_proc(cap, alg, scale = 1):
+def vido_proc(cap, alg, *args):
     max = 0
     while cap.isOpened():
         ret, frame = cap.read()
@@ -41,15 +39,14 @@ def vido_proc(cap, alg, scale = 1):
             cv.destroyAllWindows()
             return max
         grey = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        result = alg(grey, scale = scale)
+        result = alg(grey, *args)
         h_window = result[2]
         v_window = result[3]
         weight = np.sum(h_window)+np.sum(v_window)
         if weight > max:
             max = weight
-        print(weight)
         cv.imshow('edges', result[0])
-        cv.imshow('fft', result[1])
+        # cv.imshow('fft', result[1])
         
         if cv.waitKey(1) == ord('q'):
             break  
@@ -64,13 +61,12 @@ def fft_img(img):
     return fft_normalized
 
 
-
 @time_measure
-def img_alg(img, gauss_gamma = 250, scale = 1):
+def img_alg(img, scale = 1, canny_th = (100, 300)):
     img = img[..., :np.min(img.shape)]
     img = cv.resize(img, (0,0), fx=scale, fy=scale) 
-    edges = cv.Canny(img, 100, 300)
-    gaussian_window = cv.getGaussianKernel(img.shape[0], gauss_gamma)
+    edges = cv.Canny(img, canny_th[0], canny_th[1])
+    gaussian_window = cv.getGaussianKernel(img.shape[0], 250)
     gaussian_window = gaussian_window*gaussian_window.T
     windowed_edges = edges*gaussian_window
     fft = fft_img(windowed_edges)
@@ -78,7 +74,6 @@ def img_alg(img, gauss_gamma = 250, scale = 1):
     vertical_window = fft[fft.shape[0]//2+240:fft.shape[0]-100, fft.shape[0]//2-10:fft.shape[0]//2+10]
 
     return edges, fft, horizontal_window, vertical_window
-
 
 
 def images_proc(path):
@@ -102,7 +97,6 @@ def matching(img = None):
     b = img.shape[0]//2+pattern.shape[0]//2
     steps = (img.shape[0]//2)//pattern.shape[0]
     picks = np.zeros(steps)
-    # print(pat1.shape, steps)
     for i in range(0, (img.shape[0]//2)-1, pat1.shape[0]):
         # horizontal_window = img[a+step:b+step, a:b] * pattern
         # vertical_window = img[a:b, a+step:b+step] * pattern
@@ -113,23 +107,20 @@ def matching(img = None):
     return picks
 
 
-cap1 = cv.VideoCapture("decan+hc.mp4") 
-img = cv.imread('img/decan/decan_050.png')
-img = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #3-channel img to 1-channel img
-# plt.imshow(img, cmap = 'gray')
-
-# print(f'Max: {max}')
 file = ''.join(sys.argv[1:])
 print(file)
 if not os.path.isfile(file):
     print('File not exists')
 else:
     cap = cv.VideoCapture(file)
-    max = vido_proc(cap, img_alg) 
+    canny_th = (200, 400)
+    max = vido_proc(cap, img_alg, 1, canny_th) 
     logging.basicConfig(filename='results.log', format='%(asctime)s: %(levelname)s %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
-    logging.info(f'Run {file}, Max weight: {round(max, 2)}')
+    logging.info(f'Run {file}, Max weight: {round(max, 2)}, Canny thresholds: {canny_th}')
 
 
-# matching(img)
 plt.show()
 cv.waitKey(0) 
+
+# img = cv.imread('img/decan/decan_050.png')
+# img = cv.cvtColor(img, cv.COLOR_BGR2GRAY) 
