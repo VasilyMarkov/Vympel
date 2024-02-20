@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+ssh vympel@$1
+echo "Connect to vympel@$1"
+
+
