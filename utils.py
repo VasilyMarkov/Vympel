@@ -1,4 +1,3 @@
-
 import os
 from os import listdir
 from os.path import isfile, join
@@ -17,3 +16,5 @@ def rename_files(file_list):
             file_name = file_name.replace(" расход ", "_")       
         os.rename(file, file_name)
     return
+
+
