@@ -4,7 +4,13 @@ from numpy import asarray
 import matplotlib.pyplot as plt
 from scipy.signal import butter, lfilter, fftconvolve
 import numpy.fft as fft
+import socket
+from struct import pack
+import collections 
 
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+host, port = '127.0.0.1', 65000
+server_address = (host, port)
 
 def butter_lowpass(cutoff, fs, order=5):
     return butter(order, cutoff, fs=fs, btype='low', analog=False)
@@ -17,8 +23,8 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 def threshold(cap):
     signal = []
     cnt_frame = 0
-    threshold = 70
-    max_frame = 0
+    threshold = 50
+    buffer = collections.deque(maxlen=20)
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
@@ -28,12 +34,11 @@ def threshold(cap):
             ret, thresh = cv.threshold(crop, threshold, 255, cv.THRESH_BINARY)
             array_frame = asarray(thresh)
             white_pix = (array_frame > threshold).sum()
-            signal.append(white_pix)
+            buffer.append(white_pix)
+            avg = np.mean(np.array(buffer)).astype(int)
+            msg = pack('1I', avg)
+            sock.sendto(msg, server_address) 	
             cv.imshow('frame', thresh)
-            if cnt_frame == 300:
-                stop = thresh
-        if cnt_frame == 200:
-            plt.imshow(thresh, cmap="gray")
         if cv.waitKey(1) == ord('q'):
             break
 
@@ -61,7 +66,7 @@ def correlation(cap, max_frame):
         cv.imshow('fft', fft_normalized)
         cv.putText(frame,f'Frame:{cnt}',(50, 50),1,2,(0, 0, 0), cv.LINE_4)
         # if ret:
-        #     corr.append(fftconvolve(gray, max_frame, mode='full'))
+        #     corr.append(fftconvolve(gray, max_tframe, mode='full'))
         if cv.waitKey(1) == ord('q'):
             break
         cnt += 1
@@ -89,7 +94,7 @@ def extract_max_frame(cap):
 def mat2vec(A):
     return np.reshape(np.flipud(A), np.prod(A.shape))
 
-cap = cv.VideoCapture("test2.mp4")
+cap = cv.VideoCapture("new_video/hc-20w-40(octan)6.avi")
 
 # extract_max_frame(cap)
 # max_frame = cv.cvtColor(cv.imread('max_frame.png'), cv.COLOR_BGR2GRAY)
