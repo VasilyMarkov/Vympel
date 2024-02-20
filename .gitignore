@@ -4,3 +4,8 @@
 !main.py
 !video_processing.py
 !fft.py
+!u_client.py
+!u_server.py
+!utils.py
+!write_data.py
+!read_data.py
