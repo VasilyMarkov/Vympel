@@ -40,5 +40,7 @@ def sendData(data):
     data_string = pickle.dumps(data)
     sock.sendto(data_string, server_address) 
 
-cap = cv.VideoCapture("new_video/hc-20w-40(octan)6.avi")
-threshold(cap)
+
+if __name__ == "__main__":
+    cap = cv.VideoCapture("new_video/hc-20w-40(octan)6.avi")
+    threshold(cap)

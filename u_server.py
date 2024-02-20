@@ -16,6 +16,10 @@ def receiveData():
 
 if __name__ == "__main__":
     data = np.array(receiveData())
+    file = "data/1.npy"
+    np.save(file, data)
     fig, axis = plt.subplots()
     axis.plot(data, 'g-')
     plt.show()
+    arr_loaded = np.load(file)
+    print(arr_loaded)
