@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 from utils import *
 from pathlib import Path
+# Saving treshold data from video to .npy
 
 def threshold(frame):
     threshold = 50
@@ -14,7 +15,6 @@ def threshold(frame):
 
 
 if __name__ == "__main__":
-    
     files = get_file_list(str(Path.cwd()) + "/C10H22_Decan_Video/h/")
     video_dir = "C10H22_Decan_Video/h/"
     data_dir = "data/old_video_data/"

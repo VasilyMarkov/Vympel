@@ -42,7 +42,7 @@ def detect(cap):
         upper_gray = np.array([179, 50, 255], np.uint8)
         mask_gray = cv.inRange(hsv, lower_gray, upper_gray)
         img_res = cv.bitwise_and(frame, frame, mask = mask_gray)
-        cv.imshow('result', img_res)
+        cv.imshow('result', frame)
         if cv.waitKey(1) == ord('q'):
             break  
     return
@@ -98,13 +98,14 @@ file = "new_video/hc-20w-40(octan).mp4"
 #     [5,5,3,3,5],
 #     [5,5,5,5,5]
 # ])
-# cap = cv.VideoCapture(file)
+cap = cv.VideoCapture(file)
+black(cap)
 # cutFrame(cap, 200)
 
-img = cv.cvtColor(cv.imread('frame.png'), cv.COLOR_BGR2HSV)
-v = img[:, :, 2]
-blur = cv.GaussianBlur(v,(3,3),0)
-minima = regminima(blur)
-plt.imshow(minima, cmap="gray")
+# img = cv.cvtColor(cv.imread('frame.png'), cv.COLOR_BGR2HSV)
+# v = img[:, :, 2]
+# blur = cv.GaussianBlur(v,(3,3),0)
+# minima = regminima(blur)
+# plt.imshow(minima, cmap="gray")
 plt.show()
 cv.waitKey(0) 

@@ -42,5 +42,5 @@ def sendData(data):
 
 
 if __name__ == "__main__":
-    cap = cv.VideoCapture("new_video/hc-20w-40(octan)6.avi")
+    cap = cv.VideoCapture("new_video/h/hc-20w-40(octan)6.avi")
     threshold(cap)
