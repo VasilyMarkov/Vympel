@@ -6,3 +6,5 @@ __pycache__
 img
 video
 new_video
+videos_new
+*.png

@@ -7,16 +7,34 @@ from algorithms import *
 
 window = np.zeros([14, 14])
 
+def showHist(frame):
+    hist = np.zeros([256, 3])
+    hist[:, 0] = cv.calcHist([frame],[0],None,[256],[0,256]).reshape(256)
+    hist[:, 1] = cv.calcHist([frame],[1],None,[256],[0,256]).reshape(256)
+    hist[:, 2] = cv.calcHist([frame],[2],None,[256],[0,256]).reshape(256)
+    fig, axs = plt.subplots(3,1)
+    color = ('b','g','r')
+    axs[0].plot(hist[:, 0],color = color[0])
+    axs[1].plot(hist[:, 1],color = color[1])
+    axs[2].plot(hist[:, 2],color = color[2])
+
+nums = [50, 100, 150, 200, 250, 300, 350, 400, 450]
 def video_handler(cap, chain):
     cnt = 0
+    num = 0
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
             cv.imshow('frame', frame)
+            # if cnt == nums[num]:
+            #     cv.imwrite(f'fr{num}.png', frame)
+            #     num += 1
             for alg in chain:
                 frame = alg(frame)  
             cv.imshow('process', frame)
-            time.sleep(0.05)
+            time.sleep(0.04)
+
+            cnt += 1
         if cv.waitKey(1) == ord('q'):
             break
     cap.release()
@@ -29,6 +47,6 @@ if not os.path.isfile(file):
     print('File not exists')
 else:
     cap = cv.VideoCapture(file)
-    alg_chain = [gray, match]
+    alg_chain = [threshold]
     video_handler(cap, alg_chain)
     cv.waitKey(0) 
