@@ -128,15 +128,24 @@ def circleMask(frame_size, circle_size):
                 test[y][x] = 0
     return test.astype(np.uint8)
 
+def energy(frame):
+    frame_f = frame.astype(float)
+    frame_f = np.power(frame_f, 2)
+    return frame
+
 @time_measure
 def threshold(frame):
-    threshold = 20
+    threshold = 50
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     crop = gray[100:600, 0:600]
     ret, thresh = cv.threshold(crop, threshold, 255, cv.THRESH_BINARY)
     array_frame = np.asarray(thresh)
     # white_pix = (array_frame > threshold).sum()
     return thresh
+
+
+
+
 # img = np.ones([11, 11]).astype(np.uint8)
 # masked = np.zeros([11, 11])
 # mask = circleMask(img.shape, 3).astype(np.uint8)

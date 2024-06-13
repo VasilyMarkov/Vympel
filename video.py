@@ -19,24 +19,27 @@ def showHist(frame):
     axs[2].plot(hist[:, 2],color = color[2])
 
 nums = [50, 100, 150, 200, 250, 300, 350, 400, 450]
+pixels = []
 def video_handler(cap, chain):
     cnt = 0
     num = 0
+    threshold = 50
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
             cv.imshow('frame', frame)
-            # if cnt == nums[num]:
-            #     cv.imwrite(f'fr{num}.png', frame)
-            #     num += 1
             for alg in chain:
                 frame = alg(frame)  
+            array_frame = np.asarray(frame)
+            white_pix = (array_frame > threshold).sum()
+            pixels.append(white_pix)
             cv.imshow('process', frame)
             time.sleep(0.04)
 
             cnt += 1
         if cv.waitKey(1) == ord('q'):
             break
+    plt.plot(pixels)
     cap.release()
     cv.destroyAllWindows()
 
