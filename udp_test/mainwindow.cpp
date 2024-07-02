@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QDebug>
+#include <QJsonObject>
 #include <algorithm>
 #include <deque>
 #include <queue>
@@ -124,15 +125,24 @@ std::pair<double, double> mean_var(const std::vector<double>& window) {
 
 void MainWindow::readSocket()
 {
+
+
     static size_t x = 0;
     static size_t cnt = 0;
     std::vector<char> buffer;
     buffer.resize(socket->pendingDatagramSize());
-    socket->readDatagram(buffer.data(), buffer.size(), nullptr, nullptr);
+    QByteArray datagram;
+    datagram.resize(socket->pendingDatagramSize());
+    socket->readDatagram(datagram.data(), datagram.size(), nullptr, nullptr);
+    QJsonParseError jsonErr;
+    auto json = QJsonDocument::fromJson(datagram, &jsonErr);
+
+    auto value = json.object().value("bright").toDouble();
+//    std::cout << brightness << std::endl;
     std::vector<char> tmp(buffer.rbegin(), buffer.rend());
     char dat[4] = {buffer[0], buffer[1], buffer[2], buffer[3]};
-    int value = 0;
-    memcpy(&value, dat, 4);
+//    int value = 0;
+//    memcpy(&value, dat, 4);
     static bool th = false;
     if (cnt == window_size) {
         calibration = false;
