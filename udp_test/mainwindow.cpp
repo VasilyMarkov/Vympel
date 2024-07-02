@@ -10,7 +10,7 @@
 #include <QProcess>
 #include <math.h>
 
-constexpr size_t frame_size = 1000;
+constexpr size_t frame_size = 2000;
 
 template <typename Cont>
 void print(const Cont& cont) {
@@ -33,7 +33,7 @@ double round_to(double value, double precision = 1.0)
     return std::round(value / precision) * precision;
 }
 
-constexpr const size_t window_size = 200;
+constexpr size_t window_size = 100;
 std::deque<double> wind(window_size, 0);
 std::queue<double> socketData;
 
@@ -138,6 +138,7 @@ void MainWindow::readSocket()
     auto json = QJsonDocument::fromJson(datagram, &jsonErr);
 
     auto value = json.object().value("bright").toDouble();
+    auto filtered = json.object().value("filtered").toDouble();
 //    std::cout << brightness << std::endl;
     std::vector<char> tmp(buffer.rbegin(), buffer.rend());
     char dat[4] = {buffer[0], buffer[1], buffer[2], buffer[3]};
@@ -184,8 +185,10 @@ void MainWindow::readSocket()
     auto max_value1 = 0.01;
     if (value > max_value1) max_value1 = value;
     auto new_value = static_cast<double>((value-g_mean))/max_value1;
+    auto new_filtered = static_cast<double>((filtered-g_mean))/max_value1;
 
     plot->graph(0)->addData(x++, new_value);
+    plot->graph(1)->addData(x++, new_filtered);
 //    std::cout << new_value << std::endl;
 
     static size_t cnt1 = 0;
