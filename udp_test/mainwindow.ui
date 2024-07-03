@@ -26,7 +26,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,1,5">
+     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,1,4">
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="1" column="0">
@@ -112,7 +112,7 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1,1">
         <item>
          <widget class="QPushButton" name="calibrate">
           <property name="sizePolicy">
@@ -136,6 +136,19 @@
           </property>
           <property name="text">
            <string>Start</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="stop">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Stop</string>
           </property>
          </widget>
         </item>

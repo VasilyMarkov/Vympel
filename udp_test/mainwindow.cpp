@@ -10,7 +10,9 @@
 #include <QProcess>
 #include <math.h>
 
-constexpr size_t frame_size = 2000;
+constexpr size_t frame_size = 10000;
+
+
 
 template <typename Cont>
 void print(const Cont& cont) {
@@ -51,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(socket, &QUdpSocket::readyRead, this, &MainWindow::readSocket);
     plot = ui->plot;
     setupPlot(plot);
-    plot->yAxis->setRange(-0.5, 0.5);
+    plot->yAxis->setRange(-1, 1);
     plot->xAxis->setRange(0, frame_size);
 
     plot->addGraph();
@@ -81,31 +83,22 @@ MainWindow::MainWindow(QWidget *parent)
     lines.back()->setPen(QPen(QColor(250, 250, 62), 0.5));
 
 
+    var_pos_line = new QCPItemLine(plot);
+    var_pos_line->setPen(QPen(QColor(240, 199, 50), 1.5, Qt::DotLine));
+    var_neg_line = new QCPItemLine(plot);
+    var_neg_line->setPen(QPen(QColor(240, 199, 50), 1.5, Qt::DotLine));
+
+    start_line = new QCPItemLine(plot);
+    start_line->setPen(QPen(QColor(65, 172, 242), 1.5, Qt::DotLine));
+    end_line = new QCPItemLine(plot);
+    end_line->setPen(QPen(QColor(65, 172, 242), 1.5, Qt::DotLine));
+
     hist = ui->hist;
 
     setupPlot(hist);
 
-//    QCPBars* bar = new QCPBars(hist->xAxis, hist->yAxis);
-//    bar->setAntialiased(false);
-//    bar->setName("Regenerative");
-//    bar->setPen(QPen(QColor(0, 168, 140).lighter(130)));
-//    bar->setBrush(QColor(0, 168, 140));
-//    bar->setWidth(0.01);
-//    QVector<double> data = {1, 2};
-//    QVector<double> ticks = {1, 2};
-//    bar->setData(data, ticks);
-
-//    QTimer* threadTimer = new QTimer();
-//    connect(threadTimer, &QTimer::timeout, this, [&](){
-//            QtConcurrent::run(this, &MainWindow::plotData);}, Qt::QueuedConnection);
-//    threadTimer->start(20);
-//    connect(&script, SIGNAL(readyReadStandardOutput()), this, );
     calib_data.reserve(window_size);
-    python_thread = new QThread();
-    script = new PythonScript();
-//    script->run();
-    script->moveToThread(python_thread);
-    connect(python_thread, &QThread::started, script, &PythonScript::run);
+    filtered_data.reserve(window_size);
 }
 
 MainWindow::~MainWindow()
@@ -125,7 +118,8 @@ std::pair<double, double> mean_var(const std::vector<double>& window) {
 
 void MainWindow::readSocket()
 {
-
+    static bool detect_mode = false;
+    static bool calib_done = false;
 
     static size_t x = 0;
     static size_t cnt = 0;
@@ -139,11 +133,10 @@ void MainWindow::readSocket()
 
     auto value = json.object().value("bright").toDouble();
     auto filtered = json.object().value("filtered").toDouble();
-//    std::cout << brightness << std::endl;
-    std::vector<char> tmp(buffer.rbegin(), buffer.rend());
-    char dat[4] = {buffer[0], buffer[1], buffer[2], buffer[3]};
-//    int value = 0;
-//    memcpy(&value, dat, 4);
+    auto low_passed = json.object().value("low_passed").toDouble();
+    auto jmean = json.object().value("mean").toDouble();
+    auto jvariance = json.object().value("variance").toDouble();
+
     static bool th = false;
     if (cnt == window_size) {
         calibration = false;
@@ -171,6 +164,7 @@ void MainWindow::readSocket()
 //        print(occurences);
         cnt = 0;
         th = true;
+        calib_done = true;
     }
     if (calibration) {
         ui->status->setText(QString("Calibration... %1").arg(cnt));
@@ -186,10 +180,84 @@ void MainWindow::readSocket()
     if (value > max_value1) max_value1 = value;
     auto new_value = static_cast<double>((value-g_mean))/max_value1;
     auto new_filtered = static_cast<double>((filtered-g_mean))/max_value1;
+    auto new_low_passed = static_cast<double>((low_passed-g_mean))/max_value1;
 
     plot->graph(0)->addData(x++, new_value);
     plot->graph(1)->addData(x++, new_filtered);
-//    std::cout << new_value << std::endl;
+    auto norm_var = std::sqrt(jvariance)/max_value1;
+//    std::cout << calib_done << std::endl;
+    static size_t cnt_m = 0;
+    filtered_data.push_back(new_filtered);
+    switch(fsm) {
+        static size_t detect_cnt = 0;
+        static auto start_p = 0.0;
+        static auto end_p = 0.0;
+        case fsm_t::START:
+            if (new_filtered > norm_var && calib_done) {
+                std::cout << "START" << std::endl;
+                start_p = x;
+                fsm = fsm_t::DETECTION;
+            }
+        break;
+        case fsm_t::DETECTION:
+
+            if (new_filtered > norm_var) {
+                ++cnt_m;
+            }
+            if (detect_cnt == 20 && (static_cast<double>(cnt_m)/detect_cnt) < 0.5) {
+                std::cout << (cnt_m/detect_cnt) << std::endl;
+                detect_cnt = 0;
+                fsm = fsm_t::START;
+            }
+            if (detect_cnt == 60 && (static_cast<double>(cnt_m)/detect_cnt) >= 0.9) {
+                std::cout << "DETECTION" << std::endl;
+                detect_cnt = 0;
+                fsm = fsm_t::MEASHURE;
+            }
+            ++detect_cnt;
+        break;
+        case fsm_t::MEASHURE:
+            std::cout << "MEASHURE" << std::endl;
+            end_p = x;
+            start_line->start->setCoords(start_p, -1);
+            start_line->end->setCoords(start_p, 1);
+            end_line->start->setCoords(end_p, -1);
+            end_line->end->setCoords(end_p, 1);
+            fsm = fsm_t::IDLE;
+        break;
+        case fsm_t::FULL:
+            std::cout << "END" << std::endl;
+            auto max = *std::max_element(std::begin(filtered_data), std::end(filtered_data));
+            std::cout << "max: " << max << std::endl;
+            std::unordered_map<size_t, double> elements;
+            auto lower = 0.94*max;
+            auto upper = 0.96*max;
+            size_t index = 0;
+            std::for_each(std::begin(filtered_data), std::end(filtered_data), [&](double elem)
+            {
+                if (elem > lower && elem < upper)
+                    elements.emplace(index, elem);
+                ++index;
+            });
+            print(elements);
+            fsm = fsm_t::END;
+        break;
+    }
+
+    if (new_filtered > norm_var) {
+        static size_t detect_cnt = 0;
+        if(detect_mode) {
+            if(detect_cnt == 20) {
+                detect_cnt = 0;
+            }
+            ++detect_cnt;
+        }
+        detect_mode = true;
+    }
+    var_pos_line->start->setCoords(0, norm_var);
+    var_pos_line->end->setCoords(frame_size, norm_var);
+    var_neg_line->start->setCoords(0, -norm_var);
+    var_neg_line->end->setCoords(frame_size, -norm_var);
 
     static size_t cnt1 = 0;
     static bool prc = false;
@@ -205,7 +273,7 @@ void MainWindow::readSocket()
         prc = false;
     }
     cnt1++;
-    plot->yAxis->setRange(-0.5, 0.5);
+//    plot->yAxis->setRange(-0.5, 0.5);
     if (auto data_cnt = plot->graph(0)->dataCount() == frame_size) {
         plot->xAxis->setRange(data_cnt, data_cnt+frame_size);
     }
@@ -236,56 +304,6 @@ void MainWindow::on_calibrate_clicked()
 {
     calibration = true;
 }
-
-//void MainWindow::plotData()
-//{
-//    static size_t x = 0;
-//    auto value = 0;
-//    static size_t cnt_max = 0;
-//    if(socketData.empty()) return;
-
-//    value = socketData.front();
-//    socketData.pop();
-//    auto sign = 0;
-//    auto threshold = 3.5;
-//    auto influence = 0.2;
-//    auto [mean, stdev] = filter(wind);
-//    static auto max = 0;
-//    static auto cnt = 0;
-//    static auto flag = false;
-//    if(std::fabs(value-mean) > threshold*stdev && stdev !=0) {
-//        value > stdev ? sign = 100 : sign *= -100;
-//        wind.push_back(value*influence +(1-influence)*wind.front());
-//        if(!flag) {
-
-//        }
-//        if (value > max && value > 100) {
-//            max = value;
-//            lines[cnt]->start->setCoords(x, -200);
-//            std::cout << x << std::endl;
-//            lines[cnt]->end->setCoords(x, -200);
-//        }
-//        flag = true;
-
-//    }
-//    else {
-//        sign = 0;
-//        wind.push_back(value);
-//        max = 0;
-//        cnt++;
-//        flag = false;
-//    }
-//    wind.pop_front();
-//    plot->graph(0)->addData(x++, value);
-//    plot->graph(1)->addData(x++, mean);
-//    plot->graph(2)->addData(x++, stdev);
-////    plot->graph(3)->addData(x++, sign);
-//    plot->replot();
-//}
-
-
-
-
 
 void MainWindow::on_start_clicked()
 {
@@ -369,5 +387,13 @@ void MainWindow::draw_hist(QCustomPlot* hist)
     hist->xAxis->setRange(min->first, max->first);
     hist->yAxis->setRange(0, *max_ticks);
     bar->setData(data, ticks);
+}
+
+
+void MainWindow::on_stop_clicked()
+{
+    if (fsm == fsm_t::IDLE) {
+        fsm = fsm_t::FULL;
+    }
 }
 
