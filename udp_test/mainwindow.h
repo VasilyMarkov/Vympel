@@ -6,6 +6,7 @@
 #include "qcustomplot.h"
 #include <QThread>
 #include <unordered_map>
+#include <deque>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -56,14 +57,18 @@ private:
     QCPItemLine* line;
     QCPItemLine* start_line;
     QCPItemLine* end_line;
+    QCPItemLine* max_line;
     QCPItemLine* var_pos_line;
     QCPItemLine* var_neg_line;
+    QCPItemLine* intrcpt_line1;
+    QCPItemLine* intrcpt_line2;
     PythonScript* script;
     QThread* python_thread;
     std::vector<QCPItemLine*> lines;
     std::vector<double> calib_data;
     std::unordered_map<double, size_t> occurences;
     std::vector<double> filtered_data;
+    std::deque<double> deque;
     fsm_t fsm = fsm_t::START;
     double g_mean = 1;
     double g_max = 1;
@@ -72,5 +77,6 @@ private:
     void setupPlot(QCustomPlot*);
     void fill_occurences();
     void draw_hist(QCustomPlot*);
+    void updateQueue(double value);
 };
 #endif // MAINWINDOW_H

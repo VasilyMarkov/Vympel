@@ -9,7 +9,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QProcess>
 #include <math.h>
-
+#include <map>
 constexpr size_t frame_size = 10000;
 
 
@@ -29,7 +29,12 @@ void print(const std::unordered_map<T, U>& map) {
         std::cout << key << ": " << value << std::endl;
     }
 }
-
+template <typename T, typename U>
+void print(const std::map<T, U>& map) {
+    for(auto&& [key, value]:map) {
+        std::cout << key << ": " << value << std::endl;
+    }
+}
 double round_to(double value, double precision = 1.0)
 {
     return std::round(value / precision) * precision;
@@ -41,7 +46,18 @@ std::queue<double> socketData;
 
 double g_mean = 0;
 
+std::tuple<double, double> lineEquation(double x1, double y1, double x2, double y2) {
+    double m = (y2 - y1) / (x2 - x1); // Slope
+    double b = y1 - m * x1; // Y-intercept
+    return std::make_tuple(m, b);
+}
 
+double findXIntercept(double m, double b) {
+    if (m == 0) {
+        throw std::invalid_argument("The slope cannot be zero");
+    }
+    return -b / m;
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -92,7 +108,13 @@ MainWindow::MainWindow(QWidget *parent)
     start_line->setPen(QPen(QColor(65, 172, 242), 1.5, Qt::DotLine));
     end_line = new QCPItemLine(plot);
     end_line->setPen(QPen(QColor(65, 172, 242), 1.5, Qt::DotLine));
+    max_line = new QCPItemLine(plot);
+    max_line->setPen(QPen(QColor(65, 172, 242), 1.5, Qt::DotLine));
 
+    intrcpt_line1 = new QCPItemLine(plot);
+    intrcpt_line1->setPen(QPen(QColor(37, 8, 44), 2));
+    intrcpt_line2 = new QCPItemLine(plot);
+    intrcpt_line2->setPen(QPen(QColor(37, 8, 44), 2));
     hist = ui->hist;
 
     setupPlot(hist);
@@ -157,11 +179,8 @@ void MainWindow::readSocket()
         ui->mean_label->setText(QString::number(mean1));
         ui->std_label->setText(QString::number(std::sqrt(var1)));
         ui->status->setText("Calibration is done");
-//        print(calib_data);
-        std::cout << "Mean: " << mean1 << ", std: " << std::sqrt(var1) << std::endl;
         fill_occurences();
         draw_hist(hist);
-//        print(occurences);
         cnt = 0;
         th = true;
         calib_done = true;
@@ -182,12 +201,17 @@ void MainWindow::readSocket()
     auto new_filtered = static_cast<double>((filtered-g_mean))/max_value1;
     auto new_low_passed = static_cast<double>((low_passed-g_mean))/max_value1;
 
-    plot->graph(0)->addData(x++, new_value);
-    plot->graph(1)->addData(x++, new_filtered);
+    plot->graph(0)->addData(x, new_value);
+    plot->graph(1)->addData(x, new_filtered);
     auto norm_var = std::sqrt(jvariance)/max_value1;
-//    std::cout << calib_done << std::endl;
     static size_t cnt_m = 0;
-    filtered_data.push_back(new_filtered);
+    if (calib_done) {
+        filtered_data.push_back(new_filtered);
+    }
+    else {
+        filtered_data.push_back(0);
+    }
+    updateQueue(new_filtered);
     switch(fsm) {
         static size_t detect_cnt = 0;
         static auto start_p = 0.0;
@@ -197,6 +221,17 @@ void MainWindow::readSocket()
                 std::cout << "START" << std::endl;
                 start_p = x;
                 fsm = fsm_t::DETECTION;
+            }  
+            if(x % 60 == 0) {
+                static double mean_deque = 0;
+                auto new_mean_deque = std::accumulate(std::begin(deque), std::end(deque), 0)/deque.size();
+                if(deque.size() == 50) {
+                    if (new_mean_deque > mean_deque) {
+
+                    }
+                    mean_deque = new_mean_deque;
+                }
+
             }
         break;
         case fsm_t::DETECTION:
@@ -205,33 +240,42 @@ void MainWindow::readSocket()
                 ++cnt_m;
             }
             if (detect_cnt == 20 && (static_cast<double>(cnt_m)/detect_cnt) < 0.5) {
-                std::cout << (cnt_m/detect_cnt) << std::endl;
                 detect_cnt = 0;
                 fsm = fsm_t::START;
             }
             if (detect_cnt == 60 && (static_cast<double>(cnt_m)/detect_cnt) >= 0.9) {
-                std::cout << "DETECTION" << std::endl;
+//                std::cout << "DETECTION" << std::endl;
                 detect_cnt = 0;
+
                 fsm = fsm_t::MEASHURE;
             }
             ++detect_cnt;
         break;
         case fsm_t::MEASHURE:
-            std::cout << "MEASHURE" << std::endl;
+//            std::cout << "MEASHURE" << std::endl;
             end_p = x;
             start_line->start->setCoords(start_p, -1);
             start_line->end->setCoords(start_p, 1);
             end_line->start->setCoords(end_p, -1);
             end_line->end->setCoords(end_p, 1);
+            {
+                auto [k, b] = lineEquation(start_p, filtered_data[start_p], end_p, filtered_data[end_p]);
+                auto x_intercept = findXIntercept(k, b);
+                intrcpt_line1->start->setCoords(x_intercept, 0);
+                intrcpt_line1->end->setCoords(end_p, filtered_data[end_p]);
+                std::cout << "START POINT: " << x_intercept << std::endl;
+            }
             fsm = fsm_t::IDLE;
         break;
         case fsm_t::FULL:
-            std::cout << "END" << std::endl;
-            auto max = *std::max_element(std::begin(filtered_data), std::end(filtered_data));
-            std::cout << "max: " << max << std::endl;
-            std::unordered_map<size_t, double> elements;
-            auto lower = 0.94*max;
-            auto upper = 0.96*max;
+//            std::cout << "FULL" << std::endl;
+            std::cout << filtered_data.size() << std::endl;
+            auto max_it = std::max_element(std::begin(filtered_data), std::end(filtered_data));
+            auto max_pos = std::distance(std::begin(filtered_data), max_it);
+//            std::cout << "max_pos: " << max_pos << ", max_val: " << *max_it << std::endl;
+            std::map<size_t, double> elements;
+            auto lower = *max_it*0.94;
+            auto upper = *max_it*0.96;
             size_t index = 0;
             std::for_each(std::begin(filtered_data), std::end(filtered_data), [&](double elem)
             {
@@ -239,7 +283,13 @@ void MainWindow::readSocket()
                     elements.emplace(index, elem);
                 ++index;
             });
-            print(elements);
+//            print(elements);
+//            auto max_val_it = elements.upper_bound(max_pos);
+            auto max_val_it = std::max_element(std::begin(elements), std::end(elements));
+//            std::cout << "next: " << max_val_it->first << std::endl;
+            max_line->start->setCoords(max_val_it->first, -1);
+            max_line->end->setCoords(max_val_it->first, 1);
+            std::cout << "END POINT: " << max_val_it->first << std::endl;
             fsm = fsm_t::END;
         break;
     }
@@ -262,23 +312,20 @@ void MainWindow::readSocket()
     static size_t cnt1 = 0;
     static bool prc = false;
     if (new_value > 0.2 && th) {
-//        std::cout << "Start" << cnt1 << std::endl;
         ui->begin->setText(QString("Start: %1").arg(cnt1));
         prc = true;
         th = false;
     }
     if (cnt1 > 3500 && new_value < 0.2 && prc) {
-//        std::cout << "End" << cnt1 << std::endl;
         ui->end->setText(QString("End: %1").arg(cnt1));
         prc = false;
     }
     cnt1++;
-//    plot->yAxis->setRange(-0.5, 0.5);
     if (auto data_cnt = plot->graph(0)->dataCount() == frame_size) {
         plot->xAxis->setRange(data_cnt, data_cnt+frame_size);
     }
     plot->replot();
-//    std::cout << value << std::endl;
+    x++;
 }
 
 
@@ -294,7 +341,6 @@ void MainWindow::plotData() {
     wind.push_back(value);
     auto value_mean = mean(wind);
     auto max = std::max_element(std::begin(wind), std::end(wind));
-    std::cout << value << ' ' << value_mean << std::endl;
     wind.pop_front();
     plot->graph(0)->addData(x++, value);
     plot->replot();
@@ -372,7 +418,6 @@ void MainWindow::draw_hist(QCustomPlot* hist)
 
     auto min = std::min_element(std::begin(occurences), std::end(occurences));
     auto max = std::max_element(std::begin(occurences), std::end(occurences));
-    std::cout << max->second << std::endl;
 
 
     QVector<double> data;
@@ -389,10 +434,18 @@ void MainWindow::draw_hist(QCustomPlot* hist)
     bar->setData(data, ticks);
 }
 
+void MainWindow::updateQueue(double value)
+{
+    if(deque.size() == 50) {
+        deque.pop_back();
+    }
+    deque.push_front(value);
+}
+
 
 void MainWindow::on_stop_clicked()
 {
-    if (fsm == fsm_t::IDLE) {
+    if (fsm != fsm_t::FULL) {
         fsm = fsm_t::FULL;
     }
 }

@@ -18,6 +18,9 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     y = lfilter(b, a, [data])
     return y
 
+threshold = 87
+fs = 1000
+cutoff = 3
 b, a = signal.iirfilter(10, 2*np.pi*50, rs=200, btype='lowpass', analog=True, ftype='butter')
 
 jdata = {
