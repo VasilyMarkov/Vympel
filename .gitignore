@@ -19,3 +19,4 @@ mvp/hardware
 
 prod/*.mp4
 prod/build
+.vscode
