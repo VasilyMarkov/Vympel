@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+dir_path="_build"
+
+if [ -d "$dir_path" ]; then
+    cd $dir_path
+    ./main ../$1
+else
+  echo "Directory $dir_path does not exist."
+fi
