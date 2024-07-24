@@ -14,9 +14,10 @@ mvp/finish/video.mp4
 mvp/finish/data.npy
 mvp/udp_test/build
 mvp/udp_test/udp_test.pro.user
-mvp/build-udp_test-Desktop-Debug
+mvp/build-draw_data-Desktop-Debug
 mvp/hardware
 
 prod/*.mp4
 prod/build
 .vscode
+*.pdf

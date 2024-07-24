@@ -52,7 +52,6 @@ while cap.isOpened():
     if ret:
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         tmp = np.sum(gray)
-
         ytmp = butter_lowpass_filter(tmp, cutoff, fs, order)
         brightness = exp_smooth(tmp, brightness, k = 0.1)
 
