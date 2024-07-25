@@ -2,6 +2,7 @@
 #include "bluetoothDevice.hpp"
 #include <qt6/QtCore/QDebug>
 
+using namespace app;
 
 BluetoothDevice::BluetoothDevice(): discoveryAgent(std::make_unique<QBluetoothDeviceDiscoveryAgent>(this))
 {

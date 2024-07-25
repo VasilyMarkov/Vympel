@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 SET(CMAKE_AUTOMOC ON)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(OpenCV REQUIRED)
@@ -18,11 +17,15 @@ find_package(Qt6 REQUIRED COMPONENTS
 )
 
 add_executable(main 
-    main.cpp 
+    main.cpp
+    core.cpp 
     bluetoothDevice.cpp
+    udp.cpp
 )
 
-target_include_directories(main PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(main PRIVATE 
+    ${OpenCV_INCLUDE_DIRS} 
+)
 
 target_link_libraries(main PRIVATE 
     ${OpenCV_LIBS} 

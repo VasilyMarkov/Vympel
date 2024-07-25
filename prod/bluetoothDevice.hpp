@@ -3,6 +3,8 @@
 #include <qt6/QtCore/QObject>
 #include <memory>
 
+namespace app {
+
 class BluetoothDevice: public QObject {
 private:
   Q_OBJECT
@@ -16,3 +18,5 @@ private slots:
 private:
   std::unique_ptr<QBluetoothDeviceDiscoveryAgent> discoveryAgent;
 };
+
+}

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <QtConcurrent/QtConcurrent>
 #include <QProcess>
+#include <QVariant>
 #include <math.h>
 #include <map>
 
@@ -76,6 +77,9 @@ void MainWindow::readSocket()
     auto json = QJsonDocument::fromJson(datagram, &jsonErr);
     auto brightness = json.object().value("brightness").toDouble();
     auto filtered = json.object().value("filtered").toDouble();
+    auto mode = json.object().value("mode").toInt();
+
+    modeEval(static_cast<core_mode_t>(mode));
 
     plot->graph(0)->addData(x, brightness);
     plot->graph(1)->addData(x, filtered);
@@ -133,6 +137,61 @@ void MainWindow::setupPlot(QCustomPlot* plot)
     QFont legendFont = font();
     legendFont.setPointSize(10);
     plot->legend->setFont(legendFont);
+
+}
+
+void MainWindow::modeEval(core_mode_t mode)
+{
+    switch (mode) {
+        case core_mode_t::IDLE:
+            ui->status->setText("IDLE");
+        break;
+        case core_mode_t::CALIBRATION:
+            ui->status->setText("CALIBRATION");
+        break;
+        case core_mode_t::MEASHUREMENT:
+            ui->status->setText("MEASHUREMENT");
+        break;
+        default:
+            ui->status->setText("IDLE");
+        break;
+    }
+}
+
+void MainWindow::sendData(const QByteArray& data)
+{
+    if(data.isEmpty()) return;
+    socket->writeDatagram(data, QHostAddress::LocalHost, 65001);
+}
+
+QJsonValue MainWindow::toJson(core_mode_t mode) const
+{
+    return QJsonValue::fromVariant(QVariant::fromValue(mode));
+}
+
+
+void MainWindow::on_calibrate_clicked()
+{
+    QJsonObject json;
+    json["core_mode"] = toJson(core_mode_t::CALIBRATION);
+    sendData(QJsonDocument(json).toJson());
+}
+
+
+void MainWindow::on_start_clicked()
+{
+
+}
+
+
+void MainWindow::on_stop_clicked()
+{
+
+}
+
+
+void MainWindow::on_disconnect_clicked()
+{
 
 }
 
