@@ -6,6 +6,5 @@ host, port = '127.0.0.1', 65001
 server_address = (host, port)
 
 while(True):
-    # data = 'hello'
     sock.sendto(b'hello', server_address)
-    time.sleep(0.5); 	
+    time.sleep(0.1); 	

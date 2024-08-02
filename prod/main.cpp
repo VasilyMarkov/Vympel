@@ -51,17 +51,24 @@ std::unique_ptr<app::UdpSocket> createUdpSocket(const QHostAddress& sender_addr,
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-    app::Core core(argv[1]);
-    QThread core_thread;
-    core.moveToThread(&core_thread);
-    core_thread.start();
-    // quint16 port = 65001; // Specify the port to listen on
-    // UdpReceiver receiver(port);
-    
 
-    core.attach(createUdpSocket(QHostAddress::LocalHost, app::constants::SENDER_PORT, 
-                                QHostAddress::LocalHost, app::constants::RECEIVER_PORT));
-    
-    // core.process();
+    app::UdpSocket socket(QHostAddress::LocalHost, app::constants::SENDER_PORT, 
+                          QHostAddress::LocalHost, app::constants::RECEIVER_PORT);
+
+    app::Core core(argv[1]);
+    QThread thread;
+    core.moveToThread(&thread);
+    qRegisterMetaType<app::params_t>();
+    qRegisterMetaType<app::core_mode_t>();
+    QObject::connect(&thread, &QThread::started, &core, &app::Core::process);
+    QObject::connect(&thread, &QThread::finished, &core, &QObject::deleteLater);
+    QObject::connect(&socket, &app::UdpSocket::sendData, &core, &app::Core::receiveData, Qt::QueuedConnection);
+    QObject::connect(&core, &app::Core::sendData, &socket, &app::UdpSocket::receiveData, Qt::QueuedConnection);
+
+    // core.attach(createUdpSocket(QHostAddress::LocalHost, app::constants::SENDER_PORT, 
+    //                             QHostAddress::LocalHost, app::constants::RECEIVER_PORT));
+
+    thread.start();
+
     return app.exec();
 }

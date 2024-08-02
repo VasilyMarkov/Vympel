@@ -1,5 +1,7 @@
 #include "core.hpp"
 #include <numeric>
+#include <qt6/QtCore/QThread>
+#include <qt6/QtCore/QCoreApplication>
 
 using namespace app;
 using namespace constants;
@@ -9,14 +11,16 @@ Core::Core(const std::string& filename): capture_(filename), filter_(filter::cut
     if(!capture_.isOpened())
         throw std::runtime_error("file open error");
 
-    cv::namedWindow( "w", 1);
+    
+
+    // cv::namedWindow( "w", 1);
 }
 
 void Core::process()
 {
     while(true) {
         capture_ >> frame_;
-
+        
         if(frame_.empty()) return;
         
         cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
@@ -26,12 +30,11 @@ void Core::process()
         
         params_.filtered = filter_.Process(params_.brightness);
 
-        notify();
-
-        cv::imshow("w", frame_);
-        cv::waitKey(20); // waits to display frame
+        // cv::imshow("w", frame_);
+        emit sendData(params_);
+        QThread::msleep(10);
+        QCoreApplication::processEvents();
     }
-    cv::waitKey(0); // key press to close window
 }
 
 void Core::attach(std::unique_ptr<IObserver> observer)
@@ -44,6 +47,11 @@ void Core::detach(std::unique_ptr<IObserver> observer)
     if (observers_.empty()) return;
 
     observers_.remove(observer);
+}
+
+void app::Core::receiveData()
+{
+    std::cout << "a" << std::endl;
 }
 
 void Core::notify() const

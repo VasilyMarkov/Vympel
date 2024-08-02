@@ -33,22 +33,13 @@ class LowPassFilter {
 
 class Core final: public QObject, public ISubject {
     Q_OBJECT
-private:
-    enum class mode_t {
-        IDLE,
-        CALIBRATION,
-        MEASHUREMENT
-    };
-    enum class status_t {
-        not_valid_filter_value,
-        valid_filter_value
-    };
-
 public:
     Core(const std::string&);
-    void process();
     void attach(std::unique_ptr<IObserver>) override;
     void detach(std::unique_ptr<IObserver>) override;
+public slots:
+    void receiveData();
+    void process();
 private:
     void notify() const override;
 private:
@@ -57,6 +48,11 @@ private:
     LowPassFilter filter_;
     params_t params_;
     std::list<std::unique_ptr<IObserver>> observers_;
+signals:
+    void sendData(const params_t&);
 };
 
 }
+
+Q_DECLARE_METATYPE(app::params_t)
+Q_DECLARE_METATYPE(app::core_mode_t)

@@ -27,6 +27,7 @@ struct params_t {
 };
 
 
+
 /// @brief Interface providing sending logic
 class ISender {
 public:
@@ -57,5 +58,6 @@ public:
 };
 
 }
+
 #endif //IO_INTERFACE_H
 
