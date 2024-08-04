@@ -7,14 +7,13 @@
 
 namespace app {
 
-class UdpSocket final: public QObject, public IObserver {
+class UdpSocket final: public QObject {
     Q_OBJECT
 public:
     explicit UdpSocket(const QHostAddress&, quint16);
     explicit UdpSocket(const QHostAddress&, quint16, const QHostAddress&, quint16);
 public:
-    void sendPortData(const QByteArray&);
-    void update(const params_t&) override;
+    void sendPortData(const QByteArray&); //send to port
 private slots:
     void receivePortData();
 public slots:
@@ -28,7 +27,7 @@ private:
 private:
     QJsonObject json_;
 signals:
-    void sendData();
+    void sendData(const QString&); //send to core
 };
 
 }
