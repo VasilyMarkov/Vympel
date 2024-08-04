@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 
-dir_path="build"
+debug_path="Debug"
 
-if [ -d "$dir_path" ]; then
-    cd $dir_path
-    ./main ../$1
+release_path="Release"
+
+if [ -d "$debug_path" ]; then
+  cd $debug_path
+  ./main ../$1
+elif [ -d "$release_path" ]; then
+  cd $release_path
+  ./main ../$1
 else
-  echo "Directory $dir_path does not exist."
+  echo "Directores $debug_path and $release_path doesn't exists."
 fi
