@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-clear
+# clear
 # if [ $1 = "gcc" ]; then
 #     echo "Compiler: gcc"
 #     export CXX=/usr/bin/g++

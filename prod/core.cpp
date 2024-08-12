@@ -6,61 +6,84 @@
 using namespace app;
 using namespace constants;
 
-Event::Event(params_t& params): params_(params) {}
+Event::Event(std::weak_ptr<CVision> cv):cv_(cv), start_tick_(cv_.lock()->getTick()) {}
 
-Idle::Idle(params_t& params): Event(params)
+Idle::Idle(std::weak_ptr<CVision> cv): Event(cv)
 {
-    
+    std::cout << "idle " << std::endl;
 }
 
-void Idle::operator()(size_t tick)
+app::Idle::~Idle()
 {
-
+    std::cout << "~idle" << std::endl;
 }
 
-Calibration::Calibration(params_t& params): Event(params)
+std::optional<core_mode_t> Idle::operator()()
 {
-    
+    if(cv_.lock()->getTick() - start_tick_ >= WAITING_TICKS) {
+        return core_mode_t::CALIBRATION;   
+    }
+    return std::nullopt;
 }
 
-void Calibration::operator()(size_t tick)
+Calibration::Calibration(std::weak_ptr<CVision> cv): Event(cv)
 {
-
+    std::cout << "calib" << std::endl;
+    data_.reserve(buffer::CALIB_SIZE);
 }
 
-Measurement::Measurement(params_t& params): Event(params)
+app::Calibration::~Calibration()
 {
-    
+    std::cout << "~calib" << std::endl;
 }
 
-void Measurement::operator()(size_t)
+std::optional<core_mode_t> Calibration::operator()()
 {
+    if(cv_.lock()->getTick() - start_tick_ >= buffer::CALIB_SIZE) 
+    {
+        cv_.lock()->getCalcParams().mean_filtered = std::accumulate(std::begin(data_), std::end(data_), 0)/data_.size();
+        cv_.lock()->getCalcParams().event_completeness.calibration = true;
+        return core_mode_t::MEASUREMENT;    
+    }
+    data_.push_back(cv_.lock()->getCvParams().filtered);
 
+    return std::nullopt;
 }
 
-Fsm::Fsm(params_t & params, size_t global_tick):
-    params_(params), 
-    global_tick_(global_tick),
-    active_event_(std::make_unique<Idle>(params_)), 
-    events_({
-        {"idle", core_mode_t::IDLE},
-        {"calibration", core_mode_t::CALIBRATION},
-        {"meashurement", core_mode_t::MEASUREMENT},
-    }){}
-
-void app::Fsm::toggle(const QString& mode)
+Measurement::Measurement(std::weak_ptr<CVision> cv): Event(cv)
 {
-    if (mode_ == events_.at(mode)) return;
+    std::cout << "measure" << std::endl;
+}
 
-    mode_ = events_.at(mode);
+app::Measurement::~Measurement()
+{
+    std::cout << "~measure" << std::endl;
+}
+
+std::optional<core_mode_t> Measurement::operator()()
+{
+    return std::nullopt;
+}
+
+Fsm::Fsm(std::weak_ptr<CVision> cv): cv_(cv), active_event_(std::make_unique<Idle>(cv_)) {}
+
+void app::Fsm::toggle(core_mode_t mode)
+{
+    if (mode_ == mode) return;
+
+    mode_ = mode;
     dispatchEvent();
 }
 
 void app::Fsm::callEvent()
 {
     if (!active_event_) return;
+    
+    auto event_result = (*active_event_)();
 
-    (*active_event_)(global_tick_);
+    if (event_result != std::nullopt) {
+        toggle(event_result.value());
+    }
 }
 
 void app::Fsm::dispatchEvent()
@@ -70,55 +93,78 @@ void app::Fsm::dispatchEvent()
     switch (mode_)
     {
     case core_mode_t::IDLE:
-        active_event_ = std::make_unique<Idle>(params_);
+        active_event_ = std::make_unique<Idle>(cv_);
     break;
 
     case core_mode_t::CALIBRATION:
-        active_event_ = std::make_unique<Calibration>(params_);
+        active_event_ = std::make_unique<Calibration>(cv_);
     break;
 
     case core_mode_t::MEASUREMENT:
-        active_event_ = std::make_unique<Measurement>(params_);
+        if(cv_.lock()->getCalcParams().event_completeness.calibration) 
+        {
+            active_event_ = std::make_unique<Measurement>(cv_);
+        }
     break;
     
     default:
-        active_event_ = std::make_unique<Idle>(params_);
+        active_event_ = std::make_unique<Idle>(cv_);
     break;
     }
 }
 
-
 Core::Core(const std::string& filename): 
-    capture_(filename), 
-    filter_(filter::cutoff_frequency, filter::sample_rate), 
-    fsm_(params_, global_tick_) 
+    cv_(std::make_shared<CVision>(filename)),
+    fsm_(std::make_unique<Fsm>(cv_)),
+    events_({
+        {"idle", core_mode_t::IDLE},
+        {"calibration", core_mode_t::CALIBRATION},
+        {"meashurement", core_mode_t::MEASUREMENT},
+    }){}
+
+app::CVision::CVision(const std::string& filename):capture_(filename), filter_(filter::cutoff_frequency, filter::sample_rate)
 {
     if(!capture_.isOpened())
         throw std::runtime_error("file open error");
+
     // cv::namedWindow( "w", 1);
 }
 
-void Core::process()
+size_t app::CVision::getTick() const noexcept
 {
-    while(computerVision()) {
-        fsm_.callEvent();
+    return global_tick_;
+}
+
+cv_params_t app::CVision::getCvParams() const noexcept
+{
+    return cv_params_;
+}
+
+calc_params_t& app::CVision::getCalcParams() noexcept
+{
+    return calc_params_;
+}
+
+bool Core::process()
+{
+    while(cv_->process()) {
+        fsm_->callEvent();
         
-        emit sendData(params_);
-        
+        emit sendData(cv_->getCvParams());
         QThread::msleep(10);
         QCoreApplication::processEvents();
-
-        ++global_tick_;
     }
     emit exit();
+
+    return true;
 }
 
 void app::Core::receiveData(const QString& mode)
 {
-    fsm_.toggle(mode);
+    fsm_->toggle(events_.at(mode));
 }
 
-bool app::Core::computerVision()
+bool app::CVision::process()
 {
         capture_ >> frame_;
         
@@ -127,11 +173,17 @@ bool app::Core::computerVision()
         cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
 
         std::vector<uint8_t> v(frame_.begin<uint8_t>(), frame_.end<uint8_t>());
-        params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
+        cv_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
         
-        params_.filtered = filter_.Process(params_.brightness);
-        
-        return true;
-        // cv::imshow("w", frame_);
-}
+        cv_params_.filtered = filter_.Process(cv_params_.brightness);
 
+        if(calc_params_.event_completeness.calibration) {
+            cv_params_.filtered -= calc_params_.mean_filtered;
+            cv_params_.brightness -= calc_params_.mean_filtered;
+        }
+
+        ++global_tick_;
+        // cv::imshow("w", frame_);
+        return true;
+        
+}

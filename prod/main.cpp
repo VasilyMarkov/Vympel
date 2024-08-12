@@ -13,14 +13,15 @@ int main(int argc, char *argv[])
 
     QCoreApplication app(argc, argv);
 
-    app::UdpSocket socket(QHostAddress::LocalHost, app::constants::SENDER_PORT, 
-                          QHostAddress::LocalHost, app::constants::RECEIVER_PORT);
+    app::UdpSocket socket(QHostAddress::LocalHost, app::constants::port::SENDER_PORT, 
+                          QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
     // app::Core core(argv[1]);
+    // app::Core core("/home/vasily/usr/phystech/vympel/prod/video.mp4");
     app::Core core("/home/vasily/usr/phystech/vympel/prod/video.mp4");
     QThread thread;
     core.moveToThread(&thread);
-    
-    qRegisterMetaType<app::params_t>();
+
+    qRegisterMetaType<app::cv_params_t>();
     qRegisterMetaType<app::core_mode_t>();
 
     QObject::connect(&thread, &QThread::started, &core, &app::Core::process, Qt::QueuedConnection);
