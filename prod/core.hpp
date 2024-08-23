@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <functional>
 #include <optional>
+#include <deque>
 
 namespace app {
 
@@ -18,9 +19,10 @@ namespace constants {
     }
     namespace buffer {
         constexpr size_t CALIB_SIZE = 200; 
-        constexpr size_t MEASUR_SIZE = 200; 
+        constexpr size_t MEASUR_SIZE = 100; 
     }
     constexpr size_t WAITING_TICKS = 100; 
+    constexpr size_t SAMPLE_FREQ = 10; 
     constexpr size_t FRAME_DELAY = 10; //ms
 }
 
@@ -41,54 +43,57 @@ class LowPassFilter {
 };
 
 class CVision;
+class IProcessing;
 
 class Event {
 protected:
-    std::weak_ptr<CVision> cv_;
+    std::weak_ptr<IProcessing> cv_;
     std::vector<double> data_;
     size_t start_tick_ = 0;
 public:
-    Event(std::weak_ptr<CVision>);
+    Event(std::weak_ptr<IProcessing>);
     virtual std::optional<core_mode_t> operator()() = 0;
     virtual ~Event(){}
 };
 
 class Idle final: public Event {
 public:
-    Idle(std::weak_ptr<CVision>);
-    ~Idle();
+    Idle(std::weak_ptr<IProcessing>);
     std::optional<core_mode_t> operator()() override;
 };
 
 class Calibration final: public Event {
 public:
-    Calibration(std::weak_ptr<CVision>);
-    ~Calibration();
+    Calibration(std::weak_ptr<IProcessing>);
     std::optional<core_mode_t> operator()() override;
 };
 
 class Measurement final: public Event {
+    std::vector<double> least_square_samples_;
+    std::deque<double> coeffs_;
+    size_t local_tick_ = 0;
 public:
-    Measurement(std::weak_ptr<CVision>);
-    ~Measurement();
+    Measurement(std::weak_ptr<IProcessing>);
     std::optional<core_mode_t> operator()() override;
+private:
+    double findLineCoeff();
 };
 
 
 class Fsm final {
 public:
-    Fsm(std::weak_ptr<CVision>);
+    Fsm(std::weak_ptr<IProcessing>);
     void toggle(core_mode_t);
     void callEvent();
     void dispatchEvent();
 private:
     core_mode_t mode_ = core_mode_t::IDLE;
-    std::weak_ptr<CVision> cv_;
+    std::weak_ptr<IProcessing> cv_;
     std::unique_ptr<Event> active_event_ = nullptr;
 };
 
 
-class IProcessing{
+class IProcessing {
 protected:
     cv_params_t cv_params_;                    //parameters obtained by machine vision algorithm 
     calc_params_t calc_params_;                //parameters obtained by processing cv parameters inside events
