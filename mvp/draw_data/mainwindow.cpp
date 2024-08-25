@@ -12,7 +12,7 @@
 #include <math.h>
 #include <map>
 
-constexpr size_t frame_size = 1000;
+constexpr size_t frame_size = 2000;
 constexpr double VALUE_SIZE = 1e6;
 
 template <typename Cont>
@@ -38,6 +38,11 @@ void print(const std::map<T, U>& map) {
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , modes_({
+        {core_mode_t::IDLE, "idle"},
+        {core_mode_t::CALIBRATION, "calibration"},
+        {core_mode_t::MEASHUREMENT, "meashurement"}
+    })
 {
     socket = new QUdpSocket(nullptr);
     ui->setupUi(this);
@@ -47,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     plot = ui->plot;
     connect(plot, &QCustomPlot::mouseWheel, this, &MainWindow::mouseWheel);
     setupPlot(plot);
-    plot->yAxis->setRange(-VALUE_SIZE, VALUE_SIZE);
+    plot->yAxis->setRange(-VALUE_SIZE, 5*VALUE_SIZE);
     plot->xAxis->setRange(0, frame_size);
 
     plot->addGraph();
@@ -70,6 +75,7 @@ MainWindow::~MainWindow()
 void MainWindow::readSocket()
 {
     static size_t x = 0;
+    size_t test = 0;
     QByteArray datagram;
     datagram.resize(socket->pendingDatagramSize());
     socket->readDatagram(datagram.data(), datagram.size(), nullptr, nullptr);
@@ -78,7 +84,6 @@ void MainWindow::readSocket()
     auto brightness = json.object().value("brightness").toDouble();
     auto filtered = json.object().value("filtered").toDouble();
     auto mode = json.object().value("mode").toInt();
-
     modeEval(static_cast<core_mode_t>(mode));
 
     plot->graph(0)->addData(x, brightness);
@@ -164,34 +169,25 @@ void MainWindow::sendData(const QByteArray& data)
     socket->writeDatagram(data, QHostAddress::LocalHost, 65001);
 }
 
-QJsonValue MainWindow::toJson(core_mode_t mode) const
-{
-    return QJsonValue::fromVariant(QVariant::fromValue(mode));
-}
-
-
 void MainWindow::on_calibrate_clicked()
 {
     QJsonObject json;
-    json["core_mode"] = toJson(core_mode_t::CALIBRATION);
+    json["core_mode"] = modes_.at(core_mode_t::CALIBRATION);
+    sendData(QJsonDocument(json).toJson());
+}
+
+void MainWindow::on_meashurement_clicked()
+{
+    QJsonObject json;
+    json["core_mode"] = modes_.at(core_mode_t::MEASHUREMENT);
     sendData(QJsonDocument(json).toJson());
 }
 
 
-void MainWindow::on_start_clicked()
+void MainWindow::on_idle_clicked()
 {
-
-}
-
-
-void MainWindow::on_stop_clicked()
-{
-
-}
-
-
-void MainWindow::on_disconnect_clicked()
-{
-
+    QJsonObject json;
+    json["core_mode"] = modes_.at(core_mode_t::IDLE);
+    sendData(QJsonDocument(json).toJson());
 }
 

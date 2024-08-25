@@ -124,7 +124,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="start">
+         <widget class="QPushButton" name="meashurement">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -132,12 +132,12 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Start</string>
+           <string>Meashurement</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="stop">
+         <widget class="QPushButton" name="idle">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -145,7 +145,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Stop</string>
+           <string>Idle</string>
           </property>
          </widget>
         </item>
