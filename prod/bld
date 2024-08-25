@@ -10,6 +10,15 @@
 # fi
 
 build_type=$1
+build_test_on=$2
+# echo "${build_test_on}"
+# cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type} "${build_test_on}"
+# cmake --build "${build_type}"
 
-cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type}
+if [ "${build_test_on}" == "TESTS" ]; then
+    cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type} -DTESTS=ON
+else
+    cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type}
+fi
+
 cmake --build "${build_type}"

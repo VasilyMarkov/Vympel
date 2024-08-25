@@ -1,22 +1,17 @@
 #pragma once
-#include <opencv2/opencv.hpp>
 #include <iostream>
 #include <memory>
 #include <list>
-#include "io_interface.hpp"
 #include <qt6/QtCore/QObject>
 #include <unordered_map>
 #include <functional>
 #include <optional>
 #include <deque>
+#include "interface.hpp"
 
 namespace app {
 
 namespace constants {
-    namespace filter {
-        constexpr double cutoff_frequency = 10.0; //Hz
-        constexpr double sample_rate = 1000.0; //Hz
-    }
     namespace buffer {
         constexpr size_t CALIB_SIZE = 200; 
         constexpr size_t MEASUR_SIZE = 100; 
@@ -25,25 +20,6 @@ namespace constants {
     constexpr size_t SAMPLE_FREQ = 10; 
     constexpr size_t FRAME_DELAY = 10; //ms
 }
-
-class LowPassFilter {
- public:
-  LowPassFilter(float cutoff_frequency, float sample_rate, float q = 0.707)
-      : alpha_(std::sin(2 * M_PI * cutoff_frequency / sample_rate) / (2 * q)),
-        y_(0) {}
-
-  float Process(float x) {
-    y_ = alpha_ * (x - y_) + y_;
-    return y_;
-  }
-
- private:
-  float alpha_;
-  float y_;
-};
-
-class CVision;
-class IProcessing;
 
 class Event {
 protected:
@@ -93,43 +69,13 @@ private:
 };
 
 
-class IProcessing {
-protected:
-    cv_params_t cv_params_;                    //parameters obtained by machine vision algorithm 
-    calc_params_t calc_params_;                //parameters obtained by processing cv parameters inside events
-    size_t global_tick_ = 0;
-public:
-    virtual bool process() = 0;
-    virtual size_t getTick() const noexcept = 0;
-    virtual cv_params_t getCvParams() const noexcept = 0;
-    virtual calc_params_t& getCalcParams() noexcept = 0;
-    virtual ~IProcessing(){}
-};
-
-class ICommunication {
-public:
-    virtual void receiveData(const QString&) = 0;
-    virtual void sendData(const cv_params_t&) const = 0;;
-    virtual ~ICommunication(){}
-};
-
-class CVision: public IProcessing {
-public:
-    explicit CVision(const std::string&);
-    size_t getTick() const noexcept override;
-    cv_params_t getCvParams() const noexcept override;
-    calc_params_t& getCalcParams() noexcept override;
-    bool process() override;
-private:
-    cv::VideoCapture capture_;
-    cv::Mat frame_;
-    LowPassFilter filter_;
-};
-
 class Core final: public QObject, public ICommunication {
     Q_OBJECT
+#ifdef APP_TESTING
+    friend class CoreTest;
+#endif
 public:
-    explicit Core(const std::string&);
+    explicit Core(std::shared_ptr<IProcessing>);
 public slots:
     void receiveData(const QString&) override;
     bool process();
@@ -137,13 +83,13 @@ signals:
     void sendData(const cv_params_t&) const override;
     void exit();
 private:
-    std::shared_ptr<CVision> cv_ = nullptr;
+    std::shared_ptr<IProcessing> cv_ = nullptr;
     std::unique_ptr<Fsm> fsm_ = nullptr;
     
     const std::unordered_map<QString, core_mode_t> events_;
 };
 
-}
+} //namespace app
 
 Q_DECLARE_METATYPE(app::cv_params_t)
 Q_DECLARE_METATYPE(app::core_mode_t)

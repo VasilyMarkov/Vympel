@@ -17,7 +17,10 @@ mvp/udp_test/udp_test.pro.user
 mvp/build-draw_data-Desktop-Debug
 mvp/hardware
 
-prod/*.mp4
+prod/app/*.mp4
 prod/build
+prod/Debug
+prod/Release
 .vscode
 *.pdf
+hv-bl-andr_as

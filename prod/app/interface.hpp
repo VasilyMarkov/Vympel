@@ -38,6 +38,26 @@ struct calc_params_t {
     status_t status = status_t::not_valid_filter_value;
 };
 
+class IProcessing {
+protected:
+    cv_params_t cv_params_;                    //parameters obtained by machine vision algorithm 
+    calc_params_t calc_params_;                //parameters obtained by processing cv parameters inside events
+    size_t global_tick_ = 0;
+public:
+    virtual bool process() = 0;
+    virtual size_t getTick() const noexcept = 0;
+    virtual cv_params_t getCvParams() const noexcept = 0;
+    virtual calc_params_t& getCalcParams() noexcept = 0;
+    virtual ~IProcessing(){}
+};
+
+class ICommunication {
+public:
+    virtual void receiveData(const QString&) = 0;
+    virtual void sendData(const cv_params_t&) const = 0;;
+    virtual ~ICommunication(){}
+};
+
 }
 
 #endif //IO_INTERFACE_H

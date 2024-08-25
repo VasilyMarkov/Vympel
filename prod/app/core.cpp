@@ -1,4 +1,3 @@
-#include <numeric>
 #include <qt6/QtCore/QThread>
 #include <qt6/QtCore/QCoreApplication>
 #include "core.hpp"
@@ -176,8 +175,8 @@ void app::Fsm::dispatchEvent()
     }
 }
 
-Core::Core(const std::string& filename): 
-    cv_(std::make_shared<CVision>(filename)),
+Core::Core(std::shared_ptr<IProcessing> processModule): 
+    cv_(processModule),
     fsm_(std::make_unique<Fsm>(cv_)),
     events_({
         {"idle", core_mode_t::IDLE},
@@ -185,28 +184,6 @@ Core::Core(const std::string& filename):
         {"meashurement", core_mode_t::MEASUREMENT},
     }){}
 
-app::CVision::CVision(const std::string& filename):capture_(filename), filter_(filter::cutoff_frequency, filter::sample_rate)
-{
-    if(!capture_.isOpened())
-        throw std::runtime_error("file open error");
-
-    cv::namedWindow( "w", 1);
-}
-
-size_t app::CVision::getTick() const noexcept
-{
-    return global_tick_;
-}
-
-cv_params_t app::CVision::getCvParams() const noexcept
-{
-    return cv_params_;
-}
-
-calc_params_t& app::CVision::getCalcParams() noexcept
-{
-    return calc_params_;
-}
 
 bool Core::process()
 {
@@ -225,28 +202,4 @@ bool Core::process()
 void app::Core::receiveData(const QString& mode)
 {
     fsm_->toggle(events_.at(mode));
-}
-
-bool app::CVision::process()
-{
-        capture_ >> frame_;
-        
-        if(frame_.empty()) return false;
-        cv::imshow("w", frame_);
-        cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
-        
-        std::vector<uint8_t> v(frame_.begin<uint8_t>(), frame_.end<uint8_t>());
-        cv_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
-        
-        cv_params_.filtered = filter_.Process(cv_params_.brightness);
-
-        if(calc_params_.event_completeness.calibration) {
-            cv_params_.filtered -= calc_params_.mean_filtered;
-            cv_params_.brightness -= calc_params_.mean_filtered;
-        }
-
-        ++global_tick_;
-        
-        return true;
-        
 }

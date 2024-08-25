@@ -3,7 +3,7 @@
 #include <qt6/QtNetwork/QUdpSocket>
 #include <qt6/QtCore/QJsonObject>
 #include <qt6/QtCore/QJsonDocument>
-#include "io_interface.hpp"
+#include "interface.hpp"
 
 namespace app {
 

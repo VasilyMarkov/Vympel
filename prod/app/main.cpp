@@ -6,6 +6,8 @@
 #include <qt6/QtCore/QThread>
 #include "core.hpp"
 #include "udp.hpp"
+#include "cv.hpp"
+
 
 int main(int argc, char *argv[])
 {
@@ -17,7 +19,8 @@ int main(int argc, char *argv[])
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
     // app::Core core(argv[1]);
     // app::Core core("/home/vasily/usr/phystech/vympel/prod/video.mp4");
-    app::Core core("/home/vasily/usr/phystech/vympel/prod/video.mp4");
+    std::string filename = "/home/vasily/usr/phystech/vympel/prod/app/video.mp4";
+    app::Core core(std::make_shared<app::CVision>(filename));
     QThread thread;
     core.moveToThread(&thread);
 
@@ -35,6 +38,7 @@ int main(int argc, char *argv[])
 
     return app.exec();
   }
+
   catch (const std::exception& ex) {
     std::cout << ex.what() << std::endl;
   }
