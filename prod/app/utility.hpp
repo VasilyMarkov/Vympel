@@ -27,15 +27,12 @@ void print(const std::unordered_map<T, U>& map) {
 
 inline std::vector<double> readInputData() {
     std::vector<double> data;
-    size_t n = 0;
-    std::cin >> n;
+    double temp = 0;
 
     if(std::cin.fail()) throw std::runtime_error("Invalid input data");
 
-    for(size_t i = 0; i < n; ++i) {
-        double tmp = 0;
-        std::cin >> tmp;
-        data.push_back(tmp);
+    while (std::cin >> temp) {
+        data.push_back(temp);
     }
     
     return data;

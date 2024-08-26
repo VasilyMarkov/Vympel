@@ -12,7 +12,6 @@
 int main(int argc, char *argv[])
 {
   try {
-    std::cout << "test_main" << std::endl;
     QCoreApplication app(argc, argv);
 
     app::UdpSocket socket(QHostAddress::LocalHost, app::constants::port::SENDER_PORT, 

@@ -31,8 +31,11 @@ std::optional<core_mode_t> Calibration::operator()()
 {
     if(process_unit_.lock()->getTick() - start_tick_ >= buffer::CALIB_SIZE) 
     {
-        process_unit_.lock()->getCalcParams().mean_filtered = std::accumulate(std::begin(data_), std::end(data_), 0)/data_.size();
+        // process_unit_.lock()->getCalcParams().mean_filtered = std::accumulate(std::begin(data_), std::end(data_), 0)/data_.size();
         process_unit_.lock()->getCalcParams().event_completeness.calibration = true;
+        auto [mean, std_deviation] = meanVar(data_);
+        process_unit_.lock()->getCalcParams().mean_filtered = mean;
+        std::cout << mean << ' ' << std_deviation << std::endl;
         return core_mode_t::MEASUREMENT;    
     }
     data_.push_back(process_unit_.lock()->getProcessParams().filtered);
@@ -71,7 +74,7 @@ std::optional<core_mode_t> Measurement::operator()()
         // std::cout << findLineCoeff() << std::endl;
         
         if(coeffs_.size() == 2) {
-            std::cout << coeffs_[1]/coeffs_[0] << std::endl;
+            // std::cout << coeffs_[1]/coeffs_[0] << std::endl;
             coeffs_.pop_front();
         }
         coeffs_.push_back(findLineCoeff());
@@ -191,7 +194,7 @@ bool Core::process()
         fsm_->callEvent();
         
         emit sendData(process_unit_->getProcessParams());
-        QThread::msleep(10);
+        QThread::msleep(20);
         QCoreApplication::processEvents();
     }
     emit exit();

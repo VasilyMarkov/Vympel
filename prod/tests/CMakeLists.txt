@@ -1,5 +1,5 @@
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -Wall -Wextra -fsanitize=address")
-# set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra")
+# set(CMAKE_CXX_FLAGS_DEBUG "-g -O2 -Wall -Wextra -fsanitize=address")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 add_executable(test_main 

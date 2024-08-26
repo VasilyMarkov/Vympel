@@ -13,7 +13,7 @@ namespace app {
 
 namespace constants {
     namespace buffer {
-        constexpr size_t CALIB_SIZE = 200; 
+        constexpr size_t CALIB_SIZE = 500; 
         constexpr size_t MEASUR_SIZE = 100; 
     }
     constexpr size_t WAITING_TICKS = 100; 
