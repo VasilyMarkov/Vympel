@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     QThread thread;
     core.moveToThread(&thread);
 
-    qRegisterMetaType<app::cv_params_t>();
+    qRegisterMetaType<app::process_params_t>();
     qRegisterMetaType<app::core_mode_t>();
 
     QObject::connect(&thread, &QThread::started, &core, &app::Core::process, Qt::QueuedConnection);

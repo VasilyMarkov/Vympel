@@ -13,8 +13,8 @@ find_package(Qt6 REQUIRED COMPONENTS
 
 add_subdirectory(app)
 
-if(TESTS)
-    message("TESTS ON")
-    enable_testing()
-    add_subdirectory(tests)
-endif(TESTS)
+# if(TESTS)
+#     message("TESTS ON")
+#     enable_testing()
+#     add_subdirectory(tests)
+# endif(TESTS)

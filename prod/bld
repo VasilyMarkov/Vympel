@@ -16,7 +16,7 @@ build_test_on=$2
 # cmake --build "${build_type}"
 
 if [ "${build_test_on}" == "TESTS" ]; then
-    cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type} -DTESTS=ON
+    cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type} -DTESTS
 else
     cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type}
 fi

@@ -17,7 +17,7 @@ public:
 private slots:
     void receivePortData();
 public slots:
-    void receiveData(const cv_params_t&);
+    void receiveData(const process_params_t&);
 private:
     QUdpSocket socket_;
     QHostAddress sender_addr_ = QHostAddress::LocalHost;

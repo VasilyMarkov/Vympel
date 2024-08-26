@@ -17,7 +17,7 @@ enum class core_mode_t {
     MEASUREMENT
 };
 
-struct cv_params_t {
+struct process_params_t {
     double brightness = 0;
     double filtered = 0;    
 };
@@ -40,21 +40,21 @@ struct calc_params_t {
 
 class IProcessing {
 protected:
-    cv_params_t cv_params_;                    //parameters obtained by machine vision algorithm 
+    process_params_t process_params_;          //parameters obtained by machine vision algorithm 
     calc_params_t calc_params_;                //parameters obtained by processing cv parameters inside events
     size_t global_tick_ = 0;
 public:
     virtual bool process() = 0;
-    virtual size_t getTick() const noexcept = 0;
-    virtual cv_params_t getCvParams() const noexcept = 0;
-    virtual calc_params_t& getCalcParams() noexcept = 0;
+    size_t getTick() const noexcept {return global_tick_;}
+    process_params_t getProcessParams() const noexcept {return process_params_;}
+    calc_params_t& getCalcParams() noexcept {return calc_params_;}
     virtual ~IProcessing(){}
 };
 
 class ICommunication {
 public:
     virtual void receiveData(const QString&) = 0;
-    virtual void sendData(const cv_params_t&) const = 0;;
+    virtual void sendData(const process_params_t&) const = 0;;
     virtual ~ICommunication(){}
 };
 

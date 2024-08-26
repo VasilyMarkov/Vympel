@@ -12,21 +12,6 @@ CVision::CVision(const std::string& filename):capture_(filename), filter_(filter
     cv::namedWindow( "w", 1);
 }
 
-size_t CVision::getTick() const noexcept
-{
-    return global_tick_;
-}
-
-cv_params_t CVision::getCvParams() const noexcept
-{
-    return cv_params_;
-}
-
-calc_params_t& CVision::getCalcParams() noexcept
-{
-    return calc_params_;
-}
-
 bool CVision::process()
 {
         capture_ >> frame_;
@@ -36,13 +21,13 @@ bool CVision::process()
         cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
         
         std::vector<uint8_t> v(frame_.begin<uint8_t>(), frame_.end<uint8_t>());
-        cv_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
+        process_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
         
-        cv_params_.filtered = filter_.Process(cv_params_.brightness);
+        process_params_.filtered = filter_.Process(process_params_.brightness);
 
         if(calc_params_.event_completeness.calibration) {
-            cv_params_.filtered -= calc_params_.mean_filtered;
-            cv_params_.brightness -= calc_params_.mean_filtered;
+            process_params_.filtered -= calc_params_.mean_filtered;
+            process_params_.brightness -= calc_params_.mean_filtered;
         }
 
         ++global_tick_;

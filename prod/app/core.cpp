@@ -6,7 +6,7 @@
 using namespace app;
 using namespace constants;
 
-Event::Event(std::weak_ptr<IProcessing> cv):cv_(cv), start_tick_(cv_.lock()->getTick()) {}
+Event::Event(std::weak_ptr<IProcessing> cv):process_unit_(cv), start_tick_(process_unit_.lock()->getTick()) {}
 
 Idle::Idle(std::weak_ptr<IProcessing> cv): Event(cv)
 {
@@ -15,7 +15,7 @@ Idle::Idle(std::weak_ptr<IProcessing> cv): Event(cv)
 
 std::optional<core_mode_t> Idle::operator()()
 {
-    if(cv_.lock()->getTick() - start_tick_ >= WAITING_TICKS) {
+    if(process_unit_.lock()->getTick() - start_tick_ >= WAITING_TICKS) {
         return core_mode_t::CALIBRATION;   
     }
     return std::nullopt;
@@ -29,13 +29,13 @@ Calibration::Calibration(std::weak_ptr<IProcessing> cv): Event(cv)
 
 std::optional<core_mode_t> Calibration::operator()()
 {
-    if(cv_.lock()->getTick() - start_tick_ >= buffer::CALIB_SIZE) 
+    if(process_unit_.lock()->getTick() - start_tick_ >= buffer::CALIB_SIZE) 
     {
-        cv_.lock()->getCalcParams().mean_filtered = std::accumulate(std::begin(data_), std::end(data_), 0)/data_.size();
-        cv_.lock()->getCalcParams().event_completeness.calibration = true;
+        process_unit_.lock()->getCalcParams().mean_filtered = std::accumulate(std::begin(data_), std::end(data_), 0)/data_.size();
+        process_unit_.lock()->getCalcParams().event_completeness.calibration = true;
         return core_mode_t::MEASUREMENT;    
     }
-    data_.push_back(cv_.lock()->getCvParams().filtered);
+    data_.push_back(process_unit_.lock()->getProcessParams().filtered);
 
     return std::nullopt;
 }
@@ -49,7 +49,7 @@ Measurement::Measurement(std::weak_ptr<IProcessing> cv): Event(cv)
 
 std::optional<core_mode_t> Measurement::operator()()
 {
-    if(cv_.lock()->getTick() - start_tick_ >= buffer::MEASUR_SIZE) 
+    if(process_unit_.lock()->getTick() - start_tick_ >= buffer::MEASUR_SIZE) 
     {
 
     }
@@ -64,7 +64,7 @@ std::optional<core_mode_t> Measurement::operator()()
     //         coeffs_.push_back(findLineCoeff());
     //         least_square_samples_.resize(0);
     //     }
-    //     least_square_samples_.push_back(cv_.lock()->getCvParams().filtered);
+    //     least_square_samples_.push_back(process_unit_.lock()->getProcessParams().filtered);
     // }
 
     if(least_square_samples_.size() == least_square_samples_.capacity()) {
@@ -78,10 +78,10 @@ std::optional<core_mode_t> Measurement::operator()()
         least_square_samples_.clear();
     }
 
-    least_square_samples_.push_back(cv_.lock()->getCvParams().filtered);
+    least_square_samples_.push_back(process_unit_.lock()->getProcessParams().filtered);
 
 
-    data_.push_back(cv_.lock()->getCvParams().filtered);
+    data_.push_back(process_unit_.lock()->getProcessParams().filtered);
 
     ++local_tick_;
     return std::nullopt;
@@ -127,7 +127,7 @@ double app::Measurement::findLineCoeff()
     return a;
 }
 
-Fsm::Fsm(std::weak_ptr<IProcessing> cv): cv_(cv), active_event_(std::make_unique<Idle>(cv_)) {}
+Fsm::Fsm(std::weak_ptr<IProcessing> cv): process_unit_(cv), active_event_(std::make_unique<Idle>(process_unit_)) {}
 
 void app::Fsm::toggle(core_mode_t mode)
 {
@@ -155,29 +155,29 @@ void app::Fsm::dispatchEvent()
     switch (mode_)
     {
     case core_mode_t::IDLE:
-        active_event_ = std::make_unique<Idle>(cv_);
+        active_event_ = std::make_unique<Idle>(process_unit_);
     break;
 
     case core_mode_t::CALIBRATION:
-        active_event_ = std::make_unique<Calibration>(cv_);
+        active_event_ = std::make_unique<Calibration>(process_unit_);
     break;
 
     case core_mode_t::MEASUREMENT:
-        if(cv_.lock()->getCalcParams().event_completeness.calibration) 
+        if(process_unit_.lock()->getCalcParams().event_completeness.calibration) 
         {
-            active_event_ = std::make_unique<Measurement>(cv_);
+            active_event_ = std::make_unique<Measurement>(process_unit_);
         }
     break;
     
     default:
-        active_event_ = std::make_unique<Idle>(cv_);
+        active_event_ = std::make_unique<Idle>(process_unit_);
     break;
     }
 }
 
 Core::Core(std::shared_ptr<IProcessing> processModule): 
-    cv_(processModule),
-    fsm_(std::make_unique<Fsm>(cv_)),
+    process_unit_(processModule),
+    fsm_(std::make_unique<Fsm>(process_unit_)),
     events_({
         {"idle", core_mode_t::IDLE},
         {"calibration", core_mode_t::CALIBRATION},
@@ -187,10 +187,10 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
 
 bool Core::process()
 {
-    while(cv_->process()) {
+    while(process_unit_->process()) {
         fsm_->callEvent();
         
-        emit sendData(cv_->getCvParams());
+        emit sendData(process_unit_->getProcessParams());
         QThread::msleep(10);
         QCoreApplication::processEvents();
     }
@@ -202,4 +202,8 @@ bool Core::process()
 void app::Core::receiveData(const QString& mode)
 {
     fsm_->toggle(events_.at(mode));
+}
+
+std::shared_ptr<IProcessing> Core::getProcessUnit() const {
+    return process_unit_;
 }

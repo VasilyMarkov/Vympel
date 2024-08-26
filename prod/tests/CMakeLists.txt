@@ -7,7 +7,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 message("Tests building...")
 
-add_executable(tests tests.cpp)
+add_executable(tests tests.cpp ${CMAKE_SOURCE_DIR}/app/core.cpp)
 
 target_include_directories(tests
   PRIVATE
