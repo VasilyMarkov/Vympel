@@ -38,6 +38,11 @@ struct calc_params_t {
     status_t status = status_t::not_valid_filter_value;
 };
 
+/**
+ * @brief IProcessing
+ * 
+ * Provides processing interface
+ */
 class IProcessing {
 protected:
     process_params_t process_params_;          //parameters obtained by machine vision algorithm 

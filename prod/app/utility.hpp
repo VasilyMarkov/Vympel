@@ -25,6 +25,22 @@ void print(const std::unordered_map<T, U>& map) {
     std::cout << std::endl;
 }
 
+inline std::vector<double> readInputData() {
+    std::vector<double> data;
+    size_t n = 0;
+    std::cin >> n;
+
+    if(std::cin.fail()) throw std::runtime_error("Invalid input data");
+
+    for(size_t i = 0; i < n; ++i) {
+        double tmp = 0;
+        std::cin >> tmp;
+        data.push_back(tmp);
+    }
+    
+    return data;
+}
+
 namespace constants {
     namespace filter {
         constexpr double cutoff_frequency = 10.0; //Hz
@@ -32,10 +48,19 @@ namespace constants {
     }
 }
 
-inline std::pair<double, double> mean_var(const std::vector<double>& window) {
-    auto mean = std::accumulate(std::begin(window), std::end(window), 0.0)/window.size();
-    auto sq_sum = std::inner_product(std::begin(window), std::end(window), std::begin(window), 0.0);
-    return {mean, std::sqrt(sq_sum/window.size() - mean*mean)};
+
+/**
+ * @brief meanVar
+ * 
+ * Calculates mean and variance
+ * 
+ * @param  std::vector<double> 
+ * @return std::pair<double, double> 
+ */
+inline std::pair<double, double> meanVar(const std::vector<double>& data) {
+    auto mean = std::accumulate(std::begin(data), std::end(data), 0.0)/data.size();
+    auto sq_sum = std::inner_product(std::begin(data), std::end(data), std::begin(data), 0.0);
+    return {mean, std::sqrt(sq_sum/data.size() - mean*mean)};
 }
 
 class LowPassFilter {

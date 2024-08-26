@@ -33,7 +33,3 @@ target_link_libraries(main PRIVATE
     Qt6::Bluetooth
     Qt6::Network
 )
-
-if(TESTS)
-    target_compile_definitions(main PRIVATE APP_TEST)
-endif(TESTS)

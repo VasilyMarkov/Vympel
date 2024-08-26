@@ -11,7 +11,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     Network
 )
 
-add_subdirectory(app)
+# add_subdirectory(app)
+add_subdirectory(tests)
 
 # if(TESTS)
 #     message("TESTS ON")
