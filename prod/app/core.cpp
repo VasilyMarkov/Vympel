@@ -48,16 +48,22 @@ Measurement::Measurement(std::weak_ptr<IProcessing> cv): Event(cv)
     std::cout << "measure" << std::endl;
     data_.reserve(buffer::MEASUR_SIZE);
     least_square_samples_.reserve(100);
+    m_data.reserve(100);
 }
 
 std::optional<core_mode_t> Measurement::operator()()
 {
-    if(process_unit_.lock()->getTick() - start_tick_ >= buffer::MEASUR_SIZE) 
-    {
+    // if(process_unit_.lock()->getTick() - start_tick_ >= buffer::MEASUR_SIZE) 
+    // {
 
-    }
+    // }
 
-    // if(local_tick_ % SAMPLE_FREQ == 0) {
+    if(m_data.size() == m_data.capacity()) {
+        auto cnt = std::count_if(std::begin(m_data), std::end(m_data), 
+                [&](auto val){return val > 4*process_unit_.lock()->getCalcParams().std_dev_filtered;});
+        m_data.clear();
+        auto c = findLineCoeff();
+        std::cout << cnt << ' ' << c << std::endl;
     //     if(least_square_samples_.size() == 10) {
     //         if(coeffs_.size() == 1) {
     //             coeffs_.push_back(findLineCoeff());
@@ -68,66 +74,24 @@ std::optional<core_mode_t> Measurement::operator()()
     //         least_square_samples_.resize(0);
     //     }
     //     least_square_samples_.push_back(process_unit_.lock()->getProcessParams().filtered);
+    }
+    m_data.push_back(process_unit_.lock()->getProcessParams().filtered);
+    // if(least_square_samples_.size() == least_square_samples_.capacity()) {
+        
+    //     if(coeffs_.size() == 2) {
+    //         coeffs_.pop_front();
+    //     }
+    //     coeffs_.push_back(findLineCoeff());
+    //     least_square_samples_.clear();
     // }
 
-    if(least_square_samples_.size() == least_square_samples_.capacity()) {
-        // std::cout << findLineCoeff() << std::endl;
-        
-        if(coeffs_.size() == 2) {
-            // std::cout << coeffs_[1]/coeffs_[0] << std::endl;
-            coeffs_.pop_front();
-        }
-        coeffs_.push_back(findLineCoeff());
-        least_square_samples_.clear();
-    }
-
-    least_square_samples_.push_back(process_unit_.lock()->getProcessParams().filtered);
+    // least_square_samples_.push_back(process_unit_.lock()->getProcessParams().filtered);
 
 
-    data_.push_back(process_unit_.lock()->getProcessParams().filtered);
+    // data_.push_back(process_unit_.lock()->getProcessParams().filtered);
 
     ++local_tick_;
     return std::nullopt;
-}
-
-/* @brief Least squares
-*
-* Function calculates gradient of line approximation of data
-*
-* Input data takes from least_square_samples_
-*
-* @return linear coefficient a from line equation y = ax+b
-*/
-double app::Measurement::findLineCoeff() 
-{
-    auto& y = least_square_samples_;
-    auto n = y.size();
-    std::vector<double> x(n);
-    std::iota(std::begin(x), std::end(x), 0);
-
-    // auto x_sum = std::accumulate(std::begin(x), std::end(x), 0);
-    // auto y_sum = std::accumulate(std::begin(y), std::end(y), 0);
-    // auto x2_sum = std::inner_product(std::begin(x), std::end(x), std::begin(x), 0);
-    // auto xy_sum = std::inner_product(std::begin(x), std::end(x), std::begin(y), 0);
-
-    // auto nominator = n*xy_sum-x_sum*y_sum;
-    // auto denominator = n*x2_sum-x_sum*x_sum;
-    
-    // std::cout << nominator/denominator << std::endl;
-    // if (auto epsilon{1e-7}; std::fabs(denominator - epsilon) <= 0) throw std::runtime_error("Divide by zero in least squares");
-
-    // return nominator/denominator; 
-    double x_sum{0}, y_sum{0}, x2_sum{0}, xy_sum{0};
-    for (auto i = 0; i < y.size(); ++i)
-    {
-        x_sum+=x[i];
-        y_sum+=y[i];
-        x2_sum+=std::pow(x[i],2);
-        xy_sum+=x[i]*y[i];
-    }
-    double a=(n*xy_sum-x_sum*y_sum)/(n*x2_sum-x_sum*x_sum);
-    double b=(x2_sum*y_sum-x_sum*xy_sum)/(x2_sum*n-x_sum*x_sum);
-    return a;
 }
 
 Fsm::Fsm(std::weak_ptr<IProcessing> cv): process_unit_(cv), active_event_(std::make_unique<Idle>(process_unit_)) {}

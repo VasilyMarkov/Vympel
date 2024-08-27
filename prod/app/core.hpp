@@ -45,14 +45,12 @@ public:
 };
 
 class Measurement final: public Event {
-    std::vector<double> least_square_samples_;
+    std::vector<double> m_data;
     std::deque<double> coeffs_;
     size_t local_tick_ = 0;
 public:
     Measurement(std::weak_ptr<IProcessing>);
     std::optional<core_mode_t> operator()() override;
-private:
-    double findLineCoeff();
 };
 
 

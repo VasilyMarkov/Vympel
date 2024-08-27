@@ -60,6 +60,35 @@ inline std::pair<double, double> meanVar(const std::vector<double>& data) {
     return {mean, std::sqrt(sq_sum/data.size() - mean*mean)};
 }
 
+/**
+ * @brief findLineCoeff
+ * 
+ * Function calculates gradient of line approximation of data (Least squares)
+ * 
+ * @param std::vector<double> 
+ * @return double 
+ */
+inline double findLineCoeff(const std::vector<double>& y) 
+{
+    auto n = y.size();
+    std::vector<double> x(n);
+    std::iota(std::begin(x), std::end(x), 0.0);
+
+    auto x_sum = std::accumulate(std::begin(x), std::end(x), 0.0);
+    auto y_sum = std::accumulate(std::begin(y), std::end(y), 0.0);
+    auto x2_sum = std::inner_product(std::begin(x), std::end(x), std::begin(x), 0.0);
+    auto xy_sum = std::inner_product(std::begin(x), std::end(x), std::begin(y), 0.0);
+
+    auto nominator = n*xy_sum-x_sum*y_sum;
+    auto denominator = n*x2_sum-x_sum*x_sum;
+    
+    auto a = nominator/denominator;
+
+    if (auto epsilon{1e-7}; std::fabs(denominator - epsilon) <= 0) throw std::runtime_error("Divide by zero in least squares");
+
+    return a; 
+}
+
 class LowPassFilter {
 public:
     LowPassFilter(double cutoff_frequency, double sample_rate, double q = 0.707): 
