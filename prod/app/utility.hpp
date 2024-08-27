@@ -41,6 +41,7 @@ inline std::vector<double> readInputData() {
 namespace constants {
     namespace filter {
         constexpr double cutoff_frequency = 10.0; //Hz
+        constexpr double cutoff_frequency1 = 50.0; //Hz
         constexpr double sample_rate = 1000.0; //Hz
     }
 }
@@ -89,6 +90,12 @@ inline double findLineCoeff(const std::vector<double>& y)
     return a; 
 }
 
+/**
+ * @brief Low Pass Filter
+ * 
+ * Cuts off all frequencies above the laser flicker frequency
+ * 
+ */
 class LowPassFilter {
 public:
     LowPassFilter(double cutoff_frequency, double sample_rate, double q = 0.707): 

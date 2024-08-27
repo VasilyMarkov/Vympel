@@ -60,8 +60,20 @@ def decreaseBrightness(mean, sigma, size):
     saveData(init_data)
     return init_data
 
+def addPicks(data, sigma):
+    data[1000] += sigma 
+    data[1002] += 2*sigma 
+    data[1004] += 3*sigma 
+    data[1006] += 4*sigma 
+    data[1008] += 4*sigma 
+    data[1010] += 3*sigma 
+    data[1012] += 2*sigma 
+    data[1014] += sigma 
+    return data
 
-data = decreaseBrightness(0, 1, 2000)
+
+
+data = addPicks(decreaseBrightness(0, 1, 2000), 1)
 print(os.path.dirname(os.path.abspath(__file__)))
 plt.plot(data)
 plt.show()

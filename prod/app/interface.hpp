@@ -14,7 +14,8 @@ namespace constants {
 enum class core_mode_t {
     IDLE,
     CALIBRATION,
-    MEASUREMENT
+    MEASUREMENT,
+    CONDENSATION
 };
 
 struct process_params_t {

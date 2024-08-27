@@ -45,14 +45,19 @@ public:
 };
 
 class Measurement final: public Event {
-    std::vector<double> m_data;
-    std::deque<double> coeffs_;
+    std::vector<double> mean_data;
+    std::deque<bool> coeffs;
     size_t local_tick_ = 0;
 public:
     Measurement(std::weak_ptr<IProcessing>);
     std::optional<core_mode_t> operator()() override;
 };
 
+class Сondensation final: public Event {
+public:
+    Сondensation(std::weak_ptr<IProcessing>);
+    std::optional<core_mode_t> operator()() override;
+};
 
 class Fsm final {
 public:

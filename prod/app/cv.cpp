@@ -25,10 +25,10 @@ bool CVision::process()
         
         process_params_.filtered = filter_.Process(process_params_.brightness);
 
-        if(calc_params_.event_completeness.calibration) {
-            process_params_.filtered -= calc_params_.mean_filtered;
-            process_params_.brightness -= calc_params_.mean_filtered;
-        }
+        // if(calc_params_.event_completeness.calibration) {
+        //     process_params_.filtered -= calc_params_.mean_filtered;
+        //     process_params_.brightness -= calc_params_.mean_filtered;
+        // }
 
         ++global_tick_;
         

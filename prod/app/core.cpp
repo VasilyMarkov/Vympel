@@ -47,52 +47,54 @@ Measurement::Measurement(std::weak_ptr<IProcessing> cv): Event(cv)
 {
     std::cout << "measure" << std::endl;
     data_.reserve(buffer::MEASUR_SIZE);
-    least_square_samples_.reserve(100);
-    m_data.reserve(100);
+    mean_data.reserve(100);
+    coeffs.resize(5);
+}
+
+bool isPositiveGrowth(double coeff) {
+    static double local_coeff = 0;
+    auto greater = coeff > local_coeff;
+    local_coeff = coeff;
+    return greater;
 }
 
 std::optional<core_mode_t> Measurement::operator()()
 {
-    // if(process_unit_.lock()->getTick() - start_tick_ >= buffer::MEASUR_SIZE) 
-    // {
+    if(mean_data.size() == mean_data.capacity()) {
+        auto mean = std::accumulate(std::begin(mean_data), std::end(mean_data), 0.0)/mean_data.size();
 
-    // }
+        coeffs.pop_front();
+        coeffs.push_back(isPositiveGrowth(mean));
 
-    if(m_data.size() == m_data.capacity()) {
-        auto cnt = std::count_if(std::begin(m_data), std::end(m_data), 
-                [&](auto val){return val > 4*process_unit_.lock()->getCalcParams().std_dev_filtered;});
-        m_data.clear();
-        auto c = findLineCoeff();
-        std::cout << cnt << ' ' << c << std::endl;
-    //     if(least_square_samples_.size() == 10) {
-    //         if(coeffs_.size() == 1) {
-    //             coeffs_.push_back(findLineCoeff());
-    //             auto difference = coeffs_[1]-coeffs_[0];   
-    //             std::cout << difference << std::endl; 
-    //         }
-    //         coeffs_.push_back(findLineCoeff());
-    //         least_square_samples_.resize(0);
-    //     }
-    //     least_square_samples_.push_back(process_unit_.lock()->getProcessParams().filtered);
+        auto cnt = std::count_if(std::begin(coeffs), std::end(coeffs), [](bool val){return val == true;});
+        std::cout << "tick: " << process_unit_.lock()->getTick() << ' ' << cnt << std::endl;
+        std::cout << mean << std::endl;
+
+        if(cnt > 3) {
+            std::cout << "START" << ' ' << process_unit_.lock()->getTick() << std::endl;
+            return core_mode_t::CONDENSATION;   
+        }
+
+        mean_data.clear();
     }
-    m_data.push_back(process_unit_.lock()->getProcessParams().filtered);
-    // if(least_square_samples_.size() == least_square_samples_.capacity()) {
-        
-    //     if(coeffs_.size() == 2) {
-    //         coeffs_.pop_front();
-    //     }
-    //     coeffs_.push_back(findLineCoeff());
-    //     least_square_samples_.clear();
-    // }
 
-    // least_square_samples_.push_back(process_unit_.lock()->getProcessParams().filtered);
+    mean_data.push_back(process_unit_.lock()->getProcessParams().filtered);
 
-
-    // data_.push_back(process_unit_.lock()->getProcessParams().filtered);
 
     ++local_tick_;
     return std::nullopt;
 }
+
+app::Сondensation::Сondensation(std::weak_ptr<IProcessing> process_unit): Event(process_unit)
+{
+    std::cout << "condensation" << std::endl;
+}
+
+std::optional<core_mode_t> app::Сondensation::operator()()
+{
+    return std::nullopt;
+}
+
 
 Fsm::Fsm(std::weak_ptr<IProcessing> cv): process_unit_(cv), active_event_(std::make_unique<Idle>(process_unit_)) {}
 
@@ -135,6 +137,9 @@ void app::Fsm::dispatchEvent()
             active_event_ = std::make_unique<Measurement>(process_unit_);
         }
     break;
+    case core_mode_t::CONDENSATION:
+        active_event_ = std::make_unique<Сondensation>(process_unit_);
+    break;
     
     default:
         active_event_ = std::make_unique<Idle>(process_unit_);
@@ -174,3 +179,4 @@ void app::Core::receiveData(const QString& mode)
 std::shared_ptr<IProcessing> Core::getProcessUnit() const {
     return process_unit_;
 }
+
