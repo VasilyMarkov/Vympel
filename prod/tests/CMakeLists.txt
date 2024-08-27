@@ -19,3 +19,5 @@ target_link_libraries(test_main PRIVATE
     Qt6::Bluetooth
     Qt6::Network
 )
+
+add_subdirectory(unit_tests)

@@ -24,6 +24,7 @@ struct process_params_t {
 
 struct calc_params_t {
     double mean_filtered = 0;
+    double std_dev_filtered = 0;
 
     struct event_completeness_t {
         bool calibration = false;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.hpp"
+#include "interface.hpp"
 #include "utility.hpp"
 
 using namespace app;

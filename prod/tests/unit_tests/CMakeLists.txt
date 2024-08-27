@@ -9,12 +9,18 @@ message("Tests building...")
 
 add_executable(unit_tests 
   unit_tests.cpp 
-  ${CMAKE_SOURCE_DIR}/app/core.cpp
 )
 
 target_include_directories(unit_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/app
+  ${CMAKE_SOURCE_DIR}/tests
 )
 
 target_link_libraries(unit_tests PRIVATE gtest_main gmock_main)
+
+target_link_libraries(unit_tests PRIVATE 
+    Qt6::Core 
+    Qt6::Bluetooth
+    Qt6::Network
+)

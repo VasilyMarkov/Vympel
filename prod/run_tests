@@ -6,5 +6,5 @@ release_path="Release"
 
 if [ -d "$debug_path" ]; then
   cd $debug_path
-  ./tests/tests
+  ./tests/unit_tests/unit_tests
 fi
