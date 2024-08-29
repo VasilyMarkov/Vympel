@@ -7,15 +7,15 @@
 #include "core.hpp"
 #include "udp.hpp"
 #include "cv.hpp"
-
+#include "utility.hpp"
 
 int main(int argc, char *argv[])
 {
   try {
 
     QCoreApplication app(argc, argv);
-
-    app::UdpSocket socket(QHostAddress::LocalHost, app::constants::port::SENDER_PORT, 
+    auto [clientIp, clientPort] = app::writeJsonFile("/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
+    app::UdpSocket socket(QHostAddress(clientIp), clientPort, 
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
     // app::Core core(argv[1]);
     // app::Core core("/home/vasily/usr/phystech/vympel/prod/video.mp4");
