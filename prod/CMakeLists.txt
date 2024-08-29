@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
-
 project(ComputerVision VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_AUTOMOC ON)
-
 
 find_package(Qt5 REQUIRED COMPONENTS 
     Core 
@@ -12,3 +10,4 @@ find_package(Qt5 REQUIRED COMPONENTS
 )
 
 add_subdirectory(app)
+# add_subdirectory(tests)

@@ -8,16 +8,14 @@ add_executable(test_main
   ${CMAKE_SOURCE_DIR}/app/udp.cpp
 )
 
+target_compile_features(test_main PUBLIC cxx_std_20)
+
 target_include_directories(test_main
   PRIVATE
   ${CMAKE_SOURCE_DIR}/app
 )
 
 target_link_libraries(test_main PRIVATE 
-    ${OpenCV_LIBS} 
-    Qt6::Core 
-    Qt6::Bluetooth
-    Qt6::Network
+    Qt5::Core 
+    Qt5::Network
 )
-
-add_subdirectory(unit_tests)

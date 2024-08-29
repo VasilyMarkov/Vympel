@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
   try {
 
     QCoreApplication app(argc, argv);
-    auto [clientIp, clientPort] = app::writeJsonFile("/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
+    auto [clientIp, clientPort] = app::writeJsonFile("/home/vympel/usr/cv_project/prod/conf/config.json").value();
     app::UdpSocket socket(QHostAddress(clientIp), clientPort, 
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
     // app::Core core(argv[1]);
