@@ -6,6 +6,10 @@
 #include <concepts>
 #include <numeric>
 #include <cmath>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDebug>
 
 namespace app {
 
@@ -38,6 +42,31 @@ inline std::vector<double> readInputData() {
     return data;
 }
 
+inline std::optional<std::pair<QString, int>> writeJsonFile(const QString &filePath) {
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Could not open file:" << filePath;
+        return std::nullopt;
+    }
+
+    QByteArray jsonData = file.readAll();
+    file.close();
+
+    QJsonParseError parseError;
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "JSON parse error:" << parseError.errorString();
+        return std::nullopt;
+    }
+
+    auto clientIp = jsonDoc.object().value("clientIp").toString();
+    auto clientPort = jsonDoc.object().value("clientPort").toInt();
+
+    return std::pair<QString, int> (clientIp, clientPort);
+}
+
+
 namespace constants {
     namespace filter {
         constexpr double cutoff_frequency = 10.0; //Hz
@@ -45,7 +74,6 @@ namespace constants {
         constexpr double sample_rate = 1000.0; //Hz
     }
 }
-
 
 /**
  * @brief meanVar
