@@ -13,7 +13,7 @@
 #include <map>
 
 constexpr size_t frame_size = 2000;
-constexpr double VALUE_SIZE = 1e6;
+constexpr double VALUE_SIZE = 3e6;
 
 template <typename Cont>
 void print(const Cont& cont) {
