@@ -1,19 +1,8 @@
 #!/usr/bin/env bash
 
-# clear
-# if [ $1 = "gcc" ]; then
-#     echo "Compiler: gcc"
-#     export CXX=/usr/bin/g++
-# elif [ $1 = "clang" ]; then
-#     echo "Compiler: clang"
-#     export CXX=/usr/bin/clang++
-# fi
-
 build_type=$1
 build_test_on=$2
-# echo "${build_test_on}"
-# cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type} "${build_test_on}"
-# cmake --build "${build_type}"
+
 
 if [ "${build_test_on}" == "TESTS" ]; then
     cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type} -DTESTS
@@ -21,4 +10,4 @@ else
     cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type}
 fi
 
-cmake --build "${build_type}"
+time cmake --build "${build_type}" --parallel 4
