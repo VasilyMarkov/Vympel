@@ -1,5 +1,4 @@
-#include <qt6/QtCore/QThread>
-#include <qt6/QtCore/QCoreApplication>
+
 #include "core.hpp"
 #include "utility.hpp"
 

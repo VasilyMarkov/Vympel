@@ -9,7 +9,7 @@ CVision::CVision(const std::string& filename):capture_(filename), filter_(filter
     if(!capture_.isOpened())
         throw std::runtime_error("file open error");
 
-    cv::namedWindow( "w", 1);
+    // cv::namedWindow( "w", 1);
 }
 
 bool CVision::process()
@@ -17,7 +17,7 @@ bool CVision::process()
         capture_ >> frame_;
         
         if(frame_.empty()) return false;
-        cv::imshow("w", frame_);
+        // cv::imshow("w", frame_);
         cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
         
         std::vector<uint8_t> v(frame_.begin<uint8_t>(), frame_.end<uint8_t>());

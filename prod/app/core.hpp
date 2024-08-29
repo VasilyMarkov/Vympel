@@ -2,7 +2,9 @@
 #include <iostream>
 #include <memory>
 #include <list>
-#include <qt6/QtCore/QObject>
+#include <qt5/QtCore/QObject>
+#include <qt5/QtCore/QThread>
+#include <qt5/QtCore/QCoreApplication>
 #include <unordered_map>
 #include <functional>
 #include <optional>

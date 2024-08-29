@@ -41,6 +41,5 @@ void UdpSocket::receivePortData()
 void UdpSocket::receiveData(const process_params_t& params) {
     json_["brightness"] = params.brightness;
     json_["filtered"] = params.filtered;
-    json_["mode"] = QJsonValue::fromVariant(QVariant::fromValue(params));
     sendPortData(QJsonDocument(json_).toJson());
 }

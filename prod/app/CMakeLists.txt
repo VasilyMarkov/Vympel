@@ -21,11 +21,10 @@ add_executable(main
     main.cpp
     core.cpp 
     cv.cpp
-    # bluetoothDevice.cpp
     udp.cpp
 )
 
-target_compile_features(main PUBLIC cxx_std_23)
+target_compile_features(main PUBLIC cxx_std_20)
 
 target_include_directories(main PRIVATE 
     ${OpenCV_INCLUDE_DIRS} 
@@ -33,7 +32,6 @@ target_include_directories(main PRIVATE
 
 target_link_libraries(main PRIVATE 
     ${OpenCV_LIBS} 
-    Qt6::Core 
-    Qt6::Bluetooth
-    Qt6::Network
+    Qt5::Core 
+    Qt5::Network
 )
