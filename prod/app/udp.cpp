@@ -17,7 +17,7 @@ UdpSocket::UdpSocket(
     if (sender_port_ < 1024) throw std::runtime_error("Invalid sender port");
     if (receiver_port_ < 1024) throw std::runtime_error("Invalid receiver port");
 
-    socket_.bind(receiver_addr_, receiver_port_);
+    socket_.bind(sender_addr_, sender_port_);
     connect(&socket_, &QUdpSocket::readyRead, this, &UdpSocket::receivePortData);
 }
 
