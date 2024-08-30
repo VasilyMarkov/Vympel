@@ -14,7 +14,13 @@ int main(int argc, char *argv[])
   try {
     QCoreApplication app(argc, argv);
 
+<<<<<<< HEAD
     app::UdpSocket socket(QHostAddress::LocalHost, app::constants::port::SENDER_PORT, 
+=======
+    auto [clientIp, clientPort] = app::parseJsonFile("/home/vympel/usr/cv_project/prod/conf/config.json").value();
+    std::cout << clientIp.toStdString() << ": " << clientPort << std::endl;
+    app::UdpSocket socket(QHostAddress(clientIp), clientPort, 
+>>>>>>> 283ec49 (change parsing json)
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
 
     app::Core core(std::make_shared<test::ProcessUnit>());

@@ -1,4 +1,15 @@
 {
+<<<<<<< HEAD
     "clientIp": "127.0.0.1",
     "clientPort": 65000
+=======
+    "network": {
+        "clientIp": "192.168.31.36",
+        "clientPort": 65000
+    },
+    "camera": {
+        "width": 640,
+        "height": 480
+    }
+>>>>>>> 283ec49 (change parsing json)
 }
