@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
   try {
     QCoreApplication app(argc, argv);
 
-    auto [clientIp, clientPort] = app::writeJsonFile("/home/vympel/usr/cv_project/prod/conf/config.json").value();
+    auto [clientIp, clientPort] = app::parseJsonFile("/home/vympel/usr/cv_project/prod/conf/config.json").value();
     std::cout << clientIp.toStdString() << ": " << clientPort << std::endl;
     app::UdpSocket socket(QHostAddress(clientIp), clientPort, 
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);

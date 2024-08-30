@@ -42,7 +42,7 @@ inline std::vector<double> readInputData() {
     return data;
 }
 
-inline std::optional<std::pair<QString, int>> writeJsonFile(const QString &filePath) {
+inline std::optional<std::pair<QString, int>> parseJsonFile(const QString &filePath) {
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -60,8 +60,13 @@ inline std::optional<std::pair<QString, int>> writeJsonFile(const QString &fileP
         return std::nullopt;
     }
 
-    auto clientIp = jsonDoc.object().value("clientIp").toString();
-    auto clientPort = jsonDoc.object().value("clientPort").toInt();
+    auto jsonObj = jsonDoc.object();
+
+    auto networkObj = jsonObj["network"].toObject();
+    auto cameraObj = jsonObj["camera"].toObject();
+
+    auto clientIp = networkObj.value("clientIp").toString();
+    auto clientPort = networkObj.value("clientPort").toInt();
 
     return std::pair<QString, int> (clientIp, clientPort);
 }
