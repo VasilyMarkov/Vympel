@@ -2,8 +2,9 @@
 #include "cv.hpp"
 
 app::Camera::Camera():
+    camera_(std::make_shared<libcamera::Camera>())
     camera_manager_(std::make_unique<libcamera::CameraManager>()), 
-    config_(std::make_unique<libcamera::CameraConfiguration>(camera->generateConfiguration( { StreamRole::Viewfinder } )))
+    config_(std::make_unique<libcamera::CameraConfiguration>(camera_->generateConfiguration( { StreamRole::Viewfinder } )))
 {   
     using namespace libcamera;
 

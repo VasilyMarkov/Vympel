@@ -17,6 +17,7 @@ class Camera final {
 public:
     Camera();
 private:
+    std::shared_ptr<libcamera::Camera> camera_;
     std::unique_ptr<libcamera::CameraManager> camera_manager_;
     std::unique_ptr<libcamera::CameraConfiguration> config_;
 };
