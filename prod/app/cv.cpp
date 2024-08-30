@@ -11,14 +11,14 @@ app::Camera::Camera():
 
     for (auto&& camera : camera_manager_->cameras()) std::cout << camera->id() << std::endl;
         
-    auto cameras = cm->cameras();
+    auto cameras = camera_manager_->cameras();
     if (cameras.empty()) {
-        cm->stop();
+        camera_manager_->stop();
         throw std::runtime_error("No cameras were identified on the system.");
     }
 
     auto cameraId = cameras[0]->id();
-    auto camera = cm->get(cameraId);
+    auto camera = camera_manager_->get(cameraId);
 
 }
 
