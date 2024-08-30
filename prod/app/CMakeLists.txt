@@ -25,6 +25,7 @@ message(STATUS "    version: ${LIBCAMERA_VERSION}")
 message(STATUS "    libraries: ${LIBCAMERA_LINK_LIBRARIES}")
 message(STATUS "    include path: ${LIBCAMERA_INCLUDE_DIRS}")
 
+# For resolving names between Qt and libcamera
 set(QT_NO_KEYWORDS ON)
 
 add_executable(main 

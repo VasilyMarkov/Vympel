@@ -1,6 +1,27 @@
 #include <numeric>
 #include "cv.hpp"
 
+app::Camera::Camera():
+    camera_manager_(std::make_unique<libcamera::CameraManager>()), 
+    config_(std::make_unique<libcamera::CameraConfiguration>(camera->generateConfiguration( { StreamRole::Viewfinder } )))
+{   
+    using namespace libcamera;
+
+    camera_manager_->start();
+
+    for (auto&& camera : camera_manager_->cameras()) std::cout << camera->id() << std::endl;
+        
+    auto cameras = cm->cameras();
+    if (cameras.empty()) {
+        cm->stop();
+        throw std::runtime_error("No cameras were identified on the system.");
+    }
+
+    auto cameraId = cameras[0]->id();
+    auto camera = cm->get(cameraId);
+
+}
+
 
 app::CVision::CVision(const std::string& filename): 
     capture_(0), 
@@ -9,14 +30,6 @@ app::CVision::CVision(const std::string& filename):
     if(!capture_.isOpened())
         throw std::runtime_error("file open error");
     // cv::namedWindow( "w", 1);
-
-    using namespace libcamera;
-
-    // auto camera = std::make_shared<Camera>();
-    auto cm = std::make_unique<CameraManager>();
-	cm->start();
-    for (auto&& camera : cm->cameras())
-        std::cout << camera->id() << std::endl;
 }
 
 bool app::CVision::process()
@@ -37,3 +50,4 @@ bool app::CVision::process()
         return true;
         
 }
+
