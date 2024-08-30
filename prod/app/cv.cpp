@@ -1,18 +1,25 @@
 #include <numeric>
 #include "cv.hpp"
 
-using namespace app;
-using namespace constants;
 
-CVision::CVision(const std::string& filename):capture_(filename), filter_(filter::cutoff_frequency, filter::sample_rate)
+app::CVision::CVision(const std::string& filename): 
+    capture_(0), 
+    filter_(app::constants::filter::cutoff_frequency, app::constants::filter::sample_rate)
 {
     if(!capture_.isOpened())
         throw std::runtime_error("file open error");
-
     // cv::namedWindow( "w", 1);
+
+    using namespace libcamera;
+
+    // auto camera = std::make_shared<Camera>();
+    auto cm = std::make_unique<CameraManager>();
+	cm->start();
+    for (auto&& camera : cm->cameras())
+        std::cout << camera->id() << std::endl;
 }
 
-bool CVision::process()
+bool app::CVision::process()
 {
         capture_ >> frame_;
         
@@ -24,11 +31,6 @@ bool CVision::process()
         process_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
         
         process_params_.filtered = filter_.Process(process_params_.brightness);
-
-        // if(calc_params_.event_completeness.calibration) {
-        //     process_params_.filtered -= calc_params_.mean_filtered;
-        //     process_params_.brightness -= calc_params_.mean_filtered;
-        // }
 
         ++global_tick_;
         

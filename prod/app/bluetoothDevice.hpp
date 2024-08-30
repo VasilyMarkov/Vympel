@@ -13,7 +13,7 @@ public:
     BluetoothDevice();
     ~BluetoothDevice();
 
-private slots:
+private Q_SLOTS:
   void deviceDiscovered(const QBluetoothDeviceInfo&);
 private:
   std::unique_ptr<QBluetoothDeviceDiscoveryAgent> discoveryAgent;

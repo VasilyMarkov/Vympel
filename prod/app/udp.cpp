@@ -34,7 +34,7 @@ void UdpSocket::receivePortData()
     socket_.readDatagram(datagram.data(), datagram.size(), nullptr, nullptr);
     auto json = QJsonDocument::fromJson(datagram, nullptr);
     auto mode = json.object().value("core_mode").toString();
-    emit sendData(mode);
+    Q_EMIT sendData(mode);
 }
 
 void UdpSocket::receiveData(const process_params_t& params) {

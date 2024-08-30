@@ -161,11 +161,11 @@ bool Core::process()
     while(process_unit_->process()) {
         fsm_->callEvent();
         
-        emit sendData(process_unit_->getProcessParams());
+        Q_EMIT sendData(process_unit_->getProcessParams());
         QThread::msleep(20);
         QCoreApplication::processEvents();
     }
-    emit exit();
+    Q_EMIT exit();
 
     return true;
 }

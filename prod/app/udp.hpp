@@ -14,9 +14,9 @@ public:
     explicit UdpSocket(const QHostAddress&, quint16, const QHostAddress&, quint16);
 public:
     void sendPortData(const QByteArray&); //send to port
-private slots:
+private Q_SLOTS:
     void receivePortData();
-public slots:
+public Q_SLOTS:
     void receiveData(const process_params_t&);
 private:
     QUdpSocket socket_;

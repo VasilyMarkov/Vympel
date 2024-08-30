@@ -1,6 +1,11 @@
 #include <opencv2/opencv.hpp>
 #include "interface.hpp"
 #include "utility.hpp"
+#undef signals
+#undef slots
+#undef emit
+#undef foreach
+#include "libcamera/libcamera.h"
 
 namespace app {
 
