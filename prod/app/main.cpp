@@ -8,17 +8,19 @@
 #include "udp.hpp"
 #include "cv.hpp"
 #include "utility.hpp"
+#include "bluetoothDevice.hpp"
 
 int main(int argc, char *argv[])
 {
   try {
 
     QCoreApplication app(argc, argv);
-    auto [clientIp, clientPort] = app::parseJsonFile("/home/vympel/usr/cv_project/prod/conf/config.json").value();
+    auto [clientIp, clientPort] = app::parseJsonFile("/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
     app::UdpSocket socket(QHostAddress(clientIp), clientPort, 
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
-    // app::Core core(argv[1]);
-    // app::Core core("/home/vasily/usr/phystech/vympel/prod/video.mp4");
+
+    app::BluetoothDevice();
+
     std::string filename = "/home/vasily/usr/phystech/vympel/prod/app/video.mp4";
     app::Core core(std::make_shared<app::CVision>(filename));
     QThread thread;

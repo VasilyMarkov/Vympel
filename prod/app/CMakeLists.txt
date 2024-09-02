@@ -21,7 +21,7 @@ add_executable(main
     main.cpp
     core.cpp 
     cv.cpp
-    # bluetoothDevice.cpp
+    bluetoothDevice.cpp
     udp.cpp
 )
 
