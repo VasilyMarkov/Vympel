@@ -19,24 +19,25 @@ int main(int argc, char *argv[])
     app::UdpSocket socket(QHostAddress(clientIp), clientPort, 
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
 
-    app::BluetoothDevice();
+    app::BluetoothDevice bl;
+    bl.startDeviceDiscovery();
+    // bl.connectToDevice();
+    // std::string filename = "/home/vasily/usr/phystech/vympel/prod/app/video.mp4";
+    // app::Core core(std::make_shared<app::CVision>(filename));
+    // QThread thread;
+    // core.moveToThread(&thread);
 
-    std::string filename = "/home/vasily/usr/phystech/vympel/prod/app/video.mp4";
-    app::Core core(std::make_shared<app::CVision>(filename));
-    QThread thread;
-    core.moveToThread(&thread);
+    // qRegisterMetaType<app::process_params_t>();
+    // qRegisterMetaType<app::core_mode_t>();
 
-    qRegisterMetaType<app::process_params_t>();
-    qRegisterMetaType<app::core_mode_t>();
+    // QObject::connect(&thread, &QThread::started, &core, &app::Core::process, Qt::QueuedConnection);
+    // QObject::connect(&core, &app::Core::exit, &thread, &QThread::quit, Qt::QueuedConnection);
+    // QObject::connect(&thread, &QThread::finished, &core, &QObject::deleteLater, Qt::QueuedConnection);
+    // QObject::connect(&thread, &QThread::finished, &app, &QCoreApplication::quit, Qt::QueuedConnection);
+    // QObject::connect(&socket, &app::UdpSocket::sendData, &core, &app::Core::receiveData, Qt::QueuedConnection);
+    // QObject::connect(&core, &app::Core::sendData, &socket, &app::UdpSocket::receiveData, Qt::QueuedConnection);
 
-    QObject::connect(&thread, &QThread::started, &core, &app::Core::process, Qt::QueuedConnection);
-    QObject::connect(&core, &app::Core::exit, &thread, &QThread::quit, Qt::QueuedConnection);
-    QObject::connect(&thread, &QThread::finished, &core, &QObject::deleteLater, Qt::QueuedConnection);
-    QObject::connect(&thread, &QThread::finished, &app, &QCoreApplication::quit, Qt::QueuedConnection);
-    QObject::connect(&socket, &app::UdpSocket::sendData, &core, &app::Core::receiveData, Qt::QueuedConnection);
-    QObject::connect(&core, &app::Core::sendData, &socket, &app::UdpSocket::receiveData, Qt::QueuedConnection);
-
-    thread.start();
+    // thread.start();
 
     return app.exec();
   }

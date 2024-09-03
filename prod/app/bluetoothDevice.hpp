@@ -1,22 +1,34 @@
 #pragma once
 #include <qt6/QtBluetooth/QBluetoothDeviceDiscoveryAgent>
+#include <qt6/QtBluetooth/QBluetoothDeviceInfo>
+#include <qt6/QtBluetooth/QBluetoothServiceDiscoveryAgent>
+#include <qt6/QtBluetooth/QBluetoothSocket>
+#include <qt6/QtBluetooth/QBluetoothLocalDevice>
 #include <qt6/QtCore/QObject>
 #include <memory>
-
+#include <unordered_map>
 namespace app {
 
-class BluetoothDevice: public QObject {
+class BluetoothDevice final: public QObject {
 private:
   Q_OBJECT
-
 public:
-    BluetoothDevice();
-    ~BluetoothDevice();
-
-private slots:
+  BluetoothDevice();
+  ~BluetoothDevice();
+  void startDeviceDiscovery();
+  void connectToDevice(const QBluetoothAddress&);
+private Q_SLOTS:
   void deviceDiscovered(const QBluetoothDeviceInfo&);
+  void scanFinished();
+  void serviceDiscovered(const QBluetoothServiceInfo&);
+  void SocketError(QBluetoothSocket::SocketError);
+  void SocketConnected();
+  void SocketDisconnected();
+  void SocketRead();
 private:
-  std::unique_ptr<QBluetoothDeviceDiscoveryAgent> discoveryAgent;
+  QBluetoothDeviceDiscoveryAgent discoveryAgent_;
+  std::unordered_map<QString, QBluetoothAddress> devices_;
+  QBluetoothSocket* socket_;
 };
 
 }
