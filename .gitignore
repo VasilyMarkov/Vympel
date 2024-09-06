@@ -21,6 +21,7 @@ prod/app/*.mp4
 prod/build
 prod/Debug
 prod/Release
+blscanner
 .vscode
 *.pdf
 hv-bl-andr_as

@@ -9,6 +9,36 @@
 #include <unordered_map>
 namespace app {
 
+
+class ServiceDiscovery final: public QObject {
+  Q_OBJECT
+public:
+  ServiceDiscovery(const QBluetoothAddress&, QObject*);
+public slots:
+  void addService(const QBluetoothServiceInfo&);
+private:
+  QBluetoothServiceDiscoveryAgent *discoveryAgent;  
+};
+
+class DeviceDiscovery final: public QObject {
+  Q_OBJECT
+public:
+  DeviceDiscovery();
+  QBluetoothAddress getDeviceAddress();
+public slots:
+  void addDevice(const QBluetoothDeviceInfo&);
+public slots:
+  void startScan();
+  void scanFinished();
+private:
+  QBluetoothDeviceDiscoveryAgent *discoveryAgent;
+  ServiceDiscovery *serviceDiscoveryAgent;
+  std::unordered_map<QString, QBluetoothAddress> devices_;
+};
+
+
+
+
 class BluetoothDevice final: public QObject {
 private:
   Q_OBJECT
