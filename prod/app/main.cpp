@@ -4,7 +4,6 @@
 #include <qt6/QtNetwork/QUdpSocket>
 #include <qt6/QtCore/QCoreApplication>
 #include <qt6/QtCore/QThread>
-#include <qt6/QtSerialPort/QSerialPort>
 #include "core.hpp"
 #include "udp.hpp"
 #include "cv.hpp"
@@ -20,8 +19,10 @@ int main(int argc, char *argv[])
     app::UdpSocket socket(QHostAddress(clientIp), clientPort, 
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
 
-    app::DeviceDiscovery blDevice;
-    blDevice.startScan();
+    // app::DeviceDiscovery blDevice;
+    // blDevice.startScan();
+    app::ble::BLEInterface ble;
+    ble.scanDevices();
     // bl.connectToDevice();
     // std::string filename = "/home/vasily/usr/phystech/vympel/prod/app/video.mp4";
     // app::Core core(std::make_shared<app::CVision>(filename));

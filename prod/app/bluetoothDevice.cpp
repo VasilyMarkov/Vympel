@@ -1,9 +1,15 @@
 #include <iostream>
 #include "bluetoothDevice.hpp"
-#include <qt6/QtCore/QDebug>
-#include <qt6/QtBluetooth/qbluetoothaddress.h>
-#include <qt6/QtBluetooth/qbluetoothlocaldevice.h>
-#include <qt6/QtBluetooth/qbluetoothuuid.h>
+#include <QDebug>
+#include <QBluetoothAddress>
+#include <QBluetoothLocalDevice>
+#include <QBluetoothUuid>
+
+#include <QBluetoothSocket>
+#include <QModbusRtuSerialServer>
+#include <QModbusDataUnit>
+#include <QModbusReply>
+
 
 using namespace app;
 
@@ -63,97 +69,201 @@ void ServiceDiscovery::addService(const QBluetoothServiceInfo& service) {
     qDebug() << line;
 }
 
+using namespace ble;
 
-BluetoothDevice::BluetoothDevice()
+DeviceInfo::DeviceInfo(const QBluetoothDeviceInfo &info):
+    QObject(), m_device(info) {}
+
+QBluetoothDeviceInfo DeviceInfo::getDevice() const
 {
-
+    return m_device;
 }
 
-BluetoothDevice::~BluetoothDevice()
+QString DeviceInfo::getAddress() const
 {
-    
+    return m_device.address().toString();
 }
 
-void app::BluetoothDevice::startDeviceDiscovery()
+void DeviceInfo::setDevice(const QBluetoothDeviceInfo &device)
 {
-    auto localDevice = new QBluetoothLocalDevice(this);
-
-    connect(&discoveryAgent_, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered, this, &BluetoothDevice::deviceDiscovered);
-    connect(&discoveryAgent_, &QBluetoothDeviceDiscoveryAgent::finished,
-            this, &BluetoothDevice::scanFinished);
-
-
-    discoveryAgent_.start(); 
-    // std::cout << devices_.at(device).toString().toStdString() << std::endl; 
-    
+    m_device = device;
+    emit deviceChanged();
 }
 
-void app::BluetoothDevice::connectToDevice(const QBluetoothAddress& device_addr)
+
+BLEInterface::BLEInterface(QObject *parent) : QObject(parent),
+    m_control(0),
+    m_service(0),
+    m_readTimer(0),
+    m_connected(false),
+    m_currentService(0)
 {
-    qDebug() << device_addr.toString();
-    QBluetoothServiceDiscoveryAgent *serviceDiscoveryAgent = new QBluetoothServiceDiscoveryAgent(device_addr);
-    connect(serviceDiscoveryAgent, &QBluetoothServiceDiscoveryAgent::serviceDiscovered,
-        this, &BluetoothDevice::serviceDiscovered);
+    m_deviceDiscoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
 
-    connect(serviceDiscoveryAgent, &QBluetoothServiceDiscoveryAgent::finished,
-        [this](){std::cout << "service finished" << std::endl;});
-    connect(serviceDiscoveryAgent, &QBluetoothServiceDiscoveryAgent::errorOccurred,
-        [this](){std::cout << "service error" << std::endl;});
-    serviceDiscoveryAgent->start(QBluetoothServiceDiscoveryAgent::FullDiscovery);
-    // serviceDiscoveryAgent->errorString();
-    // auto selectedDevice = devices_.at(g_device);
-    // socket_ = new QBluetoothSocket(QBluetoothServiceInfo::RfcommProtocol, this);
-    // socket_->connectToService(QBluetoothAddress(selectedDevice),
-    //                         QBluetoothUuid(QBluetoothUuid::ServiceClassUuid::SerialPort));
-    // connect(socket_, &QBluetoothSocket::errorOccurred, this, &BluetoothDevice::SocketError);
-    // connect(socket_, &QBluetoothSocket::connected, this, &BluetoothDevice::SocketConnected);
-    // connect(socket_, &QBluetoothSocket::disconnected, this, &BluetoothDevice::SocketDisconnected);
-    // connect(socket_, &QBluetoothSocket::readyRead, this, &BluetoothDevice::SocketRead);
-
-    // socket_ = new QBluetoothSocket(QBluetoothServiceInfo::UnknownProtocol, this);
+    connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered, this, &BLEInterface::addDevice);
+    connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished, this, &BLEInterface::onScanFinished);
 }
 
-void app::BluetoothDevice::scanFinished()
+BLEInterface::~BLEInterface()
 {
-    
-    // std::cout << device.toStdString() << ": " << devices_.at(device).toString().toStdString() << std::endl;
-    // connectToDevice(devices_.at(device));
+    qDeleteAll(m_devices);
+    m_devices.clear();
+    delete device_;
+}
+
+void BLEInterface::scanDevices()
+{
+    m_deviceDiscoveryAgent->start();
+    Q_EMIT statusInfoChanged("Scanning for devices...", true);
+}
+
+void BLEInterface::addDevice(const QBluetoothDeviceInfo &device)
+{
+    if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
+        qDebug() << device.name() << " Address: " << device.address().toString();
+        // DeviceInfo *dev = new DeviceInfo(device);
+        // m_devices.append(dev);
+        device_ = new DeviceInfo(device);
+    }
+}
+
+void BLEInterface::connectCurrentDevice()
+{
+    if (m_control) {
+        m_control->disconnectFromDevice();
+        delete m_control;
+        m_control = 0;
+
+    }
+    m_control = QLowEnergyController::createCentral(device_->getDevice(), this);
+
+    connect(m_control, SIGNAL(serviceDiscovered(QBluetoothUuid)),
+            this, SLOT(onServiceDiscovered(QBluetoothUuid)));
+    connect(m_control, SIGNAL(discoveryFinished()),
+            this, SLOT(onServiceScanDone()));
+    connect(m_control, SIGNAL(errorOccurred(QLowEnergyController::Error)),
+            this, SLOT(onControllerError(QLowEnergyController::Error)));
+    connect(m_control, SIGNAL(connected()),
+            this, SLOT(onDeviceConnected()));
+    connect(m_control, SIGNAL(disconnected()),
+            this, SLOT(onDeviceDisconnected()));
+
+    m_control->connectToDevice();
+}
+
+void BLEInterface::onDeviceConnected()
+{
+    m_control->discoverServices();
+}
+
+void BLEInterface::onServiceDiscovered(const QBluetoothUuid &gatt)
+{
+    Q_UNUSED(gatt)
+    emit statusInfoChanged("Service discovered. Waiting for service scan to be done...", true);
+}
+
+void BLEInterface::onServiceScanDone()
+{
+    m_servicesUuid = m_control->services();
+    if(m_servicesUuid.isEmpty())
+        emit statusInfoChanged("Can't find any services.", true);
+    else{
+        const QString RX_SERVICE_UUID("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
+        // auto it = std::find_if(std::begin(m_servicesUuid), std::end(m_servicesUuid), 
+        //     [&RX_SERVICE_UUID](QBluetoothUuid uuid){return uuid.toString() == RX_SERVICE_UUID;});
+        // if(it != std::end(m_servicesUuid)) {
+        //     qDebug() << (*it).toString();
+        //     m_control->createServiceObject(QBluetoothUuid(RX_SERVICE_UUID));
+
+        // }
+        for(auto&& service: m_servicesUuid) {
+            qDebug() << service.toString();
+        }
+    }
+}
+
+void BLEInterface::onDeviceDisconnected()
+{
+    update_connected(false);
+    qDebug() << "Remote device disconnected";
+}
+
+void BLEInterface::onControllerError(QLowEnergyController::Error error)
+{
+    qWarning() << "Controller Error:" << error;
+}
 
 
-    // auto listOfDevices = discoveryAgent_.discoveredDevices();
-    // for(auto&& device : listOfDevices) {
-    //     qDebug() << device.name().trimmed() << device.address().toString().trimmed();
+void BLEInterface::onScanFinished()
+{
+    qDebug() << "Scan is done";
+    connectCurrentDevice();
+}
+
+void BLEInterface::onDeviceScanError(QBluetoothDeviceDiscoveryAgent::Error error)
+{
+    if (error == QBluetoothDeviceDiscoveryAgent::PoweredOffError)
+        qWarning() << "The Bluetooth adaptor is powered off, power it on before doing discovery.";
+    else if (error == QBluetoothDeviceDiscoveryAgent::InputOutputError)
+        qWarning() << "Writing or reading from the device resulted in an error.";
+    else
+        qWarning() << "An unknown error has occurred.";
+}
+
+
+bool BLEInterface::isConnected() const {
+    return m_connected;
+}
+
+int BLEInterface::currentService() const {
+    return m_currentService;
+}
+
+void BLEInterface::setCurrentService(int currentService) {
+    if (m_currentService == currentService)
+        return;
+    update_currentService(currentService);
+    m_currentService = currentService;
+    emit currentServiceChanged(currentService);
+}
+
+void BLEInterface::update_connected(bool connected){
+    if(connected != m_connected){
+        m_connected = connected;
+        emit connectedChanged(connected);
+    }
+}
+
+void BLEInterface::update_currentService(int indx)
+{
+    // delete m_service;
+    // m_service = 0;
+
+    // if (indx >= 0 && m_servicesUuid.count() > indx) {
+    //     m_service = m_control->createServiceObject(
+    //                 m_servicesUuid.at(indx), this);
     // }
-    std::cout << "Bluetooth scan finished." << std::endl;
-    connectToDevice(devices_.at(g_device));
-}
 
-void app::BluetoothDevice::serviceDiscovered(const QBluetoothServiceInfo &service)
-{
-    qDebug() << "Found new service:" << service.serviceName()
-             << '(' << service.device().address().toString() << ')';
-}
+    // if (!m_service) {
+    //     emit statusInfoChanged("Service not found.", false);
+    //     return;
+    // }
 
-void app::BluetoothDevice::SocketError(QBluetoothSocket::SocketError error)
-{
-    qDebug() << error;
-}
+    // connect(m_service, SIGNAL(stateChanged(QLowEnergyService::ServiceState)),
+    //         this, SLOT(onServiceStateChanged(QLowEnergyService::ServiceState)));
+    // connect(m_service, SIGNAL(characteristicChanged(QLowEnergyCharacteristic,QByteArray)),
+    //         this, SLOT(onCharacteristicChanged(QLowEnergyCharacteristic,QByteArray)));
+    // connect(m_service, SIGNAL(characteristicRead(QLowEnergyCharacteristic,QByteArray)),
+    //         this, SLOT(onCharacteristicRead(QLowEnergyCharacteristic,QByteArray)));
+    // connect(m_service, SIGNAL(characteristicWritten(QLowEnergyCharacteristic,QByteArray)),
+    //         this, SLOT(onCharacteristicWrite(QLowEnergyCharacteristic,QByteArray)));
+    // connect(m_service, SIGNAL(error(QLowEnergyService::ServiceError)),
+    //         this, SLOT(serviceError(QLowEnergyService::ServiceError)));
 
-void app::BluetoothDevice::SocketConnected()
-{
-}
-
-void app::BluetoothDevice::SocketDisconnected()
-{
-}
-
-void app::BluetoothDevice::SocketRead()
-{
-    qDebug() << socket_->readAll();
-}
-
-void BluetoothDevice::deviceDiscovered(const QBluetoothDeviceInfo & device)
-{
-    qDebug() << "Found new device:" << device.name() << '(' << device.address().toString() << ')';
-    devices_.emplace(device.name(), device.address());
+    // if(m_service->state() == QLowEnergyService::DiscoveryRequired) {
+    //     emit statusInfoChanged("Connecting to service...", true);
+    //     m_service->discoverDetails();
+    // }
+    // else
+    //     searchCharacteristic();
 }
