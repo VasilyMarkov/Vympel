@@ -126,14 +126,13 @@ inline double findLineCoeff(const std::vector<double>& y)
 /**
  * @brief Low Pass Filter
  * 
- * Cuts off all frequencies above the laser flicker frequency
+ * Cuts off all frequencies above the laser flicker frequency 120 Hz
  * 
  */
 class LowPassFilter {
 public:
     LowPassFilter(double cutoff_frequency, double sample_rate, double q = 0.707): 
-        alpha_(std::sin(2 * M_PI * cutoff_frequency / sample_rate) / (2 * q)),
-        y_(0) {}
+        alpha_(std::sin(2 * M_PI * cutoff_frequency / sample_rate) / (2 * q)) {}
 
     double Process(double x) {
         y_ = alpha_ * (x - y_) + y_;
@@ -141,8 +140,8 @@ public:
     }
 
 private:
-    double alpha_;
-    double y_;
+    double alpha_{};
+    double y_{};
 };
 
 }//namespace app

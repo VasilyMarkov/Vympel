@@ -6,68 +6,12 @@
 #include <QBluetoothUuid>
 
 #include <QBluetoothSocket>
-#include <QModbusRtuSerialServer>
-#include <QModbusDataUnit>
-#include <QModbusReply>
-
+#include <QSerialPort>
+#include <bitset>
 
 using namespace app;
 
-// const QString g_device("Keychron K8");
-// const QString g_device("M2 IE Free");
 const QString g_device("RigCom");
-
-
-DeviceDiscovery::DeviceDiscovery() {
-    discoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
-    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
-        this, &DeviceDiscovery::addDevice);
-    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished,
-        this, &DeviceDiscovery::scanFinished);
-}
-
-
-void DeviceDiscovery::addDevice(const QBluetoothDeviceInfo& device) {
-    qDebug() << device.address().toString() + u' ' + device.name();
-    devices_.emplace(device.name(), device.address());
-
-    if(device.name() == g_device) scanFinished();
-}
-
-void DeviceDiscovery::startScan() {
-    discoveryAgent->start();
-}
-
-void DeviceDiscovery::scanFinished() {
-    qDebug() << "Scan finished";
-    discoveryAgent->stop();
-    serviceDiscoveryAgent = new ServiceDiscovery(devices_.at(g_device), this);
-}
-
-QBluetoothAddress DeviceDiscovery::getDeviceAddress() {return devices_.at(g_device);}
-
-ServiceDiscovery::ServiceDiscovery(const QBluetoothAddress& address, QObject *parent = nullptr) {
-    QBluetoothLocalDevice localDevice;
-    QBluetoothAddress adapterAddress = localDevice.address();
-    discoveryAgent = new QBluetoothServiceDiscoveryAgent(adapterAddress, this);
-    discoveryAgent->setRemoteAddress(address);
-
-    connect(discoveryAgent, &QBluetoothServiceDiscoveryAgent::serviceDiscovered,
-            this, &ServiceDiscovery::addService);
-
-    discoveryAgent->start();
-}
-
-void ServiceDiscovery::addService(const QBluetoothServiceInfo& service) {
-    if (service.serviceName().isEmpty())
-        return;
-    QString line = service.serviceName();
-    if (!service.serviceDescription().isEmpty())
-        line.append("\n\t" + service.serviceDescription());
-    if (!service.serviceProvider().isEmpty())
-        line.append("\n\t" + service.serviceProvider());
-    qDebug() << line;
-}
 
 using namespace ble;
 
@@ -93,15 +37,18 @@ void DeviceInfo::setDevice(const QBluetoothDeviceInfo &device)
 
 BLEInterface::BLEInterface(QObject *parent) : QObject(parent),
     m_control(0),
-    m_service(0),
     m_readTimer(0),
     m_connected(false),
     m_currentService(0)
 {
+    // m_deviceDiscoveryAgent = new QBluetoothDeviceDiscoveryAgent(QBluetoothAddress(QString("54:F8:2A:32:6D:92")), this);
     m_deviceDiscoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
 
     connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered, this, &BLEInterface::addDevice);
+    connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::errorOccurred, [this](QBluetoothDeviceDiscoveryAgent::Error error){
+        qDebug() << "Discovery agent error occured: " << error;});
     connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished, this, &BLEInterface::onScanFinished);
+    connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::canceled, this, &BLEInterface::onScanFinished);
 }
 
 BLEInterface::~BLEInterface()
@@ -121,9 +68,10 @@ void BLEInterface::addDevice(const QBluetoothDeviceInfo &device)
 {
     if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
         qDebug() << device.name() << " Address: " << device.address().toString();
-        // DeviceInfo *dev = new DeviceInfo(device);
-        // m_devices.append(dev);
         device_ = new DeviceInfo(device);
+        if (device.name() == g_device) {
+            m_deviceDiscoveryAgent->stop();
+        }
     }
 }
 
@@ -162,6 +110,12 @@ void BLEInterface::onServiceDiscovered(const QBluetoothUuid &gatt)
     emit statusInfoChanged("Service discovered. Waiting for service scan to be done...", true);
 }
 
+void BLEInterface::readReady()
+{
+
+}
+
+
 void BLEInterface::onServiceScanDone()
 {
     m_servicesUuid = m_control->services();
@@ -169,17 +123,56 @@ void BLEInterface::onServiceScanDone()
         emit statusInfoChanged("Can't find any services.", true);
     else{
         const QString RX_SERVICE_UUID("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
-        // auto it = std::find_if(std::begin(m_servicesUuid), std::end(m_servicesUuid), 
-        //     [&RX_SERVICE_UUID](QBluetoothUuid uuid){return uuid.toString() == RX_SERVICE_UUID;});
-        // if(it != std::end(m_servicesUuid)) {
-        //     qDebug() << (*it).toString();
-        //     m_control->createServiceObject(QBluetoothUuid(RX_SERVICE_UUID));
 
-        // }
         for(auto&& service: m_servicesUuid) {
             qDebug() << service.toString();
         }
+
+        auto service = m_control->createServiceObject(QBluetoothUuid(RX_SERVICE_UUID));
+
+        connect(service, SIGNAL(characteristicChanged(QLowEnergyCharacteristic,QByteArray)),
+            this, SLOT(onCharacteristicChanged(QLowEnergyCharacteristic,QByteArray)));
+        connect(service, SIGNAL(characteristicRead(QLowEnergyCharacteristic,QByteArray)),
+                this, SLOT(onCharacteristicRead(QLowEnergyCharacteristic,QByteArray)));
+        connect(service, SIGNAL(characteristicWritten(QLowEnergyCharacteristic,QByteArray)),
+                this, SLOT(onCharacteristicWrite(QLowEnergyCharacteristic,QByteArray)));
+        connect(service, SIGNAL(errorOccurred(QLowEnergyService::ServiceError)),
+                this, SLOT(serviceError(QLowEnergyService::ServiceError)));
+
+        if(service->state() == QLowEnergyService::DiscoveryRequired) {
+	        service->discoverDetails();
+        }
+        connect(service, &QLowEnergyService::stateChanged, [service, this](QLowEnergyService::ServiceState state) {
+                if (state == QLowEnergyService::ServiceDiscovered) {
+                    qDebug() << "Service discovered.";
+
+                    // // Find the custom Modbus RTU characteristic
+                    const QString RX_CHAR_UUID("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
+                    auto characteristic = service->characteristic(QBluetoothUuid(RX_CHAR_UUID));
+                    if (characteristic.isValid()) {
+                        qDebug() << "Characteristic found.";
+                        
+                    }
+                }
+            });
     }
+}
+
+void BLEInterface::onCharacteristicRead(const QLowEnergyCharacteristic &c,
+                                        const QByteArray &value){
+    qDebug() << "Characteristic Read: " << value;
+}
+
+void BLEInterface::onCharacteristicChanged(const QLowEnergyCharacteristic &c,
+                                           const QByteArray &value)
+{
+    qDebug() << "Characteristic Changed: " << value;
+}
+
+void BLEInterface::onCharacteristicWrite(const QLowEnergyCharacteristic &c,
+                                          const QByteArray &value)
+{
+    qDebug() << "Characteristic Written: " << value;
 }
 
 void BLEInterface::onDeviceDisconnected()
@@ -266,4 +259,9 @@ void BLEInterface::update_currentService(int indx)
     // }
     // else
     //     searchCharacteristic();
+}
+
+void BLEInterface::serviceError(QLowEnergyService::ServiceError e)
+{
+    qWarning() << "Service error:" << e;
 }

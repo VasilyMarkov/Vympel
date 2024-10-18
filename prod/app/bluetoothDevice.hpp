@@ -1,45 +1,19 @@
 #pragma once
-#include <qt6/QtBluetooth/QBluetoothDeviceDiscoveryAgent>
-#include <qt6/QtBluetooth/QBluetoothDeviceInfo>
-#include <qt6/QtBluetooth/QBluetoothServiceDiscoveryAgent>
-#include <qt6/QtBluetooth/QBluetoothSocket>
-#include <qt6/QtBluetooth/QBluetoothLocalDevice>
+#include <QBluetoothDeviceDiscoveryAgent>
+#include <QBluetoothDeviceInfo>
+#include <QBluetoothServiceDiscoveryAgent>
+#include <QBluetoothSocket>
+#include <QBluetoothLocalDevice>
 #include <QObject>
 #include <memory>
 #include <unordered_map>
 
-#include <qt6/QtBluetooth/QLowEnergyController>
-#include <qt6/QtBluetooth/QLowEnergyService>
+#include <QLowEnergyController>
+#include <QLowEnergyService>
 #include <QTimer>
 
 namespace app 
 {
-
-class ServiceDiscovery final: public QObject {
-  Q_OBJECT
-public:
-  ServiceDiscovery(const QBluetoothAddress&, QObject*);
-public Q_SLOTS:
-  void addService(const QBluetoothServiceInfo&);
-private:
-  QBluetoothServiceDiscoveryAgent *discoveryAgent;  
-};
-
-class DeviceDiscovery final: public QObject {
-  Q_OBJECT
-public:
-  DeviceDiscovery();
-  QBluetoothAddress getDeviceAddress();
-public Q_SLOTS:
-  void addDevice(const QBluetoothDeviceInfo&);
-public Q_SLOTS:
-  void startScan();
-  void scanFinished();
-private:
-  QBluetoothDeviceDiscoveryAgent *discoveryAgent;
-  ServiceDiscovery *serviceDiscoveryAgent;
-  std::unordered_map<QString, QBluetoothAddress> devices_;
-};
 
 namespace ble 
 {
@@ -84,6 +58,7 @@ public:
 
 public Q_SLOTS:
     void setCurrentService(int);
+    void readReady();
 signals:
     void statusInfoChanged(QString info, bool isGood);
     void dataReceived(const QByteArray &data);
@@ -104,17 +79,11 @@ private Q_SLOTS:
     void onDeviceConnected();
     void onDeviceDisconnected();
 
-    //QLowEnergyService
-    // void onServiceStateChanged(QLowEnergyService::ServiceState s);
-    // void onCharacteristicChanged(const QLowEnergyCharacteristic &c,
-    //                           const QByteArray &value);
-    // void serviceError(QLowEnergyService::ServiceError e);
-
-    // void read();
-    // void onCharacteristicRead(const QLowEnergyCharacteristic &c, const QByteArray &value);
-    // void onCharacteristicWrite(const QLowEnergyCharacteristic &c, const QByteArray &value);
     void update_currentService(int currentSerice);
-
+    void onCharacteristicRead(const QLowEnergyCharacteristic &c, const QByteArray &value);
+    void onCharacteristicWrite(const QLowEnergyCharacteristic &c, const QByteArray &value);
+    void onCharacteristicChanged(const QLowEnergyCharacteristic &c, const QByteArray &value);
+    void serviceError(QLowEnergyService::ServiceError e);
 private:
     // inline void waitForWrite();
     void update_connected(bool);
@@ -123,7 +92,6 @@ private:
     QLowEnergyDescriptor m_notificationDesc;
     QLowEnergyController *m_control;
     QList<QBluetoothUuid> m_servicesUuid;
-    QLowEnergyService *m_service;
     QLowEnergyCharacteristic m_readCharacteristic;
     QLowEnergyCharacteristic m_writeCharacteristic;
     QList<DeviceInfo*> m_devices;

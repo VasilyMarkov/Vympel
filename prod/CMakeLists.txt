@@ -17,8 +17,8 @@ add_subdirectory(app)
 # add_subdirectory(tests)
 
 
-# if(TESTS)
-#     message("TESTS ON")
-#     enable_testing()
-#     add_subdirectory(tests)
-# endif(TESTS)
+if(SANITIZE)
+    message("SANITIZE: ON")
+else()
+    message("SANITIZE: OFF")
+endif()
