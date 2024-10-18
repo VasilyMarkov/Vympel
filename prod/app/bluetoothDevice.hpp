@@ -41,23 +41,33 @@ class BLEInterface final : public QObject
     Q_OBJECT
 public:
     explicit BLEInterface(QObject *parent = 0);
-    ~BLEInterface();
+signals:
 
-public Q_SLOTS:
+private Q_SLOTS:
+    //QBluetothDeviceDiscoveryAgent
     void addDevice(const QBluetoothDeviceInfo&);
     void onScanFinished();
     void onDeviceScanError(QBluetoothDeviceDiscoveryAgent::Error);
-signals:
+    /*****************************/
 
-
-private Q_SLOTS:
+    //QLowEnergyController
+    void onServiceDiscovered(const QBluetoothUuid &);
+    void onServiceScanDone();
+    void onControllerError(QLowEnergyController::Error);
+    void onDeviceConnected();
+    void onDeviceDisconnected();
+    /********************/
+private:
+    void connectDevice();
 
 private:
     const QString DEVICE_NAME = "RigCom";
-    std::unique_ptr<QBluetoothDeviceDiscoveryAgent> deviceDiscoveryAgent_;
+    QBluetoothDeviceDiscoveryAgent* deviceDiscoveryAgent_;
     std::unique_ptr<DeviceInfo> device_;
+    QLowEnergyController* low_energy_controller_;
+    QLowEnergyService* modbus_service_;
 };
-} //namespace ble
 
+} //namespace ble
 
 } //namespace app
