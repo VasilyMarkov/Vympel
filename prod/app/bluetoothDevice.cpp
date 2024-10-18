@@ -74,20 +74,25 @@ void BLEInterface::onDeviceScanError(QBluetoothDeviceDiscoveryAgent::Error error
 
 void BLEInterface::connectDevice() {
 
-    low_energy_controller_ = QLowEnergyController::createCentral(device_->getDevice(), this);
+    if(!device_) {
+        std::cout << "Device not found" << std::endl;
+    }
+    else {
+        low_energy_controller_ = QLowEnergyController::createCentral(device_->getDevice(), this);
 
-    connect(low_energy_controller_, &QLowEnergyController::serviceDiscovered,
-        this, &BLEInterface::onServiceDiscovered);
-    connect(low_energy_controller_, &QLowEnergyController::discoveryFinished,
-        this, &BLEInterface::onServiceScanDone);
-    connect(low_energy_controller_, &QLowEnergyController::errorOccurred,
-        this, &BLEInterface::onControllerError);
-    connect(low_energy_controller_, &QLowEnergyController::connected,
-        this, &BLEInterface::onDeviceConnected);
-    connect(low_energy_controller_, &QLowEnergyController::disconnected,
-        this, &BLEInterface::onDeviceDisconnected);
+        connect(low_energy_controller_, &QLowEnergyController::serviceDiscovered,
+            this, &BLEInterface::onServiceDiscovered);
+        connect(low_energy_controller_, &QLowEnergyController::discoveryFinished,
+            this, &BLEInterface::onServiceScanDone);
+        connect(low_energy_controller_, &QLowEnergyController::errorOccurred,
+            this, &BLEInterface::onControllerError);
+        connect(low_energy_controller_, &QLowEnergyController::connected,
+            this, &BLEInterface::onDeviceConnected);
+        connect(low_energy_controller_, &QLowEnergyController::disconnected,
+            this, &BLEInterface::onDeviceDisconnected);
 
-    low_energy_controller_->connectToDevice();
+        low_energy_controller_->connectToDevice();
+    }
 }
 
 void BLEInterface::onServiceDiscovered(const QBluetoothUuid& uuid)
