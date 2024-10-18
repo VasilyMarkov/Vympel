@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     // app::DeviceDiscovery blDevice;
     // blDevice.startScan();
     app::ble::BLEInterface ble;
-    ble.scanDevices();
+    // ble.scanDevices();
     // bl.connectToDevice();
     // std::string filename = "/home/vasily/usr/phystech/vympel/prod/app/video.mp4";
     // app::Core core(std::make_shared<app::CVision>(filename));
