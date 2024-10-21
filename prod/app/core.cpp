@@ -183,7 +183,7 @@ void app::Core::bleDeviceConnected()
 
 void app::Core::receiveData(const QString& mode)
 {
-    fsm_->toggle(events_.at(mode));
+    // fsm_->toggle(events_.at(mode)); TODO out_of_range exception
 }
 
 std::shared_ptr<IProcessing> Core::getProcessUnit() const {

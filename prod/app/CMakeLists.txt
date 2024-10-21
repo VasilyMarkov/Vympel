@@ -19,6 +19,7 @@ find_package(OpenCV REQUIRED)
 
 add_executable(main 
     main.cpp
+    app.cpp
     core.cpp 
     cv.cpp
     bluetoothDevice.cpp

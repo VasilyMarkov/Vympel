@@ -1,4 +1,6 @@
-#pragma once
+#ifndef BLUETOOTH_DEVICE_H
+#define BLUETOOTH_DEVICE_H
+
 #include <QBluetoothDeviceDiscoveryAgent>
 #include <QBluetoothDeviceInfo>
 #include <QBluetoothServiceDiscoveryAgent>
@@ -9,7 +11,6 @@
 #include <QTimer>
 #include <QObject>
 #include <memory>
-#include <bitset>
 
 namespace app 
 {
@@ -95,3 +96,5 @@ private:
 } //namespace ble
 
 } //namespace app
+
+#endif //BLUETOOTH_DEVICE_H

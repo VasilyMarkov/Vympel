@@ -1,5 +1,6 @@
 #ifndef IO_INTERFACE_H
 #define IO_INTERFACE_H
+
 #include <qt6/QtCore/QByteArray>
 
 namespace app {

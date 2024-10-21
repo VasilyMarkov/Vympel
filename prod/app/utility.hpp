@@ -1,4 +1,6 @@
-#pragma once
+#ifndef UTILITY_H
+#define UTILITY_H
+
 #include <chrono>
 #include <vector>
 #include <unordered_map>
@@ -167,3 +169,5 @@ private:
 };
 
 }//namespace app
+
+#endif //UTILITY_H

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CORE_H
+#define CORE_H
+
 #include <iostream>
 #include <memory>
 #include <list>
@@ -98,3 +100,5 @@ private:
 
 Q_DECLARE_METATYPE(app::process_params_t)
 Q_DECLARE_METATYPE(app::core_mode_t)
+
+#endif //CORE_H
