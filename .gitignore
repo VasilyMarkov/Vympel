@@ -17,7 +17,8 @@ mvp/udp_test/udp_test.pro.user
 mvp/build-draw_data-Desktop-Debug
 mvp/hardware
 
-prod/app/*.mp4
+prod/application/*.mp4
+prod/*.mp4
 prod/build
 prod/Debug
 prod/Release
@@ -25,3 +26,7 @@ blscanner
 .vscode
 *.pdf
 hv-bl-andr_as
+build-BLETester-Desktop-Debug/
+ble/
+close
+modbus/
