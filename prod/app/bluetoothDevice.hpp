@@ -1,6 +1,6 @@
 #pragma once
-#include <qt6/QtBluetooth/QBluetoothDeviceDiscoveryAgent>
-#include <qt6/QtCore/QObject>
+#include <qt5/QtBluetooth/QBluetoothDeviceDiscoveryAgent>
+#include <qt5/QtCore/QObject>
 #include <memory>
 
 namespace app {

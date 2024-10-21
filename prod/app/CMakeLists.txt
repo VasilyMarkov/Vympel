@@ -47,6 +47,7 @@ target_link_libraries(main
     "${LIBCAMERA_LIBRARIES}" 
     ${OpenCV_LIBS}
     Qt5::Core 
+    Qt5::Bluetooth 
     Qt5::Network
 )
 

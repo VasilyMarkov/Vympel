@@ -6,13 +6,14 @@
 #include "udp.hpp"
 #include "cv.hpp"
 #include "utility.hpp"
+#include "bluetoothDevice.hpp"
 
 int main(int argc, char *argv[])
 {
   try {
 
     QCoreApplication app(argc, argv);
-
+    BluetoothDevice();
     auto [clientIp, clientPort] = app::parseJsonFile("/home/vympel/usr/cv_project/prod/conf/config.json").value();
     app::UdpSocket socket(QHostAddress(clientIp), clientPort, 
                           QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);

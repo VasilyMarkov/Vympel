@@ -7,6 +7,7 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5 REQUIRED COMPONENTS 
     Core 
     Network
+    Bluetooth
 )
 
 add_subdirectory(app)
