@@ -1,8 +1,9 @@
 #ifndef UDP_H
 #define UDP_H
-#include <qt5/QtNetwork/QUdpSocket>
-#include <qt5/QtCore/QJsonObject>
-#include <qt5/QtCore/QJsonDocument>
+
+#include <QUdpSocket>
+#include <QJsonObject>
+#include <QJsonDocument>
 #include "interface.hpp"
 
 namespace app {

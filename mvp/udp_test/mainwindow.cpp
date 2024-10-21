@@ -112,9 +112,9 @@ MainWindow::MainWindow(QWidget *parent)
     max_line->setPen(QPen(QColor(65, 172, 242), 1.5, Qt::DotLine));
 
     intrcpt_line1 = new QCPItemLine(plot);
-    intrcpt_line1->setPen(QPen(QColor(37, 8, 44), 2));
+    intrcpt_line1->setPen(QPen(QColor(37, 8, 44), 1));
     intrcpt_line2 = new QCPItemLine(plot);
-    intrcpt_line2->setPen(QPen(QColor(37, 8, 44), 2));
+    intrcpt_line2->setPen(QPen(QColor(37, 8, 44), 1));
     hist = ui->hist;
 
     setupPlot(hist);
@@ -166,11 +166,11 @@ void MainWindow::readSocket()
         g_mean = mean;
         g_sigma = std::sqrt(var);
         std::transform(calib_data.begin(), calib_data.end(), calib_data.begin(),
-                  std::bind2nd(std::minus<double>(), mean));
+                  std::bind(std::minus<double>(), mean));
         auto max = std::max_element(std::begin(calib_data), std::end(calib_data));
         g_max = *max;
         std::transform(calib_data.begin(), calib_data.end(), calib_data.begin(),
-                  std::bind2nd(std::divides<double>(), 2*M_PI*g_sigma));
+                  std::bind(std::divides<double>(), 2*M_PI*g_sigma));
         for(auto&& elem : calib_data) {
             elem = round_to(elem, 0.01);
         }

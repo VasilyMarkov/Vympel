@@ -1,13 +1,7 @@
 #!/usr/bin/env bash
 
-debug_path="Debug"
-
-release_path="Release"
-
-if [ -d "$debug_path" ]; then
-    rm -rd $debug_path
-elif [ -d "$release_path" ]; then
-    rm -rd $release_path
+if [ -d "build" ]; then
+  rm -rf build
 else
-  echo "Directores $debug_path and $release_path doesn't exists."
+  echo "Directory build doesn't exists."
 fi

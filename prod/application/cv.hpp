@@ -1,3 +1,7 @@
+#ifndef CV_H
+#define CV_H
+
+#include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -32,3 +36,5 @@ private:
 };
 
 } //namespace app
+
+#endif //CV_H
