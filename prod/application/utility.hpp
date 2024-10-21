@@ -1,4 +1,6 @@
-#pragma once
+#ifndef UTILITY_H
+#define UTILITY_H
+
 #include <chrono>
 #include <vector>
 #include <unordered_map>
@@ -12,6 +14,14 @@
 #include <QDebug>
 
 namespace app {
+
+namespace constants {
+    namespace filter {
+        constexpr double cutoff_frequency = 10.0; //Hz
+        constexpr double cutoff_frequency1 = 50.0; //Hz
+        constexpr double sample_rate = 1000.0; //Hz
+    }
+}
 
 template <typename T>
 void print(const std::vector<T>& vector) {
@@ -71,13 +81,27 @@ inline std::optional<std::pair<QString, int>> parseJsonFile(const QString &fileP
     return std::pair<QString, int> (clientIp, clientPort);
 }
 
+inline uint16_t crc16(const std::vector<uint8_t>& buf, size_t len) {
+    uint16_t nCRC16 = 0xFFFF;
+    uint16_t tmp;
 
-namespace constants {
-    namespace filter {
-        constexpr double cutoff_frequency = 10.0; //Hz
-        constexpr double cutoff_frequency1 = 50.0; //Hz
-        constexpr double sample_rate = 1000.0; //Hz
+    if (!buf.empty() && len > 0 && len <= buf.size()) {
+        for (int i = 0; i < len; i++) {
+            tmp = static_cast<uint16_t>(0x00FF & buf[i]);
+            nCRC16 ^= tmp;
+            for (int k = 0; k < 8; k++) {
+                tmp = static_cast<uint16_t>(nCRC16 & 0x0001);
+                if (tmp == 0x0001) {
+                    nCRC16 >>= 1;
+                    nCRC16 ^= 0xA001;
+                } else {
+                    nCRC16 >>= 1;
+                }
+            }
+        }
+        return nCRC16;
     }
+    return 0x0000;
 }
 
 /**
@@ -126,14 +150,13 @@ inline double findLineCoeff(const std::vector<double>& y)
 /**
  * @brief Low Pass Filter
  * 
- * Cuts off all frequencies above the laser flicker frequency
+ * Cuts off all frequencies above the laser flicker frequency 120 Hz
  * 
  */
 class LowPassFilter {
 public:
     LowPassFilter(double cutoff_frequency, double sample_rate, double q = 0.707): 
-        alpha_(std::sin(2 * M_PI * cutoff_frequency / sample_rate) / (2 * q)),
-        y_(0) {}
+        alpha_(std::sin(2 * M_PI * cutoff_frequency / sample_rate) / (2 * q)) {}
 
     double Process(double x) {
         y_ = alpha_ * (x - y_) + y_;
@@ -141,8 +164,10 @@ public:
     }
 
 private:
-    double alpha_;
-    double y_;
+    double alpha_{};
+    double y_{};
 };
 
 }//namespace app
+
+#endif //UTILITY_H

@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
 
-debug_path="Debug"
-
-release_path="Release"
-
-if [ -d "$debug_path" ]; then
-  cd $debug_path
-  ./app/main ../$1 
-elif [ -d "$release_path" ]; then
-  cd $release_path
-  ./app/main ../$1 
-else
-  echo "Directores $debug_path and $release_path doesn't exists."
-fi
+cd build
+sudo setcap 'cap_net_raw,cap_net_admin+eip' ./app/main
+./application/application ../$1 

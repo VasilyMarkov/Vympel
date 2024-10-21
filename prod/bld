@@ -1,13 +1,4 @@
 #!/usr/bin/env bash
 
-build_type=$1
-build_test_on=$2
-
-
-if [ "${build_test_on}" == "TESTS" ]; then
-    cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type} -DTESTS
-else
-    cmake -S . -B "${build_type}" -DCMAKE_BUILD_TYPE=${build_type}
-fi
-
-time cmake --build "${build_type}" --parallel 4
+cmake --preset debug
+cmake --build --preset debug --parallel 4
