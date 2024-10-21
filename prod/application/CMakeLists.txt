@@ -28,6 +28,4 @@ target_link_libraries(application PRIVATE
     Qt6::Core 
     Qt6::Bluetooth
     Qt6::Network
-    Qt6::SerialPort
-    Qt6::SerialBus
 )

@@ -9,8 +9,6 @@ find_package(Qt6 REQUIRED COMPONENTS
     Core 
     Bluetooth 
     Network
-    SerialPort
-    SerialBus
 )
 
 add_subdirectory(application)
