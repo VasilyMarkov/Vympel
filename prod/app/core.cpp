@@ -157,6 +157,11 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
     }){}
 
 
+void app::Core::receiveTemperature(double temperature) const
+{
+    std::cout << temperature << std::endl;
+}
+
 bool Core::process()
 {
     while(process_unit_->process()) {
@@ -169,6 +174,11 @@ bool Core::process()
     emit exit();
 
     return true;
+}
+
+void app::Core::bleDeviceConnected()
+{
+    
 }
 
 void app::Core::receiveData(const QString& mode)

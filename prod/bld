@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-cmake --preset debug
-cmake --build --preset debug --parallel 4
+cmake --preset sanitize
+cmake --build --preset sanitize --parallel 4

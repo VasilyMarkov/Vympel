@@ -13,6 +13,14 @@
 
 namespace app {
 
+namespace constants {
+    namespace filter {
+        constexpr double cutoff_frequency = 10.0; //Hz
+        constexpr double cutoff_frequency1 = 50.0; //Hz
+        constexpr double sample_rate = 1000.0; //Hz
+    }
+}
+
 template <typename T>
 void print(const std::vector<T>& vector) {
     for(auto&& el:vector) {
@@ -71,13 +79,27 @@ inline std::optional<std::pair<QString, int>> parseJsonFile(const QString &fileP
     return std::pair<QString, int> (clientIp, clientPort);
 }
 
+inline uint16_t crc16(const std::vector<uint8_t>& buf, size_t len) {
+    uint16_t nCRC16 = 0xFFFF;
+    uint16_t tmp;
 
-namespace constants {
-    namespace filter {
-        constexpr double cutoff_frequency = 10.0; //Hz
-        constexpr double cutoff_frequency1 = 50.0; //Hz
-        constexpr double sample_rate = 1000.0; //Hz
+    if (!buf.empty() && len > 0 && len <= buf.size()) {
+        for (int i = 0; i < len; i++) {
+            tmp = static_cast<uint16_t>(0x00FF & buf[i]);
+            nCRC16 ^= tmp;
+            for (int k = 0; k < 8; k++) {
+                tmp = static_cast<uint16_t>(nCRC16 & 0x0001);
+                if (tmp == 0x0001) {
+                    nCRC16 >>= 1;
+                    nCRC16 ^= 0xA001;
+                } else {
+                    nCRC16 >>= 1;
+                }
+            }
+        }
+        return nCRC16;
     }
+    return 0x0000;
 }
 
 /**

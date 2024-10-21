@@ -4,13 +4,37 @@
 #include <QBluetoothAddress>
 #include <QBluetoothLocalDevice>
 #include <QBluetoothUuid>
-
 #include <QBluetoothSocket>
-#include <QSerialPort>
-#include <bitset>
+#include "utility.hpp"
+
 
 namespace app 
 {
+
+QByteArray createModbusPacket(uint16_t first_register_address, uint16_t registers_amount)
+{
+    QByteArray modbus_pdu;
+    modbus_pdu.resize(6);
+
+    modbus_pdu[0] = 1; //modbus address
+    modbus_pdu[1] = 4; //function code
+    modbus_pdu[2] = static_cast<char>((first_register_address >> 8) & 0xFF); 
+    modbus_pdu[3] = static_cast<char>(first_register_address & 0xFF); 
+    modbus_pdu[4] = static_cast<char>((registers_amount >> 8) & 0xFF);
+    modbus_pdu[5] = static_cast<char>(registers_amount & 0xFF);
+
+    std::vector<uint8_t> v_data(std::begin(modbus_pdu), std::end(modbus_pdu));
+
+    auto crc = crc16(v_data, v_data.size());
+
+    modbus_pdu.push_back(static_cast<char>(crc & 0xFF));       // Low byte
+    modbus_pdu.push_back(static_cast<char>((crc >> 8) & 0xFF)); // High byte
+    modbus_pdu.insert(0, static_cast<char>(0x00));
+    modbus_pdu.insert(0, static_cast<char>(0x0A));
+    modbus_pdu.push_back(static_cast<char>(0x0D));
+
+    return QByteArray(modbus_pdu.data(), modbus_pdu.size());
+}
 
 namespace ble 
 {
@@ -58,6 +82,16 @@ void BLEInterface::write(const QByteArray& data)
     }
     if(modbus_service_ && writeCharacteristic_.isValid()) {
         modbus_service_->writeCharacteristic(writeCharacteristic_, data, writeMode_);
+    }
+}
+
+void BLEInterface::requestTemperature() 
+{
+    QString RX_SERVICE_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    auto characteristic = modbus_service_->characteristic(QBluetoothUuid(RX_SERVICE_UUID));
+    if (characteristic.isValid()) {
+        searchCharacteristic();
+        write(createModbusPacket(20, 2));
     }
 }
 
@@ -167,29 +201,12 @@ void BLEInterface::onServiceStateChanged(QLowEnergyService::ServiceState service
         auto characteristic = modbus_service_->characteristic(QBluetoothUuid(RX_SERVICE_UUID));
         if (characteristic.isValid()) {
             std::cout << "Characteristic found" << std::endl;
-
         }
         searchCharacteristic();
 
-        QByteArray modbus;
-        modbus.resize(6);
-        modbus[0] = 0x01; //modbus address
-        modbus[1] = 0x04; //function code
-        modbus[2] = 0x00; //first register address MSB
-        modbus[3] = 20; //first register address LSB
-        modbus[4] = 0x00; //registers amount MSB
-        modbus[5] = 0x02; //registers amount LSB
 
-        std::vector<unsigned char> v_data(modbus.begin(), modbus.end());
-
-        auto crc = Crc16(v_data, v_data.size());
-
-        modbus.push_back(static_cast<char>(crc & 0xFF));       // Low byte
-        modbus.push_back(static_cast<char>((crc >> 8) & 0xFF)); // High byte
-        modbus.insert(0, static_cast<char>(0x00));
-        modbus.insert(0, static_cast<char>(0x0A));
-        modbus.push_back(static_cast<char>(0x0D));
-        write(modbus);
+        emit deviceIsConnected();
+        write(createModbusPacket(20, 2));
     }
 }
 
@@ -204,23 +221,16 @@ void BLEInterface::onCharacteristicChanged(
     if(value[0] == 0x0A) {
         auto tmp = value.mid(2, 3+value[3]);
         std::vector<uint8_t> dat(std::begin(tmp), std::end(tmp));
-        for(auto&& el: dat) {
-            std::cout << std::hex << +el << ' ';
-        }
 
-        std::cout << std::endl;
         std::vector<uint8_t> payload(dat.begin()+3, dat.begin()+7);
         std::rotate(std::begin(payload), std::begin(payload)+2, std::end(payload));
-        float rvalue{};
+        double rvalue{};
         std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
-        for(auto&& el: payload) {
-            std::cout << std::hex << +el << ' ';
-        }
-        std::cout << std::endl;
+
         std::cout << rvalue << std::endl;
-        auto crc = Crc16(dat, dat.size());
-        qDebug() << "CRC:" <<  QString::number(crc, 16);
-        qDebug() <<  QString::number(crc, 16);
+        auto crc = crc16(dat, dat.size());
+
+        emit sendTemperature(rvalue);
     }
 }
 
@@ -278,4 +288,6 @@ void BLEInterface::searchCharacteristic(){
 }
 
 }
+
+
 } //namespace ble

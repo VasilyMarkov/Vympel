@@ -78,10 +78,12 @@ class Core final: public QObject, public ICommunication {
 public:
     explicit Core(std::shared_ptr<IProcessing>);
     std::shared_ptr<IProcessing> getProcessUnit() const;
-public slots:
+public Q_SLOTS:
     void receiveData(const QString&) override;
+    void receiveTemperature(double) const;
     bool process();
-signals:
+    void bleDeviceConnected();
+Q_SIGNALS:
     void sendData(const process_params_t&) const override;
     void exit();
     
