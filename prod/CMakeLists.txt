@@ -7,9 +7,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Qt5 REQUIRED COMPONENTS 
     Core 
+    Bluetooth 
     Network
-    SerialPort
-    SerialBus
 )
 
 add_subdirectory(application)

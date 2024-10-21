@@ -14,21 +14,19 @@ add_executable(application
     cv.cpp
     event.cpp
     fsm.cpp
+    LibCamera.cpp
     main.cpp
     udp.cpp
 )
 
 target_include_directories(application PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OpenCV_INCLUDE_DIRS} 
     ${LIBCAMERA_INCLUDE_DIRS}
 )
 
 target_link_libraries(application PRIVATE 
     ${OpenCV_LIBS} 
-    Qt6::Core 
-    Qt6::Bluetooth
-    Qt6::Network
-    Qt6::SerialPort
-    Qt6::SerialBus
+    Qt5::Core 
+    Qt5::Bluetooth
+    Qt5::Network
 )
