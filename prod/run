@@ -2,4 +2,4 @@
 
 cd build
 sudo setcap 'cap_net_raw,cap_net_admin+eip' ./app/main
-./app/main ../$1 
+./application/application ../$1 

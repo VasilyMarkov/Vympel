@@ -13,7 +13,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     SerialBus
 )
 
-add_subdirectory(app)
+add_subdirectory(application)
 # add_subdirectory(tests)
 
 
