@@ -2,7 +2,6 @@
 #define FSM_H
 
 #include <memory>
-#include <deque>
 #include "interface.hpp"
 #include "event.hpp"
 

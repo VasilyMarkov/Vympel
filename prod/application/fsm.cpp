@@ -52,6 +52,9 @@ void app::Fsm::dispatchEvent()
         active_event_ = std::make_unique<Сondensation>(process_unit_);
         request_temperature_callback_();
     break;
+    case core_mode_t::END:
+        active_event_ = std::make_unique<End>(process_unit_);
+    break;
     
     default:
         active_event_ = std::make_unique<Idle>(process_unit_);

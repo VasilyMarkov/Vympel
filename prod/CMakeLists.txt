@@ -12,7 +12,13 @@ find_package(Qt6 REQUIRED COMPONENTS
 )
 
 add_subdirectory(application)
-# add_subdirectory(tests)
+
+if(TESTS)
+    add_subdirectory(tests)
+    message("TESTING: ON")
+else()
+    message("TESTING: OFF")
+endif()
 
 
 if(SANITIZE)

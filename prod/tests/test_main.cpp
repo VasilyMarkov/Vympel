@@ -1,9 +1,9 @@
 #include <iostream>
 #include <algorithm>
 #include <memory>
-#include <qt6/QtNetwork/QUdpSocket>
-#include <qt6/QtCore/QCoreApplication>
-#include <qt6/QtCore/QThread>
+#include <QUdpSocket>
+#include <QCoreApplication>
+#include <QThread>
 #include "core.hpp"
 #include "udp.hpp"
 #include "processUnit.hpp"

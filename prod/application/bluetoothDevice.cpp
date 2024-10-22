@@ -96,6 +96,7 @@ void BLEInterface::requestTemperature()
 void BLEInterface::addDevice(const QBluetoothDeviceInfo& device) 
 {
     if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
+        std::cout << device.name().toStdString() << std::endl;
         QString DEVICE_NAME("RigCom");
         if(device.name() == DEVICE_NAME) {
             std::cout << "Find " << DEVICE_NAME.toStdString() << std::endl;
@@ -225,8 +226,8 @@ void BLEInterface::onCharacteristicChanged(
         float rvalue{};
         std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
         
-        std::cout << rvalue << std::endl;
-        qDebug() << value.toHex();
+        // std::cout << rvalue << std::endl;
+        // qDebug() << value.toHex();
         auto crc = crc16(dat, dat.size());
 
         Q_EMIT sendTemperature(rvalue);

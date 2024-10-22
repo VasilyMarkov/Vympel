@@ -35,6 +35,13 @@
         }
       },
       {
+        "name": "test",
+        "inherits": "debug",
+        "cacheVariables": {
+          "TESTS": "ON"
+        }
+      },
+      {
         "name": "sanitize",
         "inherits": "debug",
         "cacheVariables": {
@@ -55,6 +62,10 @@
       {
         "name": "release",
         "configurePreset": "release"
+      },
+      {
+        "name": "test",
+        "configurePreset": "test"
       },
       {
         "name": "sanitize",
