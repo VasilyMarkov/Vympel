@@ -29,6 +29,7 @@ public:
 protected:
     std::weak_ptr<IProcessing> process_unit_;
     std::vector<double> data_;
+    inline static std::vector<double> global_data_;
     size_t start_tick_ = 0;
 };
 
@@ -54,8 +55,17 @@ public:
 };
 
 class Сondensation final: public Event {
+    std::vector<double> mean_data;
+    std::deque<bool> coeffs;
+    size_t local_tick_ = 0;
 public:
     Сondensation(std::weak_ptr<IProcessing>);
+    std::optional<core_mode_t> operator()() override;
+};
+
+class End final: public Event {
+public:
+    End(std::weak_ptr<IProcessing>);
     std::optional<core_mode_t> operator()() override;
 };
 

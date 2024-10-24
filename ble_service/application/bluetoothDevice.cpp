@@ -30,7 +30,6 @@ QByteArray createModbusPacket(uint16_t first_register_address, uint16_t register
     modbus_pdu.insert(0, static_cast<char>(0x00));
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
-    qDebug() << modbus_pdu;
     return QByteArray(modbus_pdu.data(), modbus_pdu.size());
 }
 
@@ -205,7 +204,7 @@ void BLEInterface::onServiceStateChanged(QLowEnergyService::ServiceState service
 
 
         Q_EMIT deviceConnected();
-        write(createModbusPacket(20, 2));
+        // write(createModbusPacket(68, 2));
     }
 }
 
@@ -229,7 +228,7 @@ void BLEInterface::onCharacteristicChanged(
         // std::cout << rvalue << std::endl;
         // qDebug() << value.toHex();
         auto crc = crc16(dat, dat.size());
-
+        std::cout << rvalue << std::endl;
         Q_EMIT sendTemperature(rvalue);
     }
 }
@@ -255,7 +254,7 @@ void BLEInterface::read()
         modbus_service_->readCharacteristic(readCharacteristic_);
 }
 
-void BLEInterface::searchCharacteristic() {
+void BLEInterface::searchCharacteristic(){
     if(modbus_service_){
         foreach (QLowEnergyCharacteristic c, modbus_service_->characteristics()) {
             if(c.isValid()){
@@ -287,6 +286,11 @@ void BLEInterface::searchCharacteristic() {
     }
 }
 
+void BLEInterface::temperature() {
+    // std::cout << "temperature" << std::endl;
+    write(createModbusPacket(TEMPERATURE_REGISTER, 2));
 }
 
 } //namespace ble
+
+} //namespace app

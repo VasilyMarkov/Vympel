@@ -8,7 +8,7 @@ namespace app
     
 Core::Core(std::shared_ptr<IProcessing> processModule): 
     process_unit_(processModule),
-    fsm_(std::make_unique<Fsm>(process_unit_, [this](){std::cout << "callback" << std::endl; Q_EMIT requestTemperature();})),
+    fsm_(std::make_unique<Fsm>(process_unit_, [this](){Q_EMIT requestTemperature();})),
     events_({
         {"idle", core_mode_t::IDLE},
         {"calibration", core_mode_t::CALIBRATION},
