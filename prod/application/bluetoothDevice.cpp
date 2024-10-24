@@ -62,8 +62,8 @@ BLEInterface::BLEInterface(QObject *parent) : QObject(parent),
 {
     connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
             this, &BLEInterface::addDevice);
-    connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::errorOccurred,
-            this, &BLEInterface::onDeviceScanError);
+    connect(deviceDiscoveryAgent_, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)),
+            this, SLOT(onDeviceScanError(QBluetoothDeviceDiscoveryAgent::Error)));
     connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::canceled,
             this, &BLEInterface::onScanFinished);
 
@@ -130,8 +130,8 @@ void BLEInterface::connectDevice() {
             this, &BLEInterface::onServiceDiscovered);
         connect(low_energy_controller_, &QLowEnergyController::discoveryFinished,
             this, &BLEInterface::onServiceScanDone);
-        connect(low_energy_controller_, &QLowEnergyController::errorOccurred,
-            this, &BLEInterface::onControllerError);
+        connect(low_energy_controller_, SIGNAL(error(QLowEnergyController::Error)),
+            this, SLOT(onControllerError(QLowEnergyController::Error)));
         connect(low_energy_controller_, &QLowEnergyController::connected,
             this, &BLEInterface::onDeviceConnected);
         connect(low_energy_controller_, &QLowEnergyController::disconnected,
@@ -162,8 +162,10 @@ void BLEInterface::onServiceScanDone()
                 this, &BLEInterface::onServiceStateChanged);
             connect(modbus_service_, &QLowEnergyService::characteristicChanged,
                 this, &BLEInterface::onCharacteristicChanged);
-            connect(modbus_service_, &QLowEnergyService::errorOccurred,
-                this, &BLEInterface::serviceError);
+            // connect(modbus_service_, &QLowEnergyService::error,
+            //     this, &BLEInterface::serviceError);
+            connect(modbus_service_, SIGNAL(error(QLowEnergyService::ServiceError)),
+                this, SLOT(serviceError(QLowEnergyService::ServiceError)));
             connect(modbus_service_, &QLowEnergyService::characteristicRead,
                 this, &BLEInterface::onCharacteristicRead);
             connect(modbus_service_, &QLowEnergyService::characteristicWritten,
@@ -224,7 +226,7 @@ void BLEInterface::onCharacteristicChanged(
         std::vector<uint8_t> payload(dat.begin()+3, dat.begin()+7);
         std::rotate(std::begin(payload), std::begin(payload)+2, std::end(payload));
         float rvalue{};
-        std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
+        memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
         
         // std::cout << rvalue << std::endl;
         // qDebug() << value.toHex();

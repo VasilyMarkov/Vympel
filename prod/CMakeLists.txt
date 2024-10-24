@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Qt5 REQUIRED COMPONENTS 
     Core 
+    Bluetooth 
     Network
 )
 

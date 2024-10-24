@@ -5,6 +5,14 @@ message(STATUS "Current C++ standard: ${CMAKE_CXX_STANDARD}")
 
 set(OpenCV_STATIC ON)
 
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" ${CMAKE_MODULE_PATH})
+project(libcamera-demo)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(CAMERA REQUIRED libcamera)
+
+find_library(LIBCAMERA_LIBRARY libcamera.so REQUIRED)
+find_library(LIBCAMERA_BASE_LIBRARY libcamera-base.so REQUIRED)
+
 find_package(OpenCV REQUIRED)
 
 add_executable(application 
@@ -14,19 +22,28 @@ add_executable(application
     cv.cpp
     event.cpp
     fsm.cpp
+    LibCamera.cpp
     main.cpp
     udp.cpp
 )
 
 target_include_directories(application PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CAMERA_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS} 
     ${LIBCAMERA_INCLUDE_DIRS}
 )
 
 target_link_libraries(application PRIVATE 
+    ${LIBCAMERA_BASE_LIBRARY}
+    ${LIBCAMERA_LIBRARY}
     ${OpenCV_LIBS} 
+<<<<<<< HEAD
     Qt6::Core 
     Qt6::Bluetooth
     Qt6::Network
+=======
+    Qt5::Core 
+    Qt5::Bluetooth
+    Qt5::Network
+>>>>>>> 14272fd620a5c29b364613ba1d1419a743e12ef2
 )
