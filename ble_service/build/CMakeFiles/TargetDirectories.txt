@@ -1,0 +1,6 @@
+/home/vasily/usr/phystech/vympel/ble_service/build/CMakeFiles/edit_cache.dir
+/home/vasily/usr/phystech/vympel/ble_service/build/CMakeFiles/rebuild_cache.dir
+/home/vasily/usr/phystech/vympel/ble_service/build/application/CMakeFiles/application.dir
+/home/vasily/usr/phystech/vympel/ble_service/build/application/CMakeFiles/edit_cache.dir
+/home/vasily/usr/phystech/vympel/ble_service/build/application/CMakeFiles/rebuild_cache.dir
+/home/vasily/usr/phystech/vympel/ble_service/build/application/CMakeFiles/application_autogen.dir

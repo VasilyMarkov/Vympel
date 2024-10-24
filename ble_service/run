@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+cd build
+sudo setcap 'cap_net_raw,cap_net_admin+eip' ./app/main
+./application/application ../$1 
