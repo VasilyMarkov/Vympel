@@ -89,14 +89,14 @@ void BLEInterface::requestTemperature()
     auto characteristic = modbus_service_->characteristic(QBluetoothUuid(RX_SERVICE_UUID));
     if (characteristic.isValid()) {
         searchCharacteristic();
-        write(createModbusPacket(20, 2));
+        write(createModbusPacket(68, 2));
     }
 }
 
 void BLEInterface::addDevice(const QBluetoothDeviceInfo& device) 
 {
     if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
-        std::cout << device.name().toStdString() << std::endl;
+        std::cout << device.name().toStdString() << ' ' << device.address().toString().toStdString() << std::endl;
         QString DEVICE_NAME("RigCom");
         if(device.name() == DEVICE_NAME) {
             std::cout << "Find " << DEVICE_NAME.toStdString() << std::endl;
@@ -255,7 +255,7 @@ void BLEInterface::read()
         modbus_service_->readCharacteristic(readCharacteristic_);
 }
 
-void BLEInterface::searchCharacteristic(){
+void BLEInterface::searchCharacteristic() {
     if(modbus_service_){
         foreach (QLowEnergyCharacteristic c, modbus_service_->characteristics()) {
             if(c.isValid()){
@@ -288,6 +288,5 @@ void BLEInterface::searchCharacteristic(){
 }
 
 }
-
 
 } //namespace ble
