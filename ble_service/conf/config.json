@@ -1,6 +1,6 @@
 {
     "network": {
-        "clientIp": "192.168.31.41",
+        "clientIp": "127.0.0.1",
         "clientPort": 64000
     },
     "bluetooth": {

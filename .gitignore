@@ -22,6 +22,7 @@ prod/*.mp4
 prod/build
 prod/Debug
 prod/Release
+ble_service/build
 blscanner
 .vscode
 *.pdf
