@@ -9,16 +9,19 @@ namespace app
 {
 
 class Fsm final {
-public:
-    Fsm(std::weak_ptr<IProcessing>, const std::function<void()>&);
-    void toggle(core_mode_t);
+public: 
+    template<typename Event>
+    using eventFactory = std::function<std::unique_ptr<Event>()>;
+    
+    template<typename Event>
+    Fsm(eventFactory<Event>);
+    
     void callEvent();
-    void dispatchEvent();
 private:
+    void toggle(core_mode_t);
+    void dispatchEvent();
     core_mode_t mode_ = core_mode_t::IDLE;
-    std::weak_ptr<IProcessing> process_unit_;
     std::unique_ptr<Event> active_event_;
-    std::function<void()> request_temperature_callback_;
 };
 
 } //namespace app

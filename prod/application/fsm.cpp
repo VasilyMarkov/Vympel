@@ -3,10 +3,8 @@
 namespace app
 {
 
-Fsm::Fsm(std::weak_ptr<IProcessing> cv, const std::function<void()>& callback): 
-    process_unit_(cv), 
-    active_event_(std::make_unique<Idle>(process_unit_)),
-    request_temperature_callback_(callback) {}
+// template<typename Event>
+// Fsm::Fsm(eventFabric<Event>){} 
 
 void app::Fsm::toggle(core_mode_t mode)
 {
