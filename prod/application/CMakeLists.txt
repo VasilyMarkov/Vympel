@@ -13,7 +13,7 @@ add_executable(application
     core.cpp 
     cv.cpp
     event.cpp
-    fsm.cpp
+    # fsm.cpp
     main.cpp
     udp.cpp
 )

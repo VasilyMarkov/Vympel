@@ -32,8 +32,14 @@ Q_SIGNALS:
     void exit();
     void requestTemperature();
 private:
+    /**********FSM***********/
+    void callEvent();
+    void toggle(core_mode_t);
+    void dispatchEvent();
+    /************************/
+    core_mode_t mode_ = core_mode_t::IDLE;
     std::shared_ptr<IProcessing> process_unit_;
-    std::unique_ptr<Fsm> fsm_;
+    std::unique_ptr<Event> active_event_;
     const std::unordered_map<QString, core_mode_t> events_;
 };
 
