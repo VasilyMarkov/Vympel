@@ -17,18 +17,20 @@ public:
     void sendPortData(const QByteArray&); //send to port
 private Q_SLOTS:
     void receivePortData();
+    void receiveTemperature();
 public Q_SLOTS:
     void receiveData(const process_params_t&);
 private:
-    QUdpSocket socket_;
-    QHostAddress sender_addr_ = QHostAddress::LocalHost;
-    QHostAddress receiver_addr_ = QHostAddress::LocalHost;
-    quint16 sender_port_ = 1024;
-    quint16 receiver_port_ = 1024;
+    QUdpSocket* socket_;
+    QHostAddress sender_addr_;
+    QHostAddress receiver_addr_;
+    quint16 sender_port_;
+    quint16 receiver_port_;
 private:
     QJsonObject json_;
 signals:
     void sendData(const QString&); //send to core
+    void sendTemperature(double); //send to core
 };
 
 }

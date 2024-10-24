@@ -18,6 +18,7 @@ public:
     Application(const QCoreApplication&);
 private:
     std::unique_ptr<UdpSocket> socket_;
+    std::unique_ptr<UdpSocket> bl_socket_;
     std::unique_ptr<Core> core_;
     std::unique_ptr<ble::BLEInterface> bluetoothDevice_;
     QThread core_thread_;

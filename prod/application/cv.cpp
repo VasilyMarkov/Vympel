@@ -31,7 +31,6 @@ app::CVision::CVision(const std::string& filename):
 
 bool app::CVision::process()
 {
-    std::cout << "process: " << global_tick_ << std::endl;
     if (cam.readFrame(&frameData)) {
         Mat im(height, width, CV_8UC3, frameData.imageData, stride);
 
@@ -42,8 +41,9 @@ bool app::CVision::process()
         process_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
 
         process_params_.filtered = filter_.Process(process_params_.brightness);
-        std::cout << process_params_.brightness  << std::endl;
-        // cam.returnFrameBuffer(frameData);
+        cam.returnFrameBuffer(frameData);
+
+        // std::cout << process_params_.filtered << std::endl;
     }
     ++global_tick_;
     return true;
