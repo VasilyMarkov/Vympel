@@ -14,8 +14,7 @@ UdpSocket::UdpSocket(const QHostAddress& sender_addr, quint16 sender_port):
         qDebug() << "Failed to bind to port" << 64000;
         return;
     }
-    // std::cout << sender_addr_.toString().toStdString() <<  ' ' << 65000 << std::endl;
-
+    socket_->bind(QHostAddress(QString("192.168.234.192")), 64000);
     connect(socket_, &QUdpSocket::readyRead, this, &UdpSocket::receiveTemperature);
     // connect(socket_, &QUdpSocket::readyRead, [](){std::cout << "receive" << std::endl;});
 }
@@ -24,10 +23,14 @@ UdpSocket::UdpSocket(
     const QHostAddress& sender_addr, quint16 sender_port, const QHostAddress& receiver_addr, quint16 receiver_port): 
     sender_addr_(sender_addr), sender_port_(sender_port), receiver_addr_(receiver_addr), receiver_port_(receiver_port) 
 {
+    socket_ = new QUdpSocket(this);
+
     if (sender_port_ < 1024) throw std::runtime_error("Invalid sender port");
     if (receiver_port_ < 1024) throw std::runtime_error("Invalid receiver port");
 
-    socket_->bind(sender_addr_, sender_port_);
+    // socket_->bind(QHostAddress(QString("192.168.234.192")), 64000);
+    // std::cout << sender_addr_.toString().toStdString() <<  ' ' << 65000 << std::endl;
+
     connect(socket_, &QUdpSocket::readyRead, this, &UdpSocket::receivePortData);
     // connect(&socket_, &QUdpSocket::readyRead, this, &UdpSocket::receiveTemperature);
 }
@@ -35,7 +38,7 @@ UdpSocket::UdpSocket(
 void UdpSocket::sendPortData(const QByteArray& data)
 {
     if(data.isEmpty()) return;
-    socket_->writeDatagram(data, sender_addr_, sender_port_);
+    socket_->writeDatagram(data, QHostAddress(QString("192.168.234.227")), 65000);
 }
 
 void UdpSocket::receivePortData()
@@ -66,11 +69,12 @@ void UdpSocket::receiveTemperature()
 
             auto json = QJsonDocument::fromJson(datagram, nullptr);
             auto temp = json.object().value("temperature").toDouble();
-            std::cout << temp << std::endl;
+            // std::cout << temp << std::endl;
+            Q_EMIT sendTemperature(temp);
+
         }
 
     // std::cout << "receive" << std::endl;
-    // Q_EMIT sendTemperature(mode);
 }
 
 void UdpSocket::receiveData(const process_params_t& params) {

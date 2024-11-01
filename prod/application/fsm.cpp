@@ -35,11 +35,12 @@ void app::Fsm::dispatchEvent()
     {
     case core_mode_t::IDLE:
         active_event_ = std::make_unique<Idle>(process_unit_);
-        
+        std::cout << "Temp: " << temp_ << std::endl;
     break;
 
     case core_mode_t::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
+        std::cout << "Temp: " << temp_ << std::endl;
     break;
 
     case core_mode_t::MEASUREMENT:
@@ -47,16 +48,37 @@ void app::Fsm::dispatchEvent()
         {
             active_event_ = std::make_unique<Measurement>(process_unit_);
         }
+        // print(temperature_);
     break;
     case core_mode_t::CONDENSATION:
-        active_event_ = std::make_unique<Сondensation>(process_unit_);
-        request_temperature_callback_();
+        if(c_temp_ > 20) mode_ = core_mode_t::MEASUREMENT;
+        else {
+            active_event_ = std::make_unique<Сondensation>(process_unit_);
+            std::cout << "Condesation temperature: " << temp_ << std::endl;
+            c_temp_ = temp_;
+        }
     break;
-    
+    case core_mode_t::END: 
+
+        active_event_ = std::make_unique<End>(process_unit_);
+        
+        // print(temperature_);
+        // std::cout << "Tick: " <<  active_event_->v_tick << std::endl;
+        std::cout << "Vaporization temperature: " << temperature_.lower_bound(active_event_->v_tick)->second << std::endl;
+        std::cout << "Half sum: " 
+            << (temperature_.lower_bound(active_event_->v_tick)->second + c_temp_)/2 << std::endl;
+        temperature_.clear();
+    break;
     default:
         active_event_ = std::make_unique<Idle>(process_unit_);
     break;
     }
+}
+
+void Fsm::setTemp(double temp) {
+    temp_ = temp;
+    temperature_.emplace(process_unit_.lock()->getTick(), temp);
+    // std::cout << temp << std::endl;
 }
 
 } //namespace app

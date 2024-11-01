@@ -34,7 +34,7 @@ bool app::CVision::process()
     if (cam.readFrame(&frameData)) {
         Mat im(height, width, CV_8UC3, frameData.imageData, stride);
 
-        // // imshow("libcamera-demo", im);
+        // imshow("libcamera-demo", im);
         // key = waitKey(1);
 
         std::vector<uint8_t> v(im.begin<uint8_t>(), im.end<uint8_t>());

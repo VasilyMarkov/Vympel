@@ -13,7 +13,7 @@ namespace app
 
 namespace constants {
     namespace buffer {
-        constexpr size_t CALIB_SIZE = 500; 
+        constexpr size_t CALIB_SIZE = 100; 
         constexpr size_t MEASUR_SIZE = 100; 
     }
     constexpr size_t WAITING_TICKS = 100; 
@@ -26,10 +26,12 @@ public:
     Event(std::weak_ptr<IProcessing>);
     virtual std::optional<core_mode_t> operator()() = 0;
     virtual ~Event(){}
+    size_t v_tick = 0;
 protected:
     std::weak_ptr<IProcessing> process_unit_;
     std::vector<double> data_;
     size_t start_tick_ = 0;
+    inline static std::vector<double> global_data_;
 };
 
 class Idle final: public Event {
@@ -54,9 +56,21 @@ public:
 };
 
 class Сondensation final: public Event {
+    std::vector<double> mean_data;
+    std::deque<bool> coeffs;
+    size_t local_tick_ = 0;
 public:
     Сondensation(std::weak_ptr<IProcessing>);
     std::optional<core_mode_t> operator()() override;
+};
+
+class End final: public Event {
+public:
+    End(std::weak_ptr<IProcessing>);
+    std::optional<core_mode_t> operator()() override;
+    
+private:
+    
 };
 
 } //namespace app

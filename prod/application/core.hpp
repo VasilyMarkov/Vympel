@@ -13,7 +13,6 @@
 #include "event.hpp"
 #include "fsm.hpp"
 
-
 namespace app {
 
 class Core final: public QObject, public ICommunication {
@@ -24,7 +23,7 @@ public:
     std::shared_ptr<IProcessing> getProcessUnit() const;
 public Q_SLOTS:
     void receiveData(const QString&) override;
-    void receiveTemperature(double) const;
+    void receiveTemperature(double);
     bool process();
     void bleDeviceConnected();
 Q_SIGNALS:
@@ -35,6 +34,8 @@ private:
     std::shared_ptr<IProcessing> process_unit_;
     std::unique_ptr<Fsm> fsm_;
     const std::unordered_map<QString, core_mode_t> events_;
+    // double temperature_;
+    
 };
 
 } //namespace app

@@ -4,6 +4,7 @@
 #include <chrono>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <iostream>
 #include <concepts>
 #include <numeric>
@@ -35,8 +36,16 @@ void print(const std::vector<T>& vector) {
 
 template <typename T, typename U>
 void print(const std::unordered_map<T, U>& map) {
-    for(auto&& el:map) {
-        std::cout << el << ' ';
+    for(auto&& [key, el]:map) {
+        std::cout << key << ' ' << el << ' ';
+    }
+    std::cout << std::endl;
+}
+
+template <typename T, typename U>
+void print(const std::map<T, U>& map) {
+    for(auto&& [key, el]:map) {
+        std::cout << key << ' ' << el << ' ';
     }
     std::cout << std::endl;
 }

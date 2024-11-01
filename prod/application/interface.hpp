@@ -16,7 +16,8 @@ enum class core_mode_t {
     IDLE,
     CALIBRATION,
     MEASUREMENT,
-    CONDENSATION
+    CONDENSATION,
+    END
 };
 
 struct process_params_t {

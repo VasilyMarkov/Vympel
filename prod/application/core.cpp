@@ -16,9 +16,12 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
     }){}
 
 
-void app::Core::receiveTemperature(double temperature) const
+void app::Core::receiveTemperature(double temperature)
 {
-    std::cout << temperature << std::endl;
+    // std::cout << temperature << std::endl;
+    fsm_->setTemp(temperature);
+
+    
 }
 
 bool Core::process()
