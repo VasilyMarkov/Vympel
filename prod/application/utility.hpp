@@ -52,7 +52,7 @@ inline std::vector<double> readInputData() {
     return data;
 }
 
-inline std::optional<std::pair<QString, int>> parseJsonFile(const QString &filePath) {
+inline std::optional<QVariantMap> parseJsonFile(const QString &filePath) {
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -77,9 +77,19 @@ inline std::optional<std::pair<QString, int>> parseJsonFile(const QString &fileP
 
     auto clientIp = networkObj.value("clientIp").toString();
     auto clientPort = networkObj.value("clientPort").toInt();
+    auto hostIp = networkObj.value("hostIp").toString();
+    auto hostPort = networkObj.value("hostPort").toInt();
 
-    return std::pair<QString, int> (clientIp, clientPort);
+    QVariantMap config;
+
+    config["clientIp"].setValue(clientIp);
+    config["clientPort"].setValue(clientPort);
+    config["hostIp"].setValue(hostIp);
+    config["hostPort"].setValue(hostPort);
+
+    return config;
 }
+
 
 inline uint16_t crc16(const std::vector<uint8_t>& buf, size_t len) {
     uint16_t nCRC16 = 0xFFFF;

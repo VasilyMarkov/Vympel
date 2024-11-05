@@ -205,7 +205,7 @@ void BLEInterface::onServiceStateChanged(QLowEnergyService::ServiceState service
 
 
         Q_EMIT deviceConnected();
-        write(createModbusPacket(20, 2));
+        write(createModbusPacket(68, 2));
     }
 }
 

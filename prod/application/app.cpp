@@ -5,10 +5,15 @@ app::Application::Application(const QCoreApplication& q_core_app)
     qRegisterMetaType<app::process_params_t>();
     qRegisterMetaType<app::core_mode_t>();
 
-    auto [clientIp, clientPort] = app::parseJsonFile(
-        "/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
-    socket_ = std::make_unique<UdpSocket>(QHostAddress(clientIp), clientPort, 
+    // auto [clientIp, clientPort] = app::parseJsonFile(
+    //     "/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
+    socket_ = std::make_unique<UdpSocket>(QHostAddress::LocalHost, 65000, 
         QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
+
+    auto config = app::parseJsonFile(
+        "/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
+
+    std::cout << config["hostPort"].toInt() << std::endl;
 
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 
@@ -29,6 +34,8 @@ app::Application::Application(const QCoreApplication& q_core_app)
 
     // connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
     //     core_.get(), &app::Core::receiveTemperature);
+
+
 
     connect(core_.get(), &app::Core::exit, 
         &core_thread_, &QThread::quit, Qt::QueuedConnection);

@@ -132,12 +132,14 @@ std::optional<core_mode_t> app::Сondensation::operator()()
 End::End(std::weak_ptr<IProcessing> cv):Event(cv)
 {
     auto max_it = std::max_element(std::begin(global_data_), std::end(global_data_));
-
+    auto start_point = std::distance(std::begin(global_data_), max_it);
+    std::cout << start_point << std::endl;
     std::vector analize_data(max_it, std::end(global_data_));
     std::vector<double> lower_bound;
     std::copy_if(std::begin(analize_data), std::end(analize_data), std::back_inserter(lower_bound), 
-        [&max_it](double value){return value < 0.96*(*max_it) && value >  0.94*(*max_it);});
-    
+        [&max_it](double value){return value < 0.97*(*max_it) && value >  0.93*(*max_it);});
+
+    std::cout << start_point +  lower_bound.size()/2 << std::endl;
 }
 
 std::optional<core_mode_t> End::operator()()
