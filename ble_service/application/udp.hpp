@@ -27,8 +27,8 @@ private:
     QUdpSocket socket_;
     QHostAddress sender_addr_ = QHostAddress::LocalHost;
     QHostAddress receiver_addr_ = QHostAddress::LocalHost;
-    quint16 sender_port_ = 1024;
-    quint16 receiver_port_ = 1024;
+    quint16 sender_port_;
+    quint16 receiver_port_;
 private:
     QJsonObject json_;
     signals:

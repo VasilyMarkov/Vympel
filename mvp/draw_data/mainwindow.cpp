@@ -85,7 +85,7 @@ void MainWindow::readSocket()
     auto filtered = json.object().value("filtered").toDouble();
     auto mode = json.object().value("mode").toInt();
     modeEval(static_cast<core_mode_t>(mode));
-
+//    std::cout << "read" << std::endl;
     plot->graph(0)->addData(x, brightness);
     plot->graph(1)->addData(x, filtered);
     x++;

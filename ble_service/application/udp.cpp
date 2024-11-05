@@ -11,6 +11,9 @@ UdpSocket::UdpSocket(const QHostAddress& sender_addr, quint16 sender_port):
     sender_port_(sender_port) 
 {
     if (sender_port_ <= RESERVE_PORTS) throw std::runtime_error("Invalid sender port");
+        // socket_.bind(QHostAddress(QString("192.168.32.192")), 65000);
+        socket_.bind(QHostAddress(QString("192.168.234.192")), 65000);
+    // socket_.bind(QHostAddress(QString("127.0.0.1")), 64000);
 }
 
 UdpSocket::UdpSocket
@@ -28,7 +31,8 @@ UdpSocket::UdpSocket
     if (sender_port_ <= RESERVE_PORTS) throw std::runtime_error("Invalid sender port");
     if (receiver_port_ <= RESERVE_PORTS) throw std::runtime_error("Invalid receiver port");
 
-    socket_.bind(sender_addr_, sender_port_);
+    socket_.bind(QHostAddress(QString("192.168.234.192")), 64000);
+    // socket_.bind(QHostAddress(QString("127.0.0.1")), 64000);
     connect(&socket_, &QUdpSocket::readyRead, this, &UdpSocket::receivePortData);
 }
 
@@ -36,7 +40,7 @@ void UdpSocket::sendPortData(const QByteArray& data)
 {
     if(data.isEmpty()) return;
 
-    socket_.writeDatagram(data, sender_addr_, sender_port_);
+    socket_.writeDatagram(data, QHostAddress(QString("192.168.234.192")), 64000);
 }
 
 void UdpSocket::receivePortData()
@@ -52,7 +56,7 @@ void UdpSocket::receivePortData()
 void UdpSocket::receiveData(double temperature) {
     QJsonObject json;
     json["temperature"] = temperature;
-    // std::cout << "send" << std::endl;
+    std::cout << "send" << std::endl;
     sendPortData(QJsonDocument(json).toJson());
 }
 

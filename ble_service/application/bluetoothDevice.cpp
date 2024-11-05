@@ -30,7 +30,7 @@ QByteArray createModbusPacket(uint16_t first_register_address, uint16_t register
     modbus_pdu.insert(0, static_cast<char>(0x00));
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
-    return QByteArray(modbus_pdu.data(), modbus_pdu.size());
+    return modbus_pdu;
 }
 
 namespace ble 
@@ -213,10 +213,12 @@ void BLEInterface::onCharacteristicChanged(
     const QByteArray& value
 )
 {
-    std::vector<int8_t> data(std::begin(value), std::end(value));
-
-    std::cout << "Characteristic Changed: " << std::endl;
-    if(value[0] == 0x0A) {
+    // std::cout << "Characteristic Changed: " << std::endl;
+    if (value.isEmpty()) {
+        std::cout << "value empty" << std::endl;
+        return;
+    }   
+    if(value[0] == 0x0A && value.size() == 12) {
         auto tmp = value.mid(2, 3+value[3]);
         std::vector<uint8_t> dat(std::begin(tmp), std::end(tmp));
 
@@ -226,10 +228,22 @@ void BLEInterface::onCharacteristicChanged(
         std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
         
         // std::cout << rvalue << std::endl;
-        // qDebug() << value.toHex();
+        qDebug() << value.toHex();
         auto crc = crc16(dat, dat.size());
+        crc = (crc >> 8) | (crc << 8);
+        
+    
+        auto msb_crc = value[value.size()-3];
+        uint8_t lsb_crc = value[value.size()-2];
+        uint16_t value_crc = (msb_crc << 8) + lsb_crc;
+
+        // std::cout << std::hex << crc <<std::endl;
+        // std::cout << std::hex << value_crc <<std::endl;
         std::cout << rvalue << std::endl;
-        Q_EMIT sendTemperature(rvalue);
+        if(crc == value_crc) {
+            // std::cout << rvalue << std::endl;
+            Q_EMIT sendTemperature(rvalue);
+        }
     }
 }
 
