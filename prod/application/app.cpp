@@ -1,9 +1,12 @@
 #include "app.hpp"
+#include "logger.hpp"
 
 app::Application::Application(const QCoreApplication& q_core_app)
 {
     qRegisterMetaType<app::process_params_t>();
     qRegisterMetaType<app::core_mode_t>();
+
+
 
     // auto [clientIp, clientPort] = app::parseJsonFile(
     //     "/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
@@ -53,4 +56,9 @@ app::Application::Application(const QCoreApplication& q_core_app)
         socket_.get(), &app::UdpSocket::receiveData, Qt::QueuedConnection);
 
     core_thread_.start();
+}
+
+app::Application::~Application()
+{
+    logger.destroyLog();
 }

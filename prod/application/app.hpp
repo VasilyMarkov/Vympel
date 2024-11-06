@@ -9,6 +9,7 @@
 #include "cv.hpp"
 #include "utility.hpp"
 #include "bluetoothDevice.hpp"
+#include "logger.hpp"
 
 namespace app
 {
@@ -16,6 +17,7 @@ class Application final: public QObject {
     Q_OBJECT
 public:
     Application(const QCoreApplication&);
+    ~Application();
 private:
     std::unique_ptr<UdpSocket> socket_;
     std::unique_ptr<UdpSocket> ble_socket_;

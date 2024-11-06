@@ -1,5 +1,5 @@
 #include "event.hpp"
-
+#include "logger.hpp"
 namespace app
 {
 
@@ -7,14 +7,17 @@ Event::Event(std::weak_ptr<IProcessing> cv):process_unit_(cv), start_tick_(proce
 
 Idle::Idle(std::weak_ptr<IProcessing> cv): Event(cv)
 {  
+    logger.createLog();
 }
 
 std::optional<core_mode_t> Idle::operator()()
 {
-    global_data_.push_back(process_unit_.lock()->getProcessParams().filtered);
+    auto filtered = process_unit_.lock()->getProcessParams().filtered;
+    global_data_.push_back(filtered);
     if(process_unit_.lock()->getTick() - start_tick_ >= constants::WAITING_TICKS) {
         return core_mode_t::CALIBRATION;   
     }
+
     return std::nullopt;
 }
 
@@ -82,7 +85,6 @@ std::optional<core_mode_t> Measurement::operator()()
 
     mean_data.push_back(filtered);
 
-
     ++local_tick_;
     return std::nullopt;
 }
@@ -124,8 +126,9 @@ std::optional<core_mode_t> app::Сondensation::operator()()
     }
 
     mean_data.push_back(filtered);
-
+    
     ++local_tick_;
+
     return std::nullopt;
 }
 
@@ -140,6 +143,8 @@ End::End(std::weak_ptr<IProcessing> cv):Event(cv)
         [&max_it](double value){return value < 0.97*(*max_it) && value >  0.93*(*max_it);});
 
     std::cout << start_point +  lower_bound.size()/2 << std::endl;
+
+    logger.log(global_data_);
 }
 
 std::optional<core_mode_t> End::operator()()
