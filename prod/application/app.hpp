@@ -10,6 +10,7 @@
 #include "utility.hpp"
 #include "bluetoothDevice.hpp"
 #include "logger.hpp"
+#include "configReader.hpp"
 
 namespace app
 {

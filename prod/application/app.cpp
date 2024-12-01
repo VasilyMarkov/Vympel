@@ -12,19 +12,18 @@ app::Application::Application(const QCoreApplication& q_core_app)
     qRegisterMetaType<app::core_mode_t>();
 
     auto sourcePath = fs::current_path().parent_path();
-    
-    fmt::print("{}\n", sourcePath.string());
-
 
     // auto [clientIp, clientPort] = app::parseJsonFile(
     //     "/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
-    socket_ = std::make_unique<UdpSocket>(QHostAddress::LocalHost, 65000, 
-        QHostAddress::LocalHost, app::constants::port::RECEIVER_PORT);
 
-    auto config = app::parseJsonFile(
-        "/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
+    auto ip = configReader.get("network", "clientIp").toString();
 
-    std::cout << config["hostPort"].toInt() << std::endl;
+    socket_ = std::make_unique<UdpSocket>(
+        QHostAddress(configReader.get("network", "clientIp").toString()), 
+        configReader.get("network", "receiverPort").toInt(), 
+        QHostAddress(configReader.get("network", "clientIp").toString()), 
+        configReader.get("network", "senderPort").toInt()
+    );
 
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 
