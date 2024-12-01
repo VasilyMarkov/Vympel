@@ -15,7 +15,7 @@
 namespace app 
 {
 
-static QByteArray createModbusPacket(uint16_t, uint16_t);
+// static QByteArray createModbusPacket(uint16_t, uint16_t);
 
 namespace ble 
 {

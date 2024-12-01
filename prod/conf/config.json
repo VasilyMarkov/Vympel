@@ -1,7 +1,8 @@
 {
     "network": {
         "clientIp": "127.0.0.1",
-        "clientPort": 65000,
+        "receiverPort": 65000,
+        "senderPort": 65001,
         "hostIp": "192.168.31.41",
         "hostPort": 64000,
         "cameraIp": "192.168.31.41",

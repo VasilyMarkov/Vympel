@@ -30,14 +30,8 @@ public:
             }
 
             jsonDir.cd(QString(jsonDir.absolutePath() + "/logs"));
-            std::cout << jsonDir.absolutePath().toStdString() << std::endl;
             auto fileName = QDateTime::currentDateTime().toString(Qt::ISODate);
             file = std::make_unique<QFile>(QString(jsonDir.absolutePath() + '/' + fileName + ".json"));
-            // if (!file->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            //     qWarning() << "Could not open file for writing:";
-            //     return;
-            // }
-
         }
     }
     void log(double data) 
@@ -73,18 +67,11 @@ public:
         if (file->isOpen()) file->close();
     }
 private:
-    Logger():jsonDir(QCoreApplication::applicationDirPath())
-    {
-        // QDir dir(QCoreApplication::applicationDirPath());
-        // jsonDirectory = dir.absoluteFilePath(QCoreApplication::applicationName());
-
-
-    }
+    Logger():jsonDir(QCoreApplication::applicationDirPath()){}
     ~Logger(){}
     Logger(const Logger&){}
     Logger& operator=(const Logger&);
 
-    // QString jsonDirectory;
     QDir jsonDir;
     std::unique_ptr<QFile> file;
 };
