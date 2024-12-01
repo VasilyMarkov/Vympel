@@ -3,7 +3,9 @@
         "clientIp": "127.0.0.1",
         "clientPort": 65000,
         "hostIp": "192.168.31.41",
-        "hostPort": 64000
+        "hostPort": 64000,
+        "cameraIp": "192.168.31.41",
+        "cameraPort": 64001
     },
     "camera": {
         "width": 640,
