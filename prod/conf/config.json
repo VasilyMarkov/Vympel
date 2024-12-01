@@ -13,5 +13,8 @@
     },
     "bluetooth": {
         "deviceName": "RigCom"
+    },
+    "files": {
+        "videoFile": "files/video.mp4"
     }
 }
