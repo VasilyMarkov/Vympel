@@ -13,6 +13,7 @@ find_package(Qt6 REQUIRED COMPONENTS
 
 add_subdirectory(application)
 
+
 if(TESTS)
     add_subdirectory(tests)
     message("TESTING: ON")

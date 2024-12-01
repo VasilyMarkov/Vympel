@@ -7,6 +7,8 @@ set(OpenCV_STATIC ON)
 
 find_package(OpenCV REQUIRED)
 
+find_package(fmt)
+
 add_executable(application 
     app.cpp
     bluetoothDevice.cpp
@@ -25,6 +27,7 @@ target_include_directories(application PRIVATE
 
 target_link_libraries(application PRIVATE 
     ${OpenCV_LIBS} 
+    fmt::fmt
     Qt6::Core 
     Qt6::Bluetooth
     Qt6::Network

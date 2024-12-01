@@ -3,9 +3,6 @@
 namespace app
 {
 
-// template<typename Event>
-// Fsm::Fsm(eventFabric<Event>){} 
-
 void app::Fsm::toggle(core_mode_t mode)
 {
     if (mode_ == mode) return;

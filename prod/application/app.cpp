@@ -1,11 +1,19 @@
 #include "app.hpp"
 #include "logger.hpp"
+#include <filesystem>
+#include <fmt/core.h>
+
+namespace fs = std::filesystem;
+
 
 app::Application::Application(const QCoreApplication& q_core_app)
 {
     qRegisterMetaType<app::process_params_t>();
     qRegisterMetaType<app::core_mode_t>();
 
+    auto sourcePath = fs::current_path().parent_path();
+    
+    fmt::print("{}\n", sourcePath.string());
 
 
     // auto [clientIp, clientPort] = app::parseJsonFile(
