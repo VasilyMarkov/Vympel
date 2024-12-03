@@ -1,10 +1,17 @@
 #include <numeric>
 #include "cv.hpp"
+#include "configReader.hpp"
+#include <filesystem>
 
-using namespace app;
+namespace app
+{
+    
 using namespace constants;
+namespace fs = std::filesystem;
 
-CVision::CVision(const std::string& filename):capture_(filename), filter_(filter::cutoff_frequency, filter::sample_rate)
+CameraProcessingModule::CameraProcessingModule():
+    capture_((fs::current_path().parent_path() / configReader.get("files", "videoFile").toString().toStdString())), 
+    filter_(filter::cutoff_frequency, filter::sample_rate)
 {
     if(!capture_.isOpened())
         throw std::runtime_error("file open error");
@@ -12,7 +19,7 @@ CVision::CVision(const std::string& filename):capture_(filename), filter_(filter
     cv::namedWindow( "w", 1);
 }
 
-bool CVision::process()
+bool CameraProcessingModule::process()
 {
         capture_ >> frame_;
         
@@ -35,3 +42,19 @@ bool CVision::process()
         return true;
         
 }
+
+// NetProcessing::NetProcessing():socket_(std::make_unique<UdpSocket>(
+//         QHostAddress(configReader.get("network", "clientIp").toString()),
+//         configReader.get("network", "videoPort").toInt()
+//     )
+// )
+// {
+    // connect(socket_.get(), &app::UdpSocket::sendData, 
+    //     core_.get(), &app::Core::receiveData, Qt::QueuedConnection);
+// }
+
+// void NetProcessing::receiveData(double val) {
+    
+// }
+
+} // namespace app

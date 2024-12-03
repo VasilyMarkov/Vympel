@@ -27,8 +27,7 @@ app::Application::Application(const QCoreApplication& q_core_app)
 
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 
-    std::string filename = "/home/vasily/usr/phystech/vympel/prod/application/video.mp4";
-    core_ = std::make_unique<Core>(std::make_shared<app::CVision>(filename));
+    core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
 
     core_->moveToThread(&core_thread_);
 
