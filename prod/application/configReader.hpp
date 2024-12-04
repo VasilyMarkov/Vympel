@@ -8,11 +8,10 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QDateTime>
+#include <QHash>
 #include <iostream>
 #include <filesystem>
 #include <exception>
-#include <cstdarg>
-#include <QHash>
 
 namespace app 
 {

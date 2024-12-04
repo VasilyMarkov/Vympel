@@ -55,11 +55,16 @@ public:
     virtual ~IProcessing(){}
 };
 
-class ICommunication {
+class IReceiver {
 public:
     virtual void receiveData(const QJsonDocument&) = 0;
-    virtual void sendData(const process_params_t&) const = 0;;
-    virtual ~ICommunication(){}
+    virtual ~IReceiver(){}
+};
+
+class ISender {
+public:
+    virtual void sendData(const QJsonDocument&) const = 0;;
+    virtual ~ISender(){}
 };
 
 }

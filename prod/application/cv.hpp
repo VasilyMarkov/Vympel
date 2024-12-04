@@ -9,14 +9,13 @@
 
 namespace app {
 
-class NetLogic: public QObject, ICommunication {
+class NetLogic: public QObject, IReceiver {
     Q_OBJECT
 public:
     NetLogic();
-    std::optional<double> getValue() noexcept;
+    std::optional<double> getValue();
 public Q_SLOTS:
     void receiveData(const QJsonDocument&) override;
-    void sendData(const process_params_t&) const override;
 private:
     std::queue<double> receiveBuffer_;
     std::unique_ptr<UdpSocket> cameraSocket_;
@@ -40,6 +39,7 @@ public:
 private:
     bool process() override;
     NetLogic netLogic;
+    LowPassFilter filter_;
 };
 
 } //namespace app

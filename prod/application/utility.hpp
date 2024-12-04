@@ -168,7 +168,7 @@ public:
     LowPassFilter(double cutoff_frequency, double sample_rate, double q = 0.707): 
         alpha_(std::sin(2 * M_PI * cutoff_frequency / sample_rate) / (2 * q)) {}
 
-    double Process(double x) {
+    double filter(double x) {
         y_ = alpha_ * (x - y_) + y_;
         return y_;
     }

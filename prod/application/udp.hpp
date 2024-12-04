@@ -19,7 +19,7 @@ public:
 private Q_SLOTS:
     void receivePortData();
 public Q_SLOTS:
-    void receiveData(const process_params_t&);
+    void receiveData(const QJsonDocument&);
 private:
     QUdpSocket socket_;
     QHostAddress senderAddr_ = QHostAddress::LocalHost;

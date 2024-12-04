@@ -24,13 +24,13 @@ void UdpSocket::receivePortData()
     emit sendData(QJsonDocument::fromJson(datagram, nullptr));
 }
 
-void UdpSocket::receiveData(const process_params_t& params) {
-
+void UdpSocket::receiveData(const QJsonDocument& json) {
+    fmt::print("{}\n", json["filtered"].toDouble());
 }
 
 void UdpSocket::setSenderParameters(const QHostAddress& senderIp = QHostAddress::Any, quint16 senderPort = 1024)
 {
-    if (senderPort_ <= RESERVE_PORTS) throw std::runtime_error("Invalid sender port");
+    if (senderPort <= RESERVE_PORTS) throw std::runtime_error("Invalid sender port");
 
     senderAddr_ = senderIp;
     senderPort_ = senderPort;

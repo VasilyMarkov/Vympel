@@ -26,7 +26,12 @@ bool Core::process()
     while(process_unit_->process()) {
         callEvent();
         
-        Q_EMIT sendData(process_unit_->getProcessParams());
+        auto processParams = process_unit_->getProcessParams();
+        QJsonObject json;
+        json["brightness"] = processParams.brightness;
+        json["filtered"] = processParams.filtered;
+        Q_EMIT sendData(QJsonDocument(json));
+        
         QThread::msleep(20);
         QCoreApplication::processEvents();
     }

@@ -16,7 +16,7 @@
 
 namespace app {
 
-class Core final: public QObject, ICommunication {
+class Core final: public QObject, IReceiver, ISender {
     Q_OBJECT
     friend class CoreTest;
 public:
@@ -28,7 +28,7 @@ public Q_SLOTS:
     bool process();
     void bleDeviceConnected();
 Q_SIGNALS:
-    void sendData(const process_params_t&) const override;
+    void sendData(const QJsonDocument&) const override;
     void exit();
     void requestTemperature();
 private:

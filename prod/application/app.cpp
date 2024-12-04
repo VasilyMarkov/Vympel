@@ -23,6 +23,7 @@ app::Application::Application(const QCoreApplication& q_core_app)
                                    configReader.get("network", "receiverPort").toInt());
     socket_->setSenderParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
                                    configReader.get("network", "senderPort").toInt());
+    
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 
     core_ = std::make_unique<Core>(std::make_shared<app::NetProcessing>());
@@ -53,11 +54,11 @@ app::Application::Application(const QCoreApplication& q_core_app)
     connect(&core_thread_, &QThread::finished,
         &q_core_app, &QCoreApplication::quit, Qt::QueuedConnection);
 
-    // connect(socket_.get(), &app::UdpSocket::sendData, 
-    //     core_.get(), &app::Core::receiveData, Qt::QueuedConnection);
+    connect(socket_.get(), &app::UdpSocket::sendData, 
+        core_.get(), &app::Core::receiveData, Qt::QueuedConnection);
 
-    // connect(core_.get(), &app::Core::sendData, 
-    //     socket_.get(), &app::UdpSocket::receiveData, Qt::QueuedConnection);
+    connect(core_.get(), &app::Core::sendData, 
+        socket_.get(), &app::UdpSocket::receiveData, Qt::QueuedConnection);
 
     core_thread_.start();
 }
