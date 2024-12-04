@@ -43,18 +43,45 @@ bool CameraProcessingModule::process()
         
 }
 
-// NetProcessing::NetProcessing():socket_(std::make_unique<UdpSocket>(
-//         QHostAddress(configReader.get("network", "clientIp").toString()),
-//         configReader.get("network", "videoPort").toInt()
-//     )
-// )
-// {
-    // connect(socket_.get(), &app::UdpSocket::sendData, 
-    //     core_.get(), &app::Core::receiveData, Qt::QueuedConnection);
-// }
+NetLogic::NetLogic():
+    cameraSocket_(std::make_unique<UdpSocket>())
+{
+    connect(cameraSocket_.get(), &UdpSocket::sendData, this, &NetLogic::receiveData, Qt::QueuedConnection);
 
-// void NetProcessing::receiveData(double val) {
-    
-// }
+    cameraSocket_->setReceiverParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
+                                         configReader.get("network", "videoPort").toInt());
+}
+
+std::optional<double> NetLogic::getValue() noexcept
+{
+    if(receiveBuffer_.empty()) return std::nullopt;
+    auto value = receiveBuffer_.front();
+    receiveBuffer_.pop();
+    return value;
+}
+
+void NetLogic::sendData(const process_params_t&) const
+{
+
+}
+
+void NetLogic::receiveData(const QJsonDocument& json) {
+    receiveBuffer_.push(json["brightness"].toDouble());
+}
+
+NetProcessing::NetProcessing()
+{
+
+}
+
+bool NetProcessing::process()
+{
+    if(netLogic.getValue()) {
+        fmt::print("{}\n", netLogic.getValue().value());
+    }
+    ++global_tick_;
+    return true;
+}
+
 
 } // namespace app

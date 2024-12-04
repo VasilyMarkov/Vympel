@@ -40,7 +40,7 @@ void Core::bleDeviceConnected()
     
 }
 
-void Core::receiveData(const QString& mode)
+void Core::receiveData(const QJsonDocument& json)
 {
     // fsm_->toggle(events_.at(mode)); TODO out_of_range exception
 }

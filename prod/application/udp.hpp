@@ -3,32 +3,29 @@
 
 #include <QUdpSocket>
 #include <QJsonObject>
-#include <QJsonDocument>
 #include "interface.hpp"
 
 namespace app {
 
+constexpr int RESERVE_PORTS = 1024;
+
 class UdpSocket final: public QObject {
     Q_OBJECT
 public:
-    explicit UdpSocket(const QHostAddress&, quint16);
-    explicit UdpSocket(const QHostAddress&, quint16, const QHostAddress&, quint16);
-public:
+    UdpSocket();
     void sendPortData(const QByteArray&); //send to port
-private slots:
+    void setSenderParameters(const QHostAddress&, quint16);
+    void setReceiverParameters(const QHostAddress&, quint16);
+private Q_SLOTS:
     void receivePortData();
-public slots:
+public Q_SLOTS:
     void receiveData(const process_params_t&);
 private:
     QUdpSocket socket_;
-    QHostAddress sender_addr_ = QHostAddress::LocalHost;
-    QHostAddress receiver_addr_ = QHostAddress::LocalHost;
-    quint16 sender_port_ = 1024;
-    quint16 receiver_port_ = 1024;
-private:
-    QJsonObject json_;
-signals:
-    void sendData(const QString&); //send to core
+    QHostAddress senderAddr_ = QHostAddress::LocalHost;
+    quint16 senderPort_ = 1024;
+Q_SIGNALS:
+    void sendData(const QJsonDocument&); 
 };
 
 }

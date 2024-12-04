@@ -6,7 +6,7 @@ import json
 import os
 
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.dirname(__file__))
 video_file = os.path.join(dirname, './application/video.mp4')
 config_file = os.path.join(dirname, './conf/config.json')
 
@@ -21,7 +21,7 @@ with open(config_file) as json_data:
 cap = cv.VideoCapture(video_file)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-host, port = config_data['network']['clientIp'], config_data['network']['clientPort']
+host, port = config_data['network']['clientIp'], config_data['network']['videoPort']
 server_address = (host, port)
 
 while cap.isOpened():
@@ -38,7 +38,6 @@ while cap.isOpened():
         json_data = json.dumps(jdata)
         bytes_data = json_data.encode('utf-8')
         sock.sendto(bytes_data, server_address) 	
-        time.sleep(0.025)
         
     if cv.waitKey(1) == ord('q'):
         break

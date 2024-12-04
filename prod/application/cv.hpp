@@ -5,8 +5,23 @@
 #include "interface.hpp"
 #include "utility.hpp"
 #include "udp.hpp"
+#include <queue>
 
 namespace app {
+
+class NetLogic: public QObject, ICommunication {
+    Q_OBJECT
+public:
+    NetLogic();
+    std::optional<double> getValue() noexcept;
+public Q_SLOTS:
+    void receiveData(const QJsonDocument&) override;
+    void sendData(const process_params_t&) const override;
+private:
+    std::queue<double> receiveBuffer_;
+    std::unique_ptr<UdpSocket> cameraSocket_;
+};
+
 
 class CameraProcessingModule: public IProcessing {
 public:
@@ -18,14 +33,13 @@ private:
     LowPassFilter filter_;
 };
 
+
 class NetProcessing: public IProcessing {
-    // Q_OBJECT
 public:
     NetProcessing();
-private slots:
-    void receiveData(double);
 private:
-    std::unique_ptr<UdpSocket> socket_;
+    bool process() override;
+    NetLogic netLogic;
 };
 
 } //namespace app

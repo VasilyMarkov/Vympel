@@ -1,7 +1,7 @@
 #include "app.hpp"
 #include "logger.hpp"
 #include <filesystem>
-#include <fmt/core.h>
+
 
 namespace fs = std::filesystem;
 
@@ -18,16 +18,14 @@ app::Application::Application(const QCoreApplication& q_core_app)
 
     auto ip = configReader.get("network", "clientIp").toString();
 
-    socket_ = std::make_unique<UdpSocket>(
-        QHostAddress(configReader.get("network", "clientIp").toString()), 
-        configReader.get("network", "receiverPort").toInt(), 
-        QHostAddress(configReader.get("network", "clientIp").toString()), 
-        configReader.get("network", "senderPort").toInt()
-    );
-
+    socket_ = std::make_unique<UdpSocket>();
+    socket_->setReceiverParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
+                                   configReader.get("network", "receiverPort").toInt());
+    socket_->setSenderParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
+                                   configReader.get("network", "senderPort").toInt());
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 
-    core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
+    core_ = std::make_unique<Core>(std::make_shared<app::NetProcessing>());
 
     core_->moveToThread(&core_thread_);
 
@@ -55,11 +53,11 @@ app::Application::Application(const QCoreApplication& q_core_app)
     connect(&core_thread_, &QThread::finished,
         &q_core_app, &QCoreApplication::quit, Qt::QueuedConnection);
 
-    connect(socket_.get(), &app::UdpSocket::sendData, 
-        core_.get(), &app::Core::receiveData, Qt::QueuedConnection);
+    // connect(socket_.get(), &app::UdpSocket::sendData, 
+    //     core_.get(), &app::Core::receiveData, Qt::QueuedConnection);
 
-    connect(core_.get(), &app::Core::sendData, 
-        socket_.get(), &app::UdpSocket::receiveData, Qt::QueuedConnection);
+    // connect(core_.get(), &app::Core::sendData, 
+    //     socket_.get(), &app::UdpSocket::receiveData, Qt::QueuedConnection);
 
     core_thread_.start();
 }

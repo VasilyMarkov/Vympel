@@ -16,14 +16,14 @@
 
 namespace app {
 
-class Core final: public QObject, public ICommunication {
+class Core final: public QObject, ICommunication {
     Q_OBJECT
     friend class CoreTest;
 public:
     explicit Core(std::shared_ptr<IProcessing>);
     std::shared_ptr<IProcessing> getProcessUnit() const;
 public Q_SLOTS:
-    void receiveData(const QString&) override;
+    void receiveData(const QJsonDocument&) override;
     void receiveTemperature(double) const;
     bool process();
     void bleDeviceConnected();
