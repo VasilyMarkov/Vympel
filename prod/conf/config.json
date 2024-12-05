@@ -7,7 +7,9 @@
         "hostPort": 65002,
         "cameraIp": "192.168.31.41",
         "cameraPort": 65003,
-        "videoPort": 65004
+        "videoPort": 65004,
+        "serviceProgramPort": 65005,
+        "controlFromServiceProgramPort": 65006
     },
     "camera": {
         "width": 640,

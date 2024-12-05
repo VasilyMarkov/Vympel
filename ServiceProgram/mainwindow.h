@@ -7,6 +7,7 @@
 #include <QThread>
 #include <unordered_map>
 #include <deque>
+#include "udp.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,20 +28,18 @@ public:
     ~MainWindow();
 
 private slots:
-    void readSocket();
+    void receiveData(const QJsonDocument& json);
     void mouseWheel();
     void on_calibrate_clicked();
     void on_meashurement_clicked();
-
     void on_idle_clicked();
-
 private:
     void setupPlot(QCustomPlot*);
     void modeEval(core_mode_t);
     void sendData(const QByteArray&);
 private:
     Ui::MainWindow *ui;
-    QUdpSocket* socket;
+    std::unique_ptr<UdpSocket> socket_;
     QCustomPlot* plot;
     std::unordered_map<core_mode_t, QString> modes_;
 };

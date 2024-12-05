@@ -25,7 +25,7 @@ void UdpSocket::receivePortData()
 }
 
 void UdpSocket::receiveData(const QJsonDocument& json) {
-    fmt::print("{}\n", json["filtered"].toDouble());
+    sendPortData(json.toJson());
 }
 
 void UdpSocket::setSenderParameters(const QHostAddress& senderIp = QHostAddress::Any, quint16 senderPort = 1024)

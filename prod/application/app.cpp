@@ -20,9 +20,9 @@ app::Application::Application(const QCoreApplication& q_core_app)
 
     socket_ = std::make_unique<UdpSocket>();
     socket_->setReceiverParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
-                                   configReader.get("network", "receiverPort").toInt());
+                                   configReader.get("network", "controlFromServiceProgramPort").toInt());
     socket_->setSenderParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
-                                   configReader.get("network", "senderPort").toInt());
+                                   configReader.get("network", "serviceProgramPort").toInt());
     
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 

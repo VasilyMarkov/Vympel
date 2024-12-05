@@ -16,25 +16,6 @@
 constexpr size_t frame_size = 2000;
 constexpr double VALUE_SIZE = 3e6;
 
-template <typename Cont>
-void print(const Cont& cont) {
-    for(auto&& elem:cont) {
-        std::cout << elem << ' ';
-    }
-    std::cout << std::endl;
-}
-template <typename T, typename U>
-void print(const std::unordered_map<T, U>& map) {
-    for(auto&& [key, value]:map) {
-        std::cout << key << ": " << value << std::endl;
-    }
-}
-template <typename T, typename U>
-void print(const std::map<T, U>& map) {
-    for(auto&& [key, value]:map) {
-        std::cout << key << ": " << value << std::endl;
-    }
-}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -45,10 +26,15 @@ MainWindow::MainWindow(QWidget *parent)
         {core_mode_t::MEASHUREMENT, "meashurement"}
     })
 {
-    socket = new QUdpSocket(nullptr);
     ui->setupUi(this);
-    socket->bind(QHostAddress("0.0.0.0"), 65000);
-    connect(socket, &QUdpSocket::readyRead, this, &MainWindow::readSocket);
+    socket_ = std::make_unique<UdpSocket>();
+    socket_->setReceiverParameters(QHostAddress(configReader.get("network", "clientIp").toString()),
+                                   configReader.get("network", "serviceProgramPort").toInt());
+    socket_->setSenderParameters(QHostAddress(configReader.get("network", "clientIp").toString()),
+                                   configReader.get("network", "controlFromServiceProgramPort").toInt());
+
+    connect(socket_.get(), &UdpSocket::sendData, this, &MainWindow::receiveData);
+
     resize(1280, 720);
     plot = ui->plot;
     connect(plot, &QCustomPlot::mouseWheel, this, &MainWindow::mouseWheel);
@@ -58,17 +44,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     plot->addGraph();
     plot->addGraph();
-//    plot->addGraph();
-//    plot->addGraph();
+
     plot->graph(0)->setPen(QPen(QColor(82, 247, 79), 2));
     plot->graph(1)->setPen(QPen(QColor(242, 65, 65), 2));
     plot->graph(0)->setName("brightness");
     plot->graph(1)->setName("filtered");
-//    plot->graph(2)->setPen(QPen(QColor(65, 172, 242), 2));
-//    plot->graph(3)->setPen(QPen(QColor(242, 204, 65), 2));
-
-
-    qDebug() << configReader.get("network", "clientIp").toString();
 }
 
 MainWindow::~MainWindow()
@@ -76,23 +56,15 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::readSocket()
+void MainWindow::receiveData(const QJsonDocument& json)
 {
-    static size_t x = 0;
-    size_t test = 0;
-    QByteArray datagram;
-    datagram.resize(socket->pendingDatagramSize());
-    socket->readDatagram(datagram.data(), datagram.size(), nullptr, nullptr);
-    QJsonParseError jsonErr;
-    auto json = QJsonDocument::fromJson(datagram, &jsonErr);
-    auto brightness = json.object().value("brightness").toDouble();
-    auto filtered = json.object().value("filtered").toDouble();
-    auto mode = json.object().value("mode").toInt();
-    modeEval(static_cast<core_mode_t>(mode));
-//    std::cout << "read" << std::endl;
-    plot->graph(0)->addData(x, brightness);
-    plot->graph(1)->addData(x, filtered);
-    x++;
+    static int sample = 0;
+    auto brightness = json["brightness"].toDouble();
+    auto filtered = json["filtered"].toDouble();
+
+    plot->graph(0)->addData(sample, brightness);
+    plot->graph(1)->addData(sample, filtered);
+    sample++;
     plot->replot();
 }
 
@@ -170,7 +142,7 @@ void MainWindow::modeEval(core_mode_t mode)
 void MainWindow::sendData(const QByteArray& data)
 {
     if(data.isEmpty()) return;
-    socket->writeDatagram(data, QHostAddress::LocalHost, 65001);
+//    socket->writeDatagram(data, QHostAddress::LocalHost, 65001);
 }
 
 void MainWindow::on_calibrate_clicked()

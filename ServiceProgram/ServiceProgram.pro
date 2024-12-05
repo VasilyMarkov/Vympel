@@ -17,7 +17,8 @@ HEADERS += \
     configreader.h \
     mainwindow.h \
     qcustomplot.h \
-    udp.h
+    udp.h \
+    utility.h
 
 FORMS += \
     mainwindow.ui
