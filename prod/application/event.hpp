@@ -24,7 +24,7 @@ namespace constants {
 class Event {
 public:
     Event(std::weak_ptr<IProcessing>);
-    virtual std::optional<core_mode_t> operator()() = 0;
+    virtual std::optional<EventType> operator()() = 0;
     virtual ~Event(){}
 protected:
     std::weak_ptr<IProcessing> process_unit_;
@@ -36,22 +36,22 @@ protected:
 class Idle final: public Event {
 public:
     Idle(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    std::optional<EventType> operator()() override;
 };
 
 class Calibration final: public Event {
 public:
     Calibration(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    std::optional<EventType> operator()() override;
 };
 
-class Measurement final: public Event {
+class MEASHUREMENT final: public Event {
     std::vector<double> mean_data;
     std::deque<bool> coeffs;
     size_t local_tick_ = 0;
 public:
-    Measurement(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    MEASHUREMENT(std::weak_ptr<IProcessing>);
+    std::optional<EventType> operator()() override;
 };
 
 class Сondensation final: public Event {
@@ -60,13 +60,13 @@ class Сondensation final: public Event {
     size_t local_tick_ = 0;
 public:
     Сondensation(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    std::optional<EventType> operator()() override;
 };
 
 class End final: public Event {
 public:
     End(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    std::optional<EventType> operator()() override;
 };
 
 } //namespace app

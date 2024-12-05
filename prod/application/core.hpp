@@ -12,9 +12,14 @@
 #include "interface.hpp"
 #include "event.hpp"
 #include "fsm.hpp"
-
+#include <QMetaEnum>
 
 namespace app {
+
+enum class CoreStatement {
+    WORK,
+    HALT
+};
 
 class Core final: public QObject, IReceiver, ISender {
     Q_OBJECT
@@ -34,18 +39,24 @@ Q_SIGNALS:
 private:
     /**********FSM***********/
     void callEvent();
-    void toggle(core_mode_t);
+    void toggle(EventType);
     void dispatchEvent();
+    void onFSM();
+    void offFSM();
+    bool isOnFSM = false;
     /************************/
-    core_mode_t mode_ = core_mode_t::IDLE;
+    CoreStatement statement_ = CoreStatement::HALT;
+    EventType mode_ = EventType::IDLE;
     std::shared_ptr<IProcessing> process_unit_;
     std::unique_ptr<Event> active_event_;
-    const std::unordered_map<QString, core_mode_t> events_;
+    const std::unordered_map<QString, EventType> events_;
+    QJsonObject json_;
+    
 };
 
 } //namespace app
 
 Q_DECLARE_METATYPE(app::process_params_t)
-Q_DECLARE_METATYPE(app::core_mode_t)
+Q_DECLARE_METATYPE(app::EventType)
 
 #endif //CORE_H

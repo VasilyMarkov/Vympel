@@ -7,10 +7,10 @@
 
 namespace app {
 
-enum class core_mode_t {
+enum class EventType {
     IDLE,
     CALIBRATION,
-    MEASUREMENT,
+    MEASHUREMENT,
     CONDENSATION,
     END
 };
@@ -26,7 +26,7 @@ struct calc_params_t {
 
     struct event_completeness_t {
         bool calibration = false;
-        bool measurement = false;
+        bool MEASHUREMENT = false;
     };
     event_completeness_t event_completeness;
 

@@ -21,9 +21,9 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , modes_({
-        {core_mode_t::IDLE, "idle"},
-        {core_mode_t::CALIBRATION, "calibration"},
-        {core_mode_t::MEASHUREMENT, "meashurement"}
+        {EventType::IDLE, "idle"},
+        {EventType::CALIBRATION, "calibration"},
+        {EventType::MEASHUREMENT, "meashurement"}
     })
 {
     ui->setupUi(this);
@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
                                    configReader.get("network", "controlFromServiceProgramPort").toInt());
 
     connect(socket_.get(), &UdpSocket::sendData, this, &MainWindow::receiveData);
+    connect(this, &MainWindow::sendData, socket_.get(), &UdpSocket::receiveData);
 
     resize(1280, 720);
     plot = ui->plot;
@@ -58,14 +59,47 @@ MainWindow::~MainWindow()
 
 void MainWindow::receiveData(const QJsonDocument& json)
 {
-    static int sample = 0;
     auto brightness = json["brightness"].toDouble();
     auto filtered = json["filtered"].toDouble();
+    coreStatement_ = static_cast<CoreStatement>(json["statement"].toInt());
 
-    plot->graph(0)->addData(sample, brightness);
-    plot->graph(1)->addData(sample, filtered);
-    sample++;
+    modeEval(static_cast<EventType>(json["mode"].toInt()));
+
+    if(coreStatement_ == CoreStatement::WORK) {
+        plot->graph(0)->addData(sample_, brightness);
+        plot->graph(1)->addData(sample_, filtered);
+        sample_++;
+    }
+    else {
+        sample_ = 0;
+        plot->graph(0)->setData(QVector<double>(), QVector<double>());
+        plot->graph(1)->setData(QVector<double>(), QVector<double>());
+    }
     plot->replot();
+}
+
+void MainWindow::modeEval(EventType mode)
+{
+    switch (mode) {
+        case EventType::IDLE:
+            ui->status->setText("IDLE");
+        break;
+        case EventType::CALIBRATION:
+            ui->status->setText("CALIBRATION");
+        break;
+        case EventType::MEASHUREMENT:
+            ui->status->setText("MEASHUREMENT");
+        break;
+        case EventType::CONDENSATION:
+            ui->status->setText("CONDENSATION");
+        break;
+        case EventType::END:
+            ui->status->setText("END");
+        break;
+        default:
+            ui->status->setText("IDLE");
+        break;
+    }
 }
 
 void MainWindow::mouseWheel()
@@ -121,49 +155,24 @@ void MainWindow::setupPlot(QCustomPlot* plot)
 
 }
 
-void MainWindow::modeEval(core_mode_t mode)
+void MainWindow::on_RunCV_clicked()
 {
-    switch (mode) {
-        case core_mode_t::IDLE:
-            ui->status->setText("IDLE");
-        break;
-        case core_mode_t::CALIBRATION:
-            ui->status->setText("CALIBRATION");
-        break;
-        case core_mode_t::MEASHUREMENT:
-            ui->status->setText("MEASHUREMENT");
-        break;
-        default:
-            ui->status->setText("IDLE");
-        break;
-    }
+
 }
 
-void MainWindow::sendData(const QByteArray& data)
-{
-    if(data.isEmpty()) return;
-//    socket->writeDatagram(data, QHostAddress::LocalHost, 65001);
-}
 
-void MainWindow::on_calibrate_clicked()
+void MainWindow::on_stopCV_clicked()
 {
     QJsonObject json;
-    json["core_mode"] = modes_.at(core_mode_t::CALIBRATION);
-    sendData(QJsonDocument(json).toJson());
-}
-
-void MainWindow::on_meashurement_clicked()
-{
-    QJsonObject json;
-    json["core_mode"] = modes_.at(core_mode_t::MEASHUREMENT);
-    sendData(QJsonDocument(json).toJson());
+    json["statement"] = static_cast<int>(CoreStatement::HALT);
+    emit sendData(QJsonDocument(json));
 }
 
 
-void MainWindow::on_idle_clicked()
+void MainWindow::on_startCV_clicked()
 {
     QJsonObject json;
-    json["core_mode"] = modes_.at(core_mode_t::IDLE);
-    sendData(QJsonDocument(json).toJson());
+    json["statement"] = static_cast<int>(CoreStatement::WORK);
+    emit sendData(QJsonDocument(json));
 }
 

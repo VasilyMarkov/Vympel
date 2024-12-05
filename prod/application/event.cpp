@@ -8,15 +8,16 @@ Event::Event(std::weak_ptr<IProcessing> cv):process_unit_(cv), start_tick_(proce
 Idle::Idle(std::weak_ptr<IProcessing> cv): Event(cv)
 {  
     logger.createLog();
+    global_data_.clear();
 }
 
-std::optional<core_mode_t> Idle::operator()()
+std::optional<EventType> Idle::operator()()
 {
-    auto filtered = process_unit_.lock()->getProcessParams().filtered;
-    global_data_.push_back(filtered);
-    if(process_unit_.lock()->getTick() - start_tick_ >= constants::WAITING_TICKS) {
-        return core_mode_t::CALIBRATION;   
-    }
+    // auto filtered = process_unit_.lock()->getProcessParams().filtered;
+    // global_data_.push_back(filtered);
+    // if(process_unit_.lock()->getTick() - start_tick_ >= constants::WAITING_TICKS) {
+    //     return EventType::CALIBRATION;   
+    // }
 
     return std::nullopt;
 }
@@ -27,7 +28,7 @@ Calibration::Calibration(std::weak_ptr<IProcessing> cv): Event(cv)
     data_.reserve(constants::buffer::CALIB_SIZE);
 }
 
-std::optional<core_mode_t> Calibration::operator()()
+std::optional<EventType> Calibration::operator()()
 {
 
     auto filtered = process_unit_.lock()->getProcessParams().filtered;
@@ -40,21 +41,21 @@ std::optional<core_mode_t> Calibration::operator()()
         auto [mean, std_deviation] = meanVar(data_);
         process_unit_.lock()->getCalcParams().mean_filtered = mean;
         std::cout << mean << ' ' << std_deviation << std::endl;
-        return core_mode_t::MEASUREMENT;    
+        return EventType::MEASHUREMENT;    
     }
     data_.push_back(filtered);
 
     return std::nullopt;
 }
 
-Measurement::Measurement(std::weak_ptr<IProcessing> cv): Event(cv)
+MEASHUREMENT::MEASHUREMENT(std::weak_ptr<IProcessing> cv): Event(cv)
 {
     std::cout << "measure" << std::endl;
     mean_data.reserve(100);
     coeffs.resize(5);
 }
 
-std::optional<core_mode_t> Measurement::operator()()
+std::optional<EventType> MEASHUREMENT::operator()()
 {
     auto filtered = process_unit_.lock()->getProcessParams().filtered;
     global_data_.push_back(filtered);
@@ -77,7 +78,7 @@ std::optional<core_mode_t> Measurement::operator()()
 
         if(cnt > 3) {
             std::cout << "START: " << process_unit_.lock()->getTick() << std::endl;
-            return core_mode_t::CONDENSATION;   
+            return EventType::CONDENSATION;   
         }
 
         mean_data.clear();
@@ -96,7 +97,7 @@ app::Сondensation::Сondensation(std::weak_ptr<IProcessing> process_unit): Even
     coeffs.resize(5);
 }
 
-std::optional<core_mode_t> app::Сondensation::operator()()
+std::optional<EventType> app::Сondensation::operator()()
 {
     auto filtered = process_unit_.lock()->getProcessParams().filtered;
     global_data_.push_back(filtered);
@@ -119,7 +120,7 @@ std::optional<core_mode_t> app::Сondensation::operator()()
 
         if(cnt > 3) {
             std::cout << "STOP: " << process_unit_.lock()->getTick() << std::endl;
-            return core_mode_t::END;   
+            return EventType::END;   
         }
 
         mean_data.clear();
@@ -147,7 +148,7 @@ End::End(std::weak_ptr<IProcessing> cv):Event(cv)
     logger.log(global_data_);
 }
 
-std::optional<core_mode_t> End::operator()()
+std::optional<EventType> End::operator()()
 {
     return std::nullopt;
 }

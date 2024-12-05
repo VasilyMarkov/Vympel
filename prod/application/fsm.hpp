@@ -18,9 +18,9 @@ public:
     
     void callEvent();
 private:
-    void toggle(core_mode_t);
+    void toggle(EventType);
     void dispatchEvent();
-    core_mode_t mode_ = core_mode_t::IDLE;
+    EventType mode_ = EventType::IDLE;
     std::unique_ptr<Event> active_event_;
 };
 

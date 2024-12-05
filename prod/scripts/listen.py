@@ -3,7 +3,7 @@ import json
 import os
 
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.dirname(os.path.dirname(__file__))
 config_file = os.path.join(dirname, './conf/config.json')
 
 jdata = {
@@ -15,7 +15,7 @@ with open(config_file) as json_data:
     json_data.close()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((config_data['network']['clientIp'], config_data['network']['clientPort']))
+sock.bind((config_data['network']['clientIp'], config_data['network']['controlFromServiceProgramPort']))
 while True:
     msg, adr = sock.recvfrom(1024)
     print(msg)
