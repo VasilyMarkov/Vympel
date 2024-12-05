@@ -33,3 +33,7 @@ ble/
 close
 modbus/
 files/
+ServiceProgram/build
+ServiceProgram/.cache
+ServiceProgram/*.stash
+

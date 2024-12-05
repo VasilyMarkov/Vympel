@@ -11,6 +11,7 @@
 #include <QVariant>
 #include <math.h>
 #include <map>
+#include "configreader.h"
 
 constexpr size_t frame_size = 2000;
 constexpr double VALUE_SIZE = 3e6;
@@ -65,6 +66,9 @@ MainWindow::MainWindow(QWidget *parent)
     plot->graph(1)->setName("filtered");
 //    plot->graph(2)->setPen(QPen(QColor(65, 172, 242), 2));
 //    plot->graph(3)->setPen(QPen(QColor(242, 204, 65), 2));
+
+
+    qDebug() << configReader.get("network", "clientIp").toString();
 }
 
 MainWindow::~MainWindow()

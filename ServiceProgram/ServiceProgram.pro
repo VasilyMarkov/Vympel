@@ -11,10 +11,13 @@ CONFIG += c++1z
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    qcustomplot.cpp
+    qcustomplot.cpp \
+    udp.cpp
 HEADERS += \
+    configreader.h \
     mainwindow.h \
-    qcustomplot.h
+    qcustomplot.h \
+    udp.h
 
 FORMS += \
     mainwindow.ui

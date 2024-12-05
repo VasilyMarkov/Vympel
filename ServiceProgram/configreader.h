@@ -1,5 +1,7 @@
-#ifndef CONFIG_READER_H
-#define CONFIG_READER_H
+#ifndef CONFIGREADER_H
+#define CONFIGREADER_H
+
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -13,12 +15,9 @@
 #include <filesystem>
 #include <exception>
 
-namespace app 
-{
-
 namespace fs = std::filesystem;
 
-class ConfigReader final 
+class ConfigReader final
 {
 public:
     ConfigReader(const ConfigReader&) = delete;
@@ -35,10 +34,10 @@ public:
     }
 private:
     ConfigReader() {
-        auto configFilePath = fs::current_path().parent_path();
+        auto configFilePath = fs::current_path().parent_path().parent_path();
         configFilePath /= localPath_;
-        
-        QFile file(configFilePath);
+
+        QFile file(QString::fromStdString(configFilePath.string()));
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             throw std::runtime_error("Could not open config file.");
         }
@@ -55,17 +54,15 @@ private:
         auto hash = jsonDoc.toVariant().toHash();
 
         for(auto it = hash.begin(); it != hash.end(); ++it) {
-            config_store_.emplace(it.key(), std::make_shared<QVariantHash>(it.value().toHash()));
+            config_store_.insert(it.key(), std::make_shared<QVariantHash>(it.value().toHash()));
         }
     }
     ~ConfigReader(){}
 
-    const std::string localPath_ = "conf/config.json";
+    const std::string localPath_ = "prod/conf/config.json";
     QHash<QString, std::shared_ptr<QVariantHash>> config_store_;
 };
 
 inline auto&& configReader = ConfigReader::getInstance();
 
-} //namespace app
-
-#endif //CONFIG_READER_H
+#endif // CONFIGREADER_H
