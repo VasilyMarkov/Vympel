@@ -9,35 +9,38 @@
 
 namespace app {
 
-class NetLogic: public QObject, IReceiver {
-    Q_OBJECT
-public:
-    NetLogic();
-    std::optional<double> getValue();
-public Q_SLOTS:
-    void receiveData(const QJsonDocument&) override;
-private:
-    std::queue<double> receiveBuffer_;
-    std::unique_ptr<UdpSocket> cameraSocket_;
-};
-
-
 class CameraProcessingModule: public IProcessing {
 public:
     explicit CameraProcessingModule();
-    bool process() override;
+    state process() override;
 private:
     cv::VideoCapture capture_;
     cv::Mat frame_;
     LowPassFilter filter_;
 };
 
+struct dataCV {
+    double value;
+    bool valid;
+};
+
+class NetLogic: public QObject, IReceiver {
+    Q_OBJECT
+public:
+    NetLogic();
+    std::optional<dataCV> getValue();
+public Q_SLOTS:
+    void receiveData(const QJsonDocument&) override;
+private:
+    std::queue<dataCV> receiveBuffer_;
+    std::unique_ptr<UdpSocket> cameraSocket_;
+};
 
 class NetProcessing: public IProcessing {
 public:
     NetProcessing();
 private:
-    bool process() override;
+    state process() override;
     NetLogic netLogic;
     LowPassFilter filter_;
 };

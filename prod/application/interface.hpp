@@ -48,7 +48,12 @@ protected:
     calc_params_t calc_params_;                //parameters obtained by processing cv parameters inside events
     size_t global_tick_ = 0;
 public:
-    virtual bool process() = 0;
+    enum class state {
+        WORKING,
+        NODATA,
+        DONE
+    };
+    virtual state process() = 0;
     size_t getTick() const noexcept {return global_tick_;}
     process_params_t getProcessParams() const noexcept {return process_params_;}
     calc_params_t& getCalcParams() noexcept {return calc_params_;}

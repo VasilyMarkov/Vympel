@@ -2,19 +2,14 @@
 #include <QCoreApplication>
 #include "core.hpp"
 #include "utility.hpp"
+#include "logger.hpp"
 
 namespace app
 {
  
 Core::Core(std::shared_ptr<IProcessing> processModule): 
     process_unit_(processModule),
-    active_event_(std::make_unique<Idle>(process_unit_)),
-    events_({
-        {"idle", EventType::IDLE},
-        {"calibration", EventType::CALIBRATION},
-        {"meashurement", EventType::MEASHUREMENT},
-    }){}
-
+    active_event_(std::make_unique<Idle>(process_unit_)) {}
 
 void Core::receiveTemperature(double temperature) const
 {
@@ -23,25 +18,27 @@ void Core::receiveTemperature(double temperature) const
 
 bool Core::process()
 {
-    while(process_unit_->process()) {
-        callEvent();
+    while(process_unit_->process() != IProcessing::state::DONE) {
         if(statement_ == CoreStatement::HALT) {
             offFSM();
         }
         else {
             onFSM();
+            callEvent();
             auto processParams = process_unit_->getProcessParams();
             json_["brightness"] = processParams.brightness;
             json_["filtered"] = processParams.filtered;
-            
+            global_data_.push_back(processParams.filtered);
         }
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
         Q_EMIT sendData(QJsonDocument(json_));
+
         QThread::msleep(20); //TODO Need to implement via timer
         QCoreApplication::processEvents();
     }
-    Q_EMIT exit();
+    logger.log(global_data_);
+    // Q_EMIT exit();
 
     return true;
 }
@@ -63,7 +60,7 @@ std::shared_ptr<IProcessing> Core::getProcessUnit() const {
 void Core::toggle(EventType mode)
 {
     if (mode_ == mode) return;
-
+    
     mode_ = mode;
     dispatchEvent();
 }
@@ -82,14 +79,16 @@ void Core::callEvent()
 void Core::dispatchEvent()
 {
     active_event_.reset(nullptr);
-
+    
     switch (mode_)
     {
     case EventType::IDLE:
+        global_data_.clear();
         active_event_ = std::make_unique<Idle>(process_unit_);
     break;
 
     case EventType::CALIBRATION:
+        logger.createLog();
         active_event_ = std::make_unique<Calibration>(process_unit_);
     break;
 
@@ -99,10 +98,12 @@ void Core::dispatchEvent()
             active_event_ = std::make_unique<MEASHUREMENT>(process_unit_);
         }
     break;
+
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_);
         Q_EMIT requestTemperature();
     break;
+
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
         Q_EMIT requestTemperature();
