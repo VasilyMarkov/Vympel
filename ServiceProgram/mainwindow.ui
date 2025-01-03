@@ -23,7 +23,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,2,5">
+     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,2,6,1">
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="1" column="0">
@@ -111,7 +111,7 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1,1,1">
         <item>
-         <widget class="QPushButton" name="RunCV">
+         <widget class="QPushButton" name="runCV">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -120,6 +120,19 @@
           </property>
           <property name="text">
            <string>RUN</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="closeCV">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>CLOSE</string>
           </property>
          </widget>
         </item>
@@ -149,20 +162,39 @@
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QPushButton" name="disconnect">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Disconnect</string>
-          </property>
-         </widget>
-        </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox">
+        <property name="title">
+         <string>Bluetooth</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,8">
+         <item>
+          <widget class="QPushButton" name="ble_connect">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Connect</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTextEdit" name="textEdit">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </item>
       <item>
        <spacer name="verticalSpacer">
