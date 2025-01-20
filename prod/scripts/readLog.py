@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import butter, filtfilt
 from scipy.optimize import minimize
+from scipy.signal import savgol_filter
+
 
 def signaltonoise_dB(a, axis=0, ddof=0):
     a = np.asanyarray(a)
@@ -39,6 +41,22 @@ def lowpass_filter(data, cutoff, fs, order=5):
     b, a = butter_lowpass(cutoff, fs, order=order)
     y = filtfilt(b, a, data)
     return y
+
+
+def mowingAverage(data, windowSize = 3): 
+
+    std = np.std(np.gradient(data[10:50]))
+    print(np.gradient(data[10:50]))
+    th = 5*std
+    print(th)
+
+    np.mean(data)
+    result = np.zeros(data.shape[0])
+    for i in range(data.shape[0] - windowSize):
+        if(np.mean(np.gradient(data[i:i+windowSize])) > th):
+            result[i] = 1
+    
+    return result
 
 
 def bars(data):
@@ -81,10 +99,13 @@ y_data -= np.min(y_data)
 y_data /= np.max(y_data)
 filtered = lowpass_filter(y_data, cutoff, fs, order)
 
+
+window_size = 20
+poly_order = 10
+smoothed = savgol_filter(filtered, window_size, poly_order)
+
 snr=signaltonoise_dB(y_data[0:500], axis=0, ddof=0) 
 fsnr=signaltonoise_dB(filtered[0:500], axis=0, ddof=0) 
-print(f"SNR: {snr}")
-print(f"Filtered SNR: {fsnr}")
 bars = bars(y_data)
 
 guess_shift = np.argmax(y_data)
@@ -101,7 +122,8 @@ sigma = optimal_coeffs[2]
 polyCoeffs = optimal_coeffs[3:]
 
 res_gaussian = gaussian(x_data, a, x0, sigma, polyCoeffs)
-grad = np.gradient(y_data)
+grad = np.gradient(filtered)
+grad = lowpass_filter(grad, 1, fs, order)
 ref = y_data[:10]
 
 corr_res = corr(y_data, ref)
@@ -111,9 +133,13 @@ print(f"MSE: {np.sqrt(np.mean((np.array(y_data) - np.array(res_gaussian))**2))}"
 
 # np.save('data/12', y_data[50:510])
 
-fig, ax = plt.subplots(2, 1)
+mw = mowingAverage(filtered, 10)
+
+fig, ax = plt.subplots(4, 1)
 ax[0].plot(x_data, y_data, label='Data')
 ax[1].plot(x_data, filtered, label='Data')
+ax[2].plot(x_data, grad, label='Data')
+ax[3].plot(x_data, mw, label='Data')
 # ax[0].plot(x_data[50:510], y_data[50:510])
 # ax[1].plot(bars, 'r')
 
