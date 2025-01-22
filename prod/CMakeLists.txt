@@ -5,7 +5,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Qt5 REQUIRED COMPONENTS 
+find_package(Qt6 REQUIRED COMPONENTS 
     Core 
     Bluetooth 
     Network
