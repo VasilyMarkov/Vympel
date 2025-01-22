@@ -19,6 +19,7 @@
         "deviceName": "RigCom"
     },
     "files": {
-        "videoFile": "files/video.mp4"
+        "videoFile": "files/video.mp4",
+        "runScript": "scripts/run_video.py"
     }
 }

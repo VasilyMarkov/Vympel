@@ -7,6 +7,7 @@
 #include <iostream>
 #include "interface.hpp"
 #include "utility.hpp"
+#include <functional>
 
 namespace app
 {

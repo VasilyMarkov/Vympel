@@ -36,6 +36,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(socket_.get(), &UdpSocket::sendData, this, &MainWindow::receiveData);
     connect(this, &MainWindow::sendData, socket_.get(), &UdpSocket::receiveData);
 
+    auto processPath = fs::current_path().parent_path().parent_path();
+    processPath /= "prod";
+    processPath /= configReader.get("files", "runScript").toString().toStdString();
+
+    pythonCommandArguments_ = QStringList() << QString::fromStdString(processPath.string());
+
+
+
     resize(1280, 720);
     plot = ui->plot;
     connect(plot, &QCustomPlot::mouseWheel, this, &MainWindow::mouseWheel);
@@ -155,9 +163,9 @@ void MainWindow::setupPlot(QCustomPlot* plot)
 
 }
 
-void MainWindow::on_RunCV_clicked()
+void MainWindow::on_runCV_clicked()
 {
-
+    process_.start ("python3", pythonCommandArguments_);
 }
 
 
@@ -174,5 +182,16 @@ void MainWindow::on_startCV_clicked()
     QJsonObject json;
     json["statement"] = static_cast<int>(CoreStatement::WORK);
     emit sendData(QJsonDocument(json));
+}
+
+
+void MainWindow::on_closeCV_clicked()
+{
+    process_.close();
+}
+
+void MainWindow::on_ble_connect_clicked()
+{
+
 }
 

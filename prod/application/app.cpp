@@ -53,5 +53,5 @@ app::Application::Application(const QCoreApplication& q_core_app)
 
 app::Application::~Application()
 {
-    logger.destroyLog();
+    // logger.destroyLog();
 }

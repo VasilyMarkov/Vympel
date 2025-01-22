@@ -3,26 +3,23 @@
 namespace app
 {
 
-Event::Event(std::weak_ptr<IProcessing> cv):process_unit_(cv), start_tick_(process_unit_.lock()->getTick()) {}
+Event::Event(std::weak_ptr<IProcessing> cv):
+    process_unit_(cv), 
+    start_tick_(process_unit_.lock()->getTick()) {}
 
-Idle::Idle(std::weak_ptr<IProcessing> cv): Event(cv)
+Idle::Idle(std::weak_ptr<IProcessing> cv): 
+    Event(cv)
 {  
-    logger.createLog();
     global_data_.clear();
 }
 
 std::optional<EventType> Idle::operator()()
 {
-    // auto filtered = process_unit_.lock()->getProcessParams().filtered;
-    // global_data_.push_back(filtered);
-    // if(process_unit_.lock()->getTick() - start_tick_ >= constants::WAITING_TICKS) {
-    //     return EventType::CALIBRATION;   
-    // }
-
-    return std::nullopt;
+    return EventType::CALIBRATION;
 }
 
-Calibration::Calibration(std::weak_ptr<IProcessing> cv): Event(cv)
+Calibration::Calibration(std::weak_ptr<IProcessing> cv): 
+    Event(cv)
 {
     std::cout << "calib" << std::endl;
     data_.reserve(constants::buffer::CALIB_SIZE);
@@ -48,7 +45,8 @@ std::optional<EventType> Calibration::operator()()
     return std::nullopt;
 }
 
-MEASHUREMENT::MEASHUREMENT(std::weak_ptr<IProcessing> cv): Event(cv)
+MEASHUREMENT::MEASHUREMENT(std::weak_ptr<IProcessing> cv): 
+    Event(cv)
 {
     std::cout << "measure" << std::endl;
     mean_data.reserve(100);
@@ -90,7 +88,8 @@ std::optional<EventType> MEASHUREMENT::operator()()
     return std::nullopt;
 }
 
-app::Сondensation::Сondensation(std::weak_ptr<IProcessing> process_unit): Event(process_unit)
+app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv): 
+    Event(cv)
 {
     std::cout << "condensation" << std::endl;
     mean_data.reserve(100);
@@ -133,7 +132,8 @@ std::optional<EventType> app::Сondensation::operator()()
     return std::nullopt;
 }
 
-End::End(std::weak_ptr<IProcessing> cv):Event(cv)
+End::End(std::weak_ptr<IProcessing> cv):
+    Event(cv)
 {
     auto max_it = std::max_element(std::begin(global_data_), std::end(global_data_));
     auto start_point = std::distance(std::begin(global_data_), max_it);
@@ -145,7 +145,7 @@ End::End(std::weak_ptr<IProcessing> cv):Event(cv)
 
     std::cout << start_point +  lower_bound.size()/2 << std::endl;
 
-    logger.log(global_data_);
+    // logger.log(global_data_);
 }
 
 std::optional<EventType> End::operator()()

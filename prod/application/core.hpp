@@ -12,7 +12,6 @@
 #include "interface.hpp"
 #include "event.hpp"
 #include "fsm.hpp"
-#include <QMetaEnum>
 
 namespace app {
 
@@ -49,9 +48,8 @@ private:
     EventType mode_ = EventType::IDLE;
     std::shared_ptr<IProcessing> process_unit_;
     std::unique_ptr<Event> active_event_;
-    const std::unordered_map<QString, EventType> events_;
     QJsonObject json_;
-    
+    std::vector<double> global_data_;
 };
 
 } //namespace app

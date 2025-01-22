@@ -32,10 +32,13 @@ public:
             jsonDir.cd(QString(jsonDir.absolutePath() + "/logs"));
             auto fileName = QDateTime::currentDateTime().toString(Qt::ISODate);
             file = std::make_unique<QFile>(QString(jsonDir.absolutePath() + '/' + fileName + ".json"));
+            std::cout << fileName.toStdString() << std::endl;
         }
     }
     void log(double data) 
     {
+        assert(file && "Log file doesn't exists");
+
         QJsonObject jsonObj;
         jsonObj["filtered_brightness"] = data;
 
@@ -76,7 +79,7 @@ private:
     std::unique_ptr<QFile> file;
 };
 
-inline auto&& logger = Logger::getInstance();
+// inline auto&& logger = Logger::getInstance();
 
 } //namespace app
 

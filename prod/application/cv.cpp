@@ -35,8 +35,9 @@ CameraProcessingModule::CameraProcessingModule():
     cam.VideoStream(&width, &height, &stride);
 }
 
-bool CameraProcessingModule::process()
+IProcessing::state CameraProcessingModule::process()
 {
+<<<<<<< HEAD
     if (cam.readFrame(&frameData)) {
         Mat im(height, width, CV_8UC3, frameData.imageData, stride);
 
@@ -44,14 +45,34 @@ bool CameraProcessingModule::process()
         // key = waitKey(1);
 
         std::vector<uint8_t> v(im.begin<uint8_t>(), im.end<uint8_t>());
+=======
+        capture_ >> frame_;
+        
+        if(frame_.empty()) return IProcessing::state::NODATA;
+        cv::imshow("w", frame_);
+        cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
+        
+        std::vector<uint8_t> v(frame_.begin<uint8_t>(), frame_.end<uint8_t>());
+>>>>>>> origin/dev
         process_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
         
         process_params_.filtered = filter_.filter(process_params_.brightness);
 
+<<<<<<< HEAD
         // std::cout << process_params_.filtered << std::endl;
     }
     ++global_tick_;
     return true;
+=======
+        // if(calc_params_.event_completeness.calibration) {
+        //     process_params_.filtered -= calc_params_.mean_filtered;
+        //     process_params_.brightness -= calc_params_.mean_filtered;
+        // }
+
+        ++global_tick_;
+        
+        return IProcessing::state::WORKING;
+>>>>>>> origin/dev
         
 }
 
@@ -64,7 +85,11 @@ NetLogic::NetLogic():
                                          configReader.get("network", "videoPort").toInt());
 }
 
-std::optional<double> NetLogic::getValue()
+void NetLogic::receiveData(const QJsonDocument& json) {
+    receiveBuffer_.push({json["brightness"].toDouble(), json["valid"].toBool()});
+}
+
+std::optional<dataCV> NetLogic::getValue()
 {
     if(receiveBuffer_.empty()) return std::nullopt;
 
@@ -73,20 +98,23 @@ std::optional<double> NetLogic::getValue()
     return value;
 }
 
-void NetLogic::receiveData(const QJsonDocument& json) {
-    receiveBuffer_.push(json["brightness"].toDouble());
-}
-
 NetProcessing::NetProcessing(): filter_(filter::cutoff_frequency, filter::sample_rate) {}
 
-bool NetProcessing::process()
-{
-    if(netLogic.getValue()) {
-        process_params_.brightness = netLogic.getValue().value(); 
+IProcessing::state NetProcessing::process()
+{   
+    if(auto net_value = netLogic.getValue(); net_value.has_value()) {
+        if(!net_value.value().valid) return IProcessing::state::DONE;
+
+        process_params_.brightness = net_value.value().value; 
         process_params_.filtered = filter_.filter(process_params_.brightness);
+
+        return IProcessing::state::WORKING;
+    }
+    else {
+        return IProcessing::state::NODATA;
     }
     ++global_tick_;
-    return true;
+    
 }
 
 
