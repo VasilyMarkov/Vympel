@@ -2,15 +2,20 @@
 #define IO_INTERFACE_H
 
 #include <QByteArray>
-#include <QJsonDocument>
-#include <fmt/core.h>
 
 namespace app {
 
-enum class EventType {
+namespace constants {
+    namespace port {
+        constexpr quint16 SENDER_PORT = 65000;
+        constexpr quint16 RECEIVER_PORT = 65001;
+    }
+}
+
+enum class core_mode_t {
     IDLE,
     CALIBRATION,
-    MEASHUREMENT,
+    MEASUREMENT,
     CONDENSATION,
     END
 };
@@ -26,7 +31,7 @@ struct calc_params_t {
 
     struct event_completeness_t {
         bool calibration = false;
-        bool MEASHUREMENT = false;
+        bool measurement = false;
     };
     event_completeness_t event_completeness;
 
@@ -55,16 +60,11 @@ public:
     virtual ~IProcessing(){}
 };
 
-class IReceiver {
+class ICommunication {
 public:
-    virtual void receiveData(const QJsonDocument&) = 0;
-    virtual ~IReceiver(){}
-};
-
-class ISender {
-public:
-    virtual void sendData(const QJsonDocument&) const = 0;;
-    virtual ~ISender(){}
+    virtual void receiveData(const QString&) = 0;
+    virtual void sendData(const process_params_t&) const = 0;;
+    virtual ~ICommunication(){}
 };
 
 }

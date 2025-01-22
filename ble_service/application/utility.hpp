@@ -4,7 +4,6 @@
 #include <chrono>
 #include <vector>
 #include <unordered_map>
-#include <map>
 #include <iostream>
 #include <concepts>
 #include <numeric>
@@ -13,8 +12,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QDebug>
-#include <QVariant>
-
 
 namespace app {
 
@@ -36,16 +33,8 @@ void print(const std::vector<T>& vector) {
 
 template <typename T, typename U>
 void print(const std::unordered_map<T, U>& map) {
-    for(auto&& [key, el]:map) {
-        std::cout << key << ' ' << el << ' ';
-    }
-    std::cout << std::endl;
-}
-
-template <typename T, typename U>
-void print(const std::map<T, U>& map) {
-    for(auto&& [key, el]:map) {
-        std::cout << key << ' ' << el << ' ';
+    for(auto&& el:map) {
+        std::cout << el << ' ';
     }
     std::cout << std::endl;
 }
@@ -63,7 +52,7 @@ inline std::vector<double> readInputData() {
     return data;
 }
 
-inline std::optional<QVariantMap> parseJsonFile(const QString &filePath) {
+inline std::optional<std::pair<QString, int>> parseJsonFile(const QString &filePath) {
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -88,19 +77,9 @@ inline std::optional<QVariantMap> parseJsonFile(const QString &filePath) {
 
     auto clientIp = networkObj.value("clientIp").toString();
     auto clientPort = networkObj.value("clientPort").toInt();
-    auto hostIp = networkObj.value("hostIp").toString();
-    auto hostPort = networkObj.value("hostPort").toInt();
 
-    QVariantMap config;
-
-    config["clientIp"].setValue(clientIp);
-    config["clientPort"].setValue(clientPort);
-    config["hostIp"].setValue(hostIp);
-    config["hostPort"].setValue(hostPort);
-
-    return config;
+    return std::pair<QString, int> (clientIp, clientPort);
 }
-
 
 inline uint16_t crc16(const std::vector<uint8_t>& buf, size_t len) {
     uint16_t nCRC16 = 0xFFFF;
@@ -179,7 +158,7 @@ public:
     LowPassFilter(double cutoff_frequency, double sample_rate, double q = 0.707): 
         alpha_(std::sin(2 * M_PI * cutoff_frequency / sample_rate) / (2 * q)) {}
 
-    double filter(double x) {
+    double Process(double x) {
         y_ = alpha_ * (x - y_) + y_;
         return y_;
     }

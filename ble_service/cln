@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+if [ -d "build" ]; then
+  rm -rf build
+else
+  echo "Directory build doesn't exists."
+fi

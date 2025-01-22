@@ -7,15 +7,23 @@
 #include <QThread>
 #include <unordered_map>
 #include <deque>
+#include "udp.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
-enum class core_mode_t {
+enum class EventType {
     IDLE,
     CALIBRATION,
-    MEASHUREMENT
+    MEASHUREMENT,
+    CONDENSATION,
+    END
+};
+
+enum class CoreStatement {
+    WORK,
+    HALT
 };
 
 class MainWindow : public QMainWindow
@@ -27,21 +35,24 @@ public:
     ~MainWindow();
 
 private slots:
-    void readSocket();
+    void receiveData(const QJsonDocument& json);
     void mouseWheel();
-    void on_calibrate_clicked();
-    void on_meashurement_clicked();
 
-    void on_idle_clicked();
+    void on_RunCV_clicked();
+    void on_stopCV_clicked();
+    void on_startCV_clicked();
+Q_SIGNALS:
+    void sendData(const QJsonDocument&);
 
 private:
     void setupPlot(QCustomPlot*);
-    void modeEval(core_mode_t);
-    void sendData(const QByteArray&);
+    void modeEval(EventType);
 private:
     Ui::MainWindow *ui;
-    QUdpSocket* socket;
+    std::unique_ptr<UdpSocket> socket_;
     QCustomPlot* plot;
-    std::unordered_map<core_mode_t, QString> modes_;
+    std::unordered_map<EventType, QString> modes_;
+    CoreStatement coreStatement_;
+    int sample_ = 0;
 };
 #endif // MAINWINDOW_H

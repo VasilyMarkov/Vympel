@@ -1,11 +1,7 @@
-#include "udp.hpp"
+#include "udp.h"
 #include <iostream>
 
-using namespace app;
-
-namespace app {
-
-UdpSocket::UdpSocket() {
+UdpSocket::UdpSocket(QObject *parent): QObject(parent) {
     connect(&socket_, &QUdpSocket::readyRead, this, &UdpSocket::receivePortData);
 }
 
@@ -41,6 +37,4 @@ void UdpSocket::setReceiverParameters(const QHostAddress& receiverIp = QHostAddr
     if (receiverPort <= RESERVE_PORTS) throw std::runtime_error("Invalid receiver port");
 
     socket_.bind(receiverIp, receiverPort);
-}
-
 }

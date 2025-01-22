@@ -1,33 +1,30 @@
 #ifndef UDP_H
 #define UDP_H
 
+#include <QObject>
 #include <QUdpSocket>
-#include <QJsonObject>
-#include "interface.hpp"
-
-namespace app {
+#include <QJsonDocument>
 
 constexpr int RESERVE_PORTS = 1024;
 
-class UdpSocket final: public QObject {
+class UdpSocket : public QObject
+{
     Q_OBJECT
 public:
-    UdpSocket();
-    void sendPortData(const QByteArray&); //send to port
+    explicit UdpSocket(QObject *parent = nullptr);
     void setSenderParameters(const QHostAddress&, quint16);
     void setReceiverParameters(const QHostAddress&, quint16);
-private Q_SLOTS:
+signals:
+    void sendData(const QJsonDocument&);
+private slots:
     void receivePortData();
-public Q_SLOTS:
+public slots:
     void receiveData(const QJsonDocument&);
 private:
+    void sendPortData(const QByteArray&);
     QUdpSocket socket_;
     QHostAddress senderAddr_ = QHostAddress::LocalHost;
     quint16 senderPort_ = 1024;
-Q_SIGNALS:
-    void sendData(const QJsonDocument&); 
 };
 
-}
-
-#endif //UDP_H
+#endif // UDP_H

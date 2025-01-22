@@ -22,6 +22,8 @@ prod/*.mp4
 prod/build
 prod/Debug
 prod/Release
+prod/logs/*
+ble_service/build
 blscanner
 .vscode
 *.pdf
@@ -30,3 +32,8 @@ build-BLETester-Desktop-Debug/
 ble/
 close
 modbus/
+files/
+ServiceProgram/build
+ServiceProgram/.cache
+ServiceProgram/*.stash
+

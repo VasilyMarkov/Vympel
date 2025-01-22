@@ -1,0 +1,9 @@
+{
+    "network": {
+        "clientIp": "127.0.0.1",
+        "clientPort": 64000
+    },
+    "bluetooth": {
+        "deviceName": "RigCom"
+    }
+}

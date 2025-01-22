@@ -12,35 +12,51 @@
 #include "interface.hpp"
 #include "event.hpp"
 #include "fsm.hpp"
+#include <QMetaEnum>
 
 namespace app {
 
-class Core final: public QObject, public ICommunication {
+enum class CoreStatement {
+    WORK,
+    HALT
+};
+
+class Core final: public QObject, IReceiver, ISender {
     Q_OBJECT
     friend class CoreTest;
 public:
     explicit Core(std::shared_ptr<IProcessing>);
     std::shared_ptr<IProcessing> getProcessUnit() const;
 public Q_SLOTS:
-    void receiveData(const QString&) override;
-    void receiveTemperature(double);
+    void receiveData(const QJsonDocument&) override;
+    void receiveTemperature(double) const;
     bool process();
     void bleDeviceConnected();
 Q_SIGNALS:
-    void sendData(const process_params_t&) const override;
+    void sendData(const QJsonDocument&) const override;
     void exit();
     void requestTemperature();
 private:
+    /**********FSM***********/
+    void callEvent();
+    void toggle(EventType);
+    void dispatchEvent();
+    void onFSM();
+    void offFSM();
+    bool isOnFSM = false;
+    /************************/
+    CoreStatement statement_ = CoreStatement::HALT;
+    EventType mode_ = EventType::IDLE;
     std::shared_ptr<IProcessing> process_unit_;
-    std::unique_ptr<Fsm> fsm_;
-    const std::unordered_map<QString, core_mode_t> events_;
-    // double temperature_;
+    std::unique_ptr<Event> active_event_;
+    const std::unordered_map<QString, EventType> events_;
+    QJsonObject json_;
     
 };
 
 } //namespace app
 
 Q_DECLARE_METATYPE(app::process_params_t)
-Q_DECLARE_METATYPE(app::core_mode_t)
+Q_DECLARE_METATYPE(app::EventType)
 
 #endif //CORE_H

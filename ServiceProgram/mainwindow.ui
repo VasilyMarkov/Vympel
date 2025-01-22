@@ -111,7 +111,7 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1,1,1">
         <item>
-         <widget class="QPushButton" name="calibrate">
+         <widget class="QPushButton" name="RunCV">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -119,12 +119,12 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Calibrate</string>
+           <string>RUN</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="meashurement">
+         <widget class="QPushButton" name="startCV">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -132,12 +132,12 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Meashurement</string>
+           <string>START</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="idle">
+         <widget class="QPushButton" name="stopCV">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -145,7 +145,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Idle</string>
+           <string>STOP</string>
           </property>
          </widget>
         </item>
