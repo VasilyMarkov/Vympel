@@ -45,7 +45,7 @@ std::optional<EventType> Calibration::operator()()
     return std::nullopt;
 }
 
-MEASHUREMENT::MEASHUREMENT(std::weak_ptr<IProcessing> cv): 
+Meashurement::Meashurement(std::weak_ptr<IProcessing> cv): 
     Event(cv)
 {
     std::cout << "measure" << std::endl;
@@ -53,7 +53,7 @@ MEASHUREMENT::MEASHUREMENT(std::weak_ptr<IProcessing> cv):
     coeffs.resize(5);
 }
 
-std::optional<EventType> MEASHUREMENT::operator()()
+std::optional<EventType> Meashurement::operator()()
 {
     auto filtered = process_unit_.lock()->getProcessParams().filtered;
     global_data_.push_back(filtered);
@@ -132,57 +132,6 @@ std::optional<EventType> app::Сondensation::operator()()
     return std::nullopt;
 }
 
-End::End(std::weak_ptr<IProcessing> cv):
-    Event(cv)
-{
-    auto max_it = std::max_element(std::begin(global_data_), std::end(global_data_));
-    auto start_point = std::distance(std::begin(global_data_), max_it);
-    std::cout << start_point << std::endl;
-    std::vector analize_data(max_it, std::end(global_data_));
-    std::vector<double> lower_bound;
-    std::copy_if(std::begin(analize_data), std::end(analize_data), std::back_inserter(lower_bound), 
-        [&max_it](double value){return value < 0.97*(*max_it) && value >  0.93*(*max_it);});
-
-    std::cout << start_point +  lower_bound.size()/2 << std::endl;
-
-    // logger.log(global_data_);
-}
-
-std::optional<EventType> End::operator()()
-{
-    auto filtered = process_unit_.lock()->getProcessParams().filtered;
-   
-
-    if(mean_data.size() == mean_data.capacity()) {
-        auto mean = std::accumulate(std::begin(mean_data), std::end(mean_data), 0.0)/mean_data.size();
-
-        auto isNegativeGrowth = [](double coeff)
-        {
-            static double local_coeff = 0;
-            auto greater = coeff < local_coeff;
-            local_coeff = coeff;
-            return greater;
-        };
-
-        coeffs.pop_front();
-        coeffs.push_back(isNegativeGrowth(mean));
-
-        auto cnt = std::count_if(std::begin(coeffs), std::end(coeffs), [](bool val){return val == true;});
-
-        if(cnt > 3) {
-            std::cout << "STOP: " << process_unit_.lock()->getTick() << std::endl;
-            return core_mode_t::END;   
-        }
-
-        mean_data.clear();
-    }
-
-    mean_data.push_back(filtered);
-    global_data_.push_back(filtered);
-    ++local_tick_;
-    return std::nullopt;
-}
-
 End::End(std::weak_ptr<IProcessing> cv):Event(cv)
 {
     std::cout << "vaporization" << std::endl;
@@ -199,10 +148,9 @@ End::End(std::weak_ptr<IProcessing> cv):Event(cv)
     global_data_.clear();
 }
 
-std::optional<core_mode_t> End::operator()()
+std::optional<EventType> End::operator()()
 {
-    return core_mode_t::IDLE;
-    // return std::nullopt;
+    return std::nullopt;
 }
 
 } // namespace app

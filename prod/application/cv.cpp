@@ -37,15 +37,6 @@ CameraProcessingModule::CameraProcessingModule():
 
 IProcessing::state CameraProcessingModule::process()
 {
-<<<<<<< HEAD
-    if (cam.readFrame(&frameData)) {
-        Mat im(height, width, CV_8UC3, frameData.imageData, stride);
-
-        // imshow("libcamera-demo", im);
-        // key = waitKey(1);
-
-        std::vector<uint8_t> v(im.begin<uint8_t>(), im.end<uint8_t>());
-=======
         capture_ >> frame_;
         
         if(frame_.empty()) return IProcessing::state::NODATA;
@@ -53,17 +44,10 @@ IProcessing::state CameraProcessingModule::process()
         cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
         
         std::vector<uint8_t> v(frame_.begin<uint8_t>(), frame_.end<uint8_t>());
->>>>>>> origin/dev
         process_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
         
         process_params_.filtered = filter_.filter(process_params_.brightness);
 
-<<<<<<< HEAD
-        // std::cout << process_params_.filtered << std::endl;
-    }
-    ++global_tick_;
-    return true;
-=======
         // if(calc_params_.event_completeness.calibration) {
         //     process_params_.filtered -= calc_params_.mean_filtered;
         //     process_params_.brightness -= calc_params_.mean_filtered;
@@ -72,7 +56,6 @@ IProcessing::state CameraProcessingModule::process()
         ++global_tick_;
         
         return IProcessing::state::WORKING;
->>>>>>> origin/dev
         
 }
 

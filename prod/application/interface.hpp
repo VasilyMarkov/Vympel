@@ -3,7 +3,6 @@
 
 #include <QByteArray>
 #include <QJsonDocument>
-#include <fmt/core.h>
 
 namespace app {
 

@@ -33,7 +33,6 @@ protected:
     std::vector<double> data_;
     inline static std::vector<double> global_data_;
     size_t start_tick_ = 0;
-    inline static std::vector<double> global_data_;
 };
 
 class Idle final: public Event {
@@ -48,12 +47,12 @@ public:
     std::optional<EventType> operator()() override;
 };
 
-class MEASHUREMENT final: public Event {
+class Meashurement final: public Event {
     std::vector<double> mean_data;
     std::deque<bool> coeffs;
     size_t local_tick_ = 0;
 public:
-    MEASHUREMENT(std::weak_ptr<IProcessing>);
+    Meashurement(std::weak_ptr<IProcessing>);
     std::optional<EventType> operator()() override;
 };
 
@@ -70,15 +69,6 @@ class End final: public Event {
 public:
     End(std::weak_ptr<IProcessing>);
     std::optional<EventType> operator()() override;
-};
-
-class End final: public Event {
-public:
-    End(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
-    
-private:
-    
 };
 
 } //namespace app

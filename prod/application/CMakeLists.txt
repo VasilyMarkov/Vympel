@@ -15,8 +15,6 @@ find_library(LIBCAMERA_BASE_LIBRARY libcamera-base.so REQUIRED)
 
 find_package(OpenCV REQUIRED)
 
-find_package(fmt)
-
 add_executable(application 
     app.cpp
     bluetoothDevice.cpp
@@ -39,7 +37,6 @@ target_link_libraries(application PRIVATE
     ${LIBCAMERA_BASE_LIBRARY}
     ${LIBCAMERA_LIBRARY}
     ${OpenCV_LIBS} 
-    fmt::fmt
     Qt6::Core 
     Qt6::Bluetooth
     Qt6::Network

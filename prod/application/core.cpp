@@ -13,10 +13,7 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
 
 void Core::receiveTemperature(double temperature) const
 {
-    // std::cout << temperature << std::endl;
-    fsm_->setTemp(temperature);
-
-    
+    std::cout << temperature << std::endl;
 }
 
 bool Core::process()
@@ -98,7 +95,7 @@ void Core::dispatchEvent()
     case EventType::MEASHUREMENT:
         if(process_unit_->getCalcParams().event_completeness.calibration) 
         {
-            active_event_ = std::make_unique<MEASHUREMENT>(process_unit_);
+            active_event_ = std::make_unique<Meashurement>(process_unit_);
         }
     break;
 
