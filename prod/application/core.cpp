@@ -37,7 +37,7 @@ bool Core::process()
         QThread::msleep(20); //TODO Need to implement via timer
         QCoreApplication::processEvents();
     }
-    logger.log(global_data_);
+    // logger.log(global_data_);
     // Q_EMIT exit();
 
     return true;
@@ -88,7 +88,7 @@ void Core::dispatchEvent()
     break;
 
     case EventType::CALIBRATION:
-        logger.createLog();
+        // logger.createLog();
         active_event_ = std::make_unique<Calibration>(process_unit_);
     break;
 

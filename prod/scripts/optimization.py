@@ -47,15 +47,19 @@ fs = 500.0  # Sampling frequency
 cutoff = 7.0  # Desired cutoff frequency of the filter, Hz
 order = 5  # Order of the filter
 
-data = np.load('data/12.npy')
+# data = np.load('data/12.npy')
+
+with open('data/DecanW-21,8HC+10_1.mp4.json', 'r') as file:
+    data = json.load(file)
+
 y_data = data
 x_data = np.linspace(0, len(y_data)-1, len(y_data))
-# y_data = lowpass_filter(y_data, cutoff, fs, order)
+y_data = lowpass_filter(y_data, cutoff, fs, order)
 y_data = normalize(y_data)
 
 #find mean of data
 guess_shift = np.argmax(y_data)
-initial_guess = [1, guess_shift, 1, 1, 1, 1, 1] #x^3+x^2+x+a
+initial_guess = [1, guess_shift, 1, 1, 1, 1, 1, 1] #x^3+x^2+x+a
 
 #optimize data
 result = minimize(objective_function, initial_guess, method='Powell')
@@ -68,6 +72,8 @@ polyCoeffs = optimal_coeffs[3:]
 
 res_gaussian = gaussian(x_data, a, x0, sigma, polyCoeffs)
 
+error =  np.abs(np.argmax(y_data) - np.argmax(res_gaussian)) * 98 /  y_data.shape[0] 
+print(error)
 print(f"MSE: {np.sqrt(np.mean((np.array(y_data) - np.array(res_gaussian))**2))}")
 
 fig, ax = plt.subplots(2,1)

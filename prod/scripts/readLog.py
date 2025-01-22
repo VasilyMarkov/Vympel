@@ -43,19 +43,21 @@ def lowpass_filter(data, cutoff, fs, order=5):
     return y
 
 
-def mowingAverage(data, windowSize = 3): 
+def mowingAverage(data, windowSize = 30): 
 
-    std = np.std(np.gradient(data[10:50]))
-    print(np.gradient(data[10:50]))
-    th = 5*std
+    std = np.std(data[100:500])
+    mean = np.mean(data[100:500])
+    th = 3*std + mean
+    # print(std)
     print(th)
 
-    np.mean(data)
     result = np.zeros(data.shape[0])
-    for i in range(data.shape[0] - windowSize):
-        if(np.mean(np.gradient(data[i:i+windowSize])) > th):
-            result[i] = 1
-    
+    for i in range(0, data.shape[0] - windowSize, windowSize):
+        window = data[i:windowSize + i]
+        # print(np.mean(window))
+        if np.mean(window) > th :
+            print(i)
+            break
     return result
 
 
@@ -81,7 +83,7 @@ def bars(data):
 
 
 fs = 500.0  # Sampling frequency
-cutoff = 5.0  # Desired cutoff frequency of the filter, Hz
+cutoff = 20.0  # Desired cutoff frequency of the filter, Hz
 order = 5  # Order of the filter
 
 def corr(data, ker):
@@ -133,13 +135,13 @@ print(f"MSE: {np.sqrt(np.mean((np.array(y_data) - np.array(res_gaussian))**2))}"
 
 # np.save('data/12', y_data[50:510])
 
-mw = mowingAverage(filtered, 10)
+mw = mowingAverage(filtered)
 
-fig, ax = plt.subplots(4, 1)
+fig, ax = plt.subplots(2, 1)
 ax[0].plot(x_data, y_data, label='Data')
 ax[1].plot(x_data, filtered, label='Data')
-ax[2].plot(x_data, grad, label='Data')
-ax[3].plot(x_data, mw, label='Data')
+# ax[2].plot(x_data, grad, label='Data')
+# ax[3].plot(x_data, mw, label='Data')
 # ax[0].plot(x_data[50:510], y_data[50:510])
 # ax[1].plot(bars, 'r')
 

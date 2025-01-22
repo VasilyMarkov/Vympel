@@ -79,7 +79,7 @@ private:
     std::unique_ptr<QFile> file;
 };
 
-inline auto&& logger = Logger::getInstance();
+// inline auto&& logger = Logger::getInstance();
 
 } //namespace app
 
