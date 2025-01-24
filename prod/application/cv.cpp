@@ -40,14 +40,14 @@ IProcessing::state CameraProcessingModule::process()
         capture_ >> frame_;
         
         if(frame_.empty()) return IProcessing::state::NODATA;
-        cv::imshow("w", frame_);
+        // cv::imshow("w", frame_);
         cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
         
         std::vector<uint8_t> v(frame_.begin<uint8_t>(), frame_.end<uint8_t>());
         process_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
         
         process_params_.filtered = filter_.filter(process_params_.brightness);
-
+        std::cout << process_params_.brightness << std::endl;
         // if(calc_params_.event_completeness.calibration) {
         //     process_params_.filtered -= calc_params_.mean_filtered;
         //     process_params_.brightness -= calc_params_.mean_filtered;

@@ -13,7 +13,7 @@ app::Application::Application(const QCoreApplication& q_core_app)
                                    configReader.get("network", "serviceProgramPort").toInt());
     
     
-    core_ = std::make_unique<Core>(std::make_shared<app::NetProcessing>());
+    core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
 
     core_->moveToThread(&core_thread_);
 
@@ -35,14 +35,14 @@ app::Application::Application(const QCoreApplication& q_core_app)
     connect(core_.get(), &app::Core::sendData, 
         socket_.get(), &app::UdpSocket::receiveData, Qt::QueuedConnection);
 
+
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 
     // connect(bluetoothDevice_.get(), &ble::BLEInterface::deviceConnected, 
     //     core_.get(), &app::Core::process, Qt::QueuedConnection);
-
+        
     // connect(core_.get(), &app::Core::requestTemperature, 
-    //     bluetoothDevice_.get(), &ble::BLEInterface::requestTemperature, 
-    //     Qt::QueuedConnection);
+    //     bluetoothDevice_.get(), &ble::BLEInterface::temperature, Qt::QueuedConnection);
 
     // connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
     //     core_.get(), &app::Core::receiveTemperature);

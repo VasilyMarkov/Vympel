@@ -15,8 +15,8 @@
 namespace app 
 {
 
-// static QByteArray createModbusPacket(uint16_t, uint16_t);
-
+static QByteArray createModbusPacket(uint16_t, uint16_t);
+constexpr uint16_t TEMPERATURE_REGISTER = 68;
 namespace ble 
 {
 
@@ -48,6 +48,7 @@ class BLEInterface final : public QObject
 public:
     explicit BLEInterface(QObject *parent = 0);
     void write(const QByteArray&);
+    void temperature();
 public Q_SLOTS:
     void requestTemperature();
 Q_SIGNALS:

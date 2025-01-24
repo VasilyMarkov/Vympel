@@ -30,8 +30,7 @@ QByteArray createModbusPacket(uint16_t first_register_address, uint16_t register
     modbus_pdu.insert(0, static_cast<char>(0x00));
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
-    qDebug() << modbus_pdu;
-    return QByteArray(modbus_pdu.data(), modbus_pdu.size());
+    return modbus_pdu;
 }
 
 namespace ble 
@@ -62,8 +61,8 @@ BLEInterface::BLEInterface(QObject *parent) : QObject(parent),
 {
     connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
             this, &BLEInterface::addDevice);
-    connect(deviceDiscoveryAgent_, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)),
-            this, SLOT(onDeviceScanError(QBluetoothDeviceDiscoveryAgent::Error)));
+    connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::errorOccurred,
+            this, &BLEInterface::onDeviceScanError);
     connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::canceled,
             this, &BLEInterface::onScanFinished);
 
@@ -130,8 +129,8 @@ void BLEInterface::connectDevice() {
             this, &BLEInterface::onServiceDiscovered);
         connect(low_energy_controller_, &QLowEnergyController::discoveryFinished,
             this, &BLEInterface::onServiceScanDone);
-        connect(low_energy_controller_, SIGNAL(error(QLowEnergyController::Error)),
-            this, SLOT(onControllerError(QLowEnergyController::Error)));
+        connect(low_energy_controller_, &QLowEnergyController::errorOccurred,
+            this, &BLEInterface::onControllerError);
         connect(low_energy_controller_, &QLowEnergyController::connected,
             this, &BLEInterface::onDeviceConnected);
         connect(low_energy_controller_, &QLowEnergyController::disconnected,
@@ -162,10 +161,8 @@ void BLEInterface::onServiceScanDone()
                 this, &BLEInterface::onServiceStateChanged);
             connect(modbus_service_, &QLowEnergyService::characteristicChanged,
                 this, &BLEInterface::onCharacteristicChanged);
-            // connect(modbus_service_, &QLowEnergyService::error,
-            //     this, &BLEInterface::serviceError);
-            connect(modbus_service_, SIGNAL(error(QLowEnergyService::ServiceError)),
-                this, SLOT(serviceError(QLowEnergyService::ServiceError)));
+            connect(modbus_service_, &QLowEnergyService::errorOccurred,
+                this, &BLEInterface::serviceError);
             connect(modbus_service_, &QLowEnergyService::characteristicRead,
                 this, &BLEInterface::onCharacteristicRead);
             connect(modbus_service_, &QLowEnergyService::characteristicWritten,
@@ -207,7 +204,7 @@ void BLEInterface::onServiceStateChanged(QLowEnergyService::ServiceState service
 
 
         Q_EMIT deviceConnected();
-        write(createModbusPacket(68, 2));
+        // write(createModbusPacket(68, 2));
     }
 }
 
@@ -216,23 +213,36 @@ void BLEInterface::onCharacteristicChanged(
     const QByteArray& value
 )
 {
-    std::vector<int8_t> data(std::begin(value), std::end(value));
-
-    std::cout << "Characteristic Changed: " << std::endl;
-    if(value[0] == 0x0A) {
+    // std::cout << "Characteristic Changed: " << std::endl;
+    if (value.isEmpty()) {
+        std::cout << "value empty" << std::endl;
+        return;
+    }   
+    if(value[0] == 0x0A && value.size() == 12) {
         auto tmp = value.mid(2, 3+value[3]);
         std::vector<uint8_t> dat(std::begin(tmp), std::end(tmp));
 
         std::vector<uint8_t> payload(dat.begin()+3, dat.begin()+7);
         std::rotate(std::begin(payload), std::begin(payload)+2, std::end(payload));
         float rvalue{};
-        memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
+        std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
         
         // std::cout << rvalue << std::endl;
-        // qDebug() << value.toHex();
+        qDebug() << value.toHex();
         auto crc = crc16(dat, dat.size());
+        crc = (crc >> 8) | (crc << 8);
+        
+    
+        auto msb_crc = value[value.size()-3];
+        uint8_t lsb_crc = value[value.size()-2];
+        uint16_t value_crc = (msb_crc << 8) + lsb_crc;
 
-        Q_EMIT sendTemperature(rvalue);
+        // std::cout << std::hex << crc <<std::endl;
+        // std::cout << std::hex << value_crc <<std::endl;
+        if(crc == value_crc) {
+            // std::cout << rvalue << std::endl;
+            Q_EMIT sendTemperature(rvalue);
+        }
     }
 }
 
@@ -257,7 +267,7 @@ void BLEInterface::read()
         modbus_service_->readCharacteristic(readCharacteristic_);
 }
 
-void BLEInterface::searchCharacteristic() {
+void BLEInterface::searchCharacteristic(){
     if(modbus_service_){
         foreach (QLowEnergyCharacteristic c, modbus_service_->characteristics()) {
             if(c.isValid()){
@@ -289,6 +299,11 @@ void BLEInterface::searchCharacteristic() {
     }
 }
 
+void BLEInterface::temperature() {
+    // std::cout << "temperature" << std::endl;
+    write(createModbusPacket(TEMPERATURE_REGISTER, 2));
 }
 
 } //namespace ble
+
+} //namespace app

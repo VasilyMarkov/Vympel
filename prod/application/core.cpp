@@ -11,28 +11,30 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
     process_unit_(processModule),
     active_event_(std::make_unique<Idle>(process_unit_)) {}
 
-void Core::receiveTemperature(double temperature) const
+void Core::receiveTemperature(double temperature) noexcept
 {
-    std::cout << temperature << std::endl;
+    // std::cout << temperature << std::endl;
+    temperature_ = temperature;
 }
 
 bool Core::process()
 {
     while(process_unit_->process() != IProcessing::state::DONE) {
-        if(statement_ == CoreStatement::HALT) {
-            offFSM();
-        }
-        else {
-            onFSM();
-            callEvent();
-            auto processParams = process_unit_->getProcessParams();
-            json_["brightness"] = processParams.brightness;
-            json_["filtered"] = processParams.filtered;
-            global_data_.push_back(processParams.filtered);
-        }
-        json_["mode"] = static_cast<int>(mode_);
-        json_["statement"] = static_cast<int>(statement_);
-        Q_EMIT sendData(QJsonDocument(json_));
+        // if(statement_ == CoreStatement::HALT) {
+        //     offFSM();
+        // }
+        // else {
+        //     onFSM();
+        //     callEvent();
+        //     auto processParams = process_unit_->getProcessParams();
+        //     json_["brightness"] = processParams.brightness;
+        //     json_["filtered"] = processParams.filtered;
+        //     global_data_.push_back(processParams.filtered);
+        // }
+        // json_["mode"] = static_cast<int>(mode_);
+        // json_["statement"] = static_cast<int>(statement_);
+        // json_["temperature"] = static_cast<int>(statement_);
+        // Q_EMIT sendData(QJsonDocument(json_));
 
         QThread::msleep(20); //TODO Need to implement via timer
         QCoreApplication::processEvents();

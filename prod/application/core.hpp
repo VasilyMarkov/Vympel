@@ -28,7 +28,7 @@ public:
     std::shared_ptr<IProcessing> getProcessUnit() const;
 public Q_SLOTS:
     void receiveData(const QJsonDocument&) override;
-    void receiveTemperature(double) const;
+    void receiveTemperature(double) noexcept;
     bool process();
     void bleDeviceConnected();
 Q_SIGNALS:
@@ -50,6 +50,7 @@ private:
     std::unique_ptr<Event> active_event_;
     QJsonObject json_;
     std::vector<double> global_data_;
+    double temperature_;
 };
 
 } //namespace app
