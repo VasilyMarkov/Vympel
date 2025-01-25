@@ -20,6 +20,8 @@ void Core::receiveTemperature(double temperature) noexcept
 bool Core::process()
 {
     while(process_unit_->process() != IProcessing::state::DONE) {
+        std::cout << process_unit_->getProcessParams().brightness << std::endl;
+
         // if(statement_ == CoreStatement::HALT) {
         //     offFSM();
         // }
@@ -31,11 +33,10 @@ bool Core::process()
         //     json_["filtered"] = processParams.filtered;
         //     global_data_.push_back(processParams.filtered);
         // }
-        // json_["mode"] = static_cast<int>(mode_);
-        // json_["statement"] = static_cast<int>(statement_);
-        // json_["temperature"] = static_cast<int>(statement_);
-        // Q_EMIT sendData(QJsonDocument(json_));
-
+        json_["mode"] = static_cast<int>(mode_);
+        json_["statement"] = static_cast<int>(statement_);
+        json_["temperature"] = static_cast<int>(statement_);
+        Q_EMIT sendData(QJsonDocument(json_));
         QThread::msleep(20); //TODO Need to implement via timer
         QCoreApplication::processEvents();
     }

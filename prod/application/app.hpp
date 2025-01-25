@@ -4,6 +4,7 @@
 #include <QUdpSocket>
 #include <QCoreApplication>
 #include <QThread>
+#include <QProcess>
 #include "core.hpp"
 #include "udp.hpp"
 #include "cv.hpp"
@@ -11,6 +12,7 @@
 #include "bluetoothDevice.hpp"
 #include "logger.hpp"
 #include "configReader.hpp"
+
 
 namespace app
 {
@@ -25,6 +27,10 @@ private:
     std::unique_ptr<Core> core_;
     std::unique_ptr<ble::BLEInterface> bluetoothDevice_;
     QThread core_thread_;
+    QThread process_thread_;
+    QProcess camera_python_;
+    void captureOutput(QProcess*);
+    void captureError(QProcess*);
 };
 
 } // namespace app

@@ -20,6 +20,6 @@
     },
     "files": {
         "videoFile": "files/video.mp4",
-        "runScript": "scripts/run_video.py"
+        "camera_python_script": "scripts/run_video.py"
     }
 }

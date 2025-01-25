@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "logger.hpp"
+#include <QtConcurrent>
 
 app::Application::Application(const QCoreApplication& q_core_app)
 {
@@ -13,7 +14,7 @@ app::Application::Application(const QCoreApplication& q_core_app)
                                    configReader.get("network", "serviceProgramPort").toInt());
     
     
-    core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
+    core_ = std::make_unique<Core>(std::make_shared<app::NetProcessing>());
 
     core_->moveToThread(&core_thread_);
 
@@ -36,6 +37,24 @@ app::Application::Application(const QCoreApplication& q_core_app)
         socket_.get(), &app::UdpSocket::receiveData, Qt::QueuedConnection);
 
 
+    auto camera_python_process_path = fs::current_path().parent_path() / 
+        configReader.get("files", "camera_python_script").toString().toStdString();
+    
+    // QObject::connect(&camera_python_, &QProcess::readyReadStandardOutput, [this]() {
+    //     captureOutput(&camera_python_);
+    // });
+    
+    // QObject::connect(&camera_python_, &QProcess::readyReadStandardError, [this]() {
+    //     captureError(&camera_python_);
+    // });
+
+    // QObject::connect(&camera_python_, &QProcess::started, [this]() {
+    //      qDebug() << "started";
+    // });
+    
+    QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
+    // qDebug() << args;
+    camera_python_.start ("python3", args);
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 
     // connect(bluetoothDevice_.get(), &ble::BLEInterface::deviceConnected, 
@@ -54,4 +73,19 @@ app::Application::Application(const QCoreApplication& q_core_app)
 app::Application::~Application()
 {
     // logger.destroyLog();
+}
+
+void app::Application::captureOutput(QProcess* process) {
+    QByteArray output = process->readAllStandardOutput();
+     qDebug() << QString(output);
+    // QtConcurrent::run([output]() {
+    //     qDebug() << QString(output);
+    // });
+}
+
+void app::Application::captureError(QProcess* process) {
+    QByteArray output = process->readAllStandardError();
+    QtConcurrent::run([output]() {
+        qDebug() << QString(output);
+    });
 }

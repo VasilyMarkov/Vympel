@@ -15,7 +15,7 @@ with open(config_file) as json_data:
     json_data.close()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((config_data['network']['clientIp'], config_data['network']['controlFromServiceProgramPort']))
+sock.bind((config_data['network']['clientIp'], config_data['network']['videoPort']))
 while True:
     msg, adr = sock.recvfrom(1024)
     print(msg)

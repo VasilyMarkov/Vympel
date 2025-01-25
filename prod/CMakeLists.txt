@@ -9,6 +9,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Core 
     Bluetooth 
     Network
+    Concurrent
 )
 
 add_subdirectory(application)
