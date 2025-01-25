@@ -21,7 +21,6 @@ add_executable(application
     core.cpp 
     cv.cpp
     event.cpp
-    # fsm.cpp
     LibCamera.cpp
     main.cpp
     udp.cpp

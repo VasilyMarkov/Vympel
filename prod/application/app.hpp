@@ -27,10 +27,8 @@ private:
     std::unique_ptr<Core> core_;
     std::unique_ptr<ble::BLEInterface> bluetoothDevice_;
     QThread core_thread_;
-    QThread process_thread_;
+    QThread ble_thread_;
     QProcess camera_python_;
-    void captureOutput(QProcess*);
-    void captureError(QProcess*);
 };
 
 } // namespace app

@@ -65,7 +65,9 @@ BLEInterface::BLEInterface(QObject *parent) : QObject(parent),
             this, &BLEInterface::onDeviceScanError);
     connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::canceled,
             this, &BLEInterface::onScanFinished);
+}
 
+void BLEInterface::run() {
     deviceDiscoveryAgent_->start();
 }
 
@@ -300,7 +302,6 @@ void BLEInterface::searchCharacteristic(){
 }
 
 void BLEInterface::temperature() {
-    // std::cout << "temperature" << std::endl;
     write(createModbusPacket(TEMPERATURE_REGISTER, 2));
 }
 

@@ -42,37 +42,21 @@ app::Application::Application(const QCoreApplication& q_core_app)
     QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
     camera_python_.start ("python3", args);
 
-    // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
+    bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
+    bluetoothDevice_->moveToThread(&ble_thread_);
 
-    // connect(bluetoothDevice_.get(), &ble::BLEInterface::deviceConnected, 
-    //     core_.get(), &app::Core::process, Qt::QueuedConnection);
-        
-    // connect(core_.get(), &app::Core::requestTemperature, 
-    //     bluetoothDevice_.get(), &ble::BLEInterface::temperature, Qt::QueuedConnection);
-
-    // connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
-    //     core_.get(), &app::Core::receiveTemperature);
-
-
+    connect(&ble_thread_, &QThread::started, 
+        bluetoothDevice_.get(), &ble::BLEInterface::run, Qt::QueuedConnection);
+    connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
+        core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);
+    connect(core_.get(), &app::Core::requestTemperature, 
+        bluetoothDevice_.get(), &ble::BLEInterface::temperature, Qt::QueuedConnection);
+    
+    ble_thread_.start();
     core_thread_.start();
 }
 
 app::Application::~Application()
 {
     // logger.destroyLog();
-}
-
-void app::Application::captureOutput(QProcess* process) {
-    QByteArray output = process->readAllStandardOutput();
-     qDebug() << QString(output);
-    // QtConcurrent::run([output]() {
-    //     qDebug() << QString(output);
-    // });
-}
-
-void app::Application::captureError(QProcess* process) {
-    QByteArray output = process->readAllStandardError();
-    QtConcurrent::run([output]() {
-        qDebug() << QString(output);
-    });
 }

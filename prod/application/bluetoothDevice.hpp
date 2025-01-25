@@ -51,6 +51,7 @@ public:
     void temperature();
 public Q_SLOTS:
     void requestTemperature();
+    void run();
 Q_SIGNALS:
     void sendTemperature(double);
     void deviceConnected();
