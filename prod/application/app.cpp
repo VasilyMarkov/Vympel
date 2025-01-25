@@ -8,9 +8,9 @@ app::Application::Application(const QCoreApplication& q_core_app)
     qRegisterMetaType<app::EventType>();
 
     socket_ = std::make_unique<UdpSocket>();
-    socket_->setReceiverParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
+    socket_->setReceiverParameters(QHostAddress(configReader.get("network", "cameraIp").toString()), 
                                    configReader.get("network", "controlFromServiceProgramPort").toInt());
-    socket_->setSenderParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
+    socket_->setSenderParameters(QHostAddress(configReader.get("network", "hostIp").toString()), 
                                    configReader.get("network", "serviceProgramPort").toInt());
     
     
@@ -39,22 +39,9 @@ app::Application::Application(const QCoreApplication& q_core_app)
 
     auto camera_python_process_path = fs::current_path().parent_path() / 
         configReader.get("files", "camera_python_script").toString().toStdString();
-    
-    // QObject::connect(&camera_python_, &QProcess::readyReadStandardOutput, [this]() {
-    //     captureOutput(&camera_python_);
-    // });
-    
-    // QObject::connect(&camera_python_, &QProcess::readyReadStandardError, [this]() {
-    //     captureError(&camera_python_);
-    // });
-
-    // QObject::connect(&camera_python_, &QProcess::started, [this]() {
-    //      qDebug() << "started";
-    // });
-    
     QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
-    // qDebug() << args;
     camera_python_.start ("python3", args);
+
     // bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
 
     // connect(bluetoothDevice_.get(), &ble::BLEInterface::deviceConnected, 

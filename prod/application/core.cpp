@@ -13,26 +13,23 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
 
 void Core::receiveTemperature(double temperature) noexcept
 {
-    // std::cout << temperature << std::endl;
     temperature_ = temperature;
 }
 
 bool Core::process()
 {
     while(process_unit_->process() != IProcessing::state::DONE) {
-        std::cout << process_unit_->getProcessParams().brightness << std::endl;
-
-        // if(statement_ == CoreStatement::HALT) {
-        //     offFSM();
-        // }
-        // else {
-        //     onFSM();
-        //     callEvent();
-        //     auto processParams = process_unit_->getProcessParams();
-        //     json_["brightness"] = processParams.brightness;
-        //     json_["filtered"] = processParams.filtered;
-        //     global_data_.push_back(processParams.filtered);
-        // }
+        if(statement_ == CoreStatement::HALT) {
+            offFSM();
+        }
+        else {
+            onFSM();
+            callEvent();
+            auto processParams = process_unit_->getProcessParams();
+            json_["brightness"] = processParams.brightness;
+            json_["filtered"] = processParams.filtered;
+            global_data_.push_back(processParams.filtered);
+        }
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
         json_["temperature"] = static_cast<int>(statement_);
