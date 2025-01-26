@@ -55,6 +55,7 @@ public Q_SLOTS:
 Q_SIGNALS:
     void sendTemperature(double);
     void deviceConnected();
+    void isReady();
 private Q_SLOTS:
 /*******************QBluetothDeviceDiscoveryAgent********************/
     void addDevice(const QBluetoothDeviceInfo&);

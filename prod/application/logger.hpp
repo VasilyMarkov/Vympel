@@ -9,9 +9,17 @@
 #include <QJsonArray>
 #include <QDateTime>
 #include <iostream>
+#include <filesystem>
+#include <fstream>  
+#include <chrono>
+#include <ctime>
+#include <sstream>
+#include <algorithm>
 
 namespace app 
 {
+
+namespace fs = std::filesystem;
 
 class Logger final 
 {
@@ -23,63 +31,90 @@ public:
     }
     void createLog() 
     {
-        if(jsonDir.cdUp()) 
-        {
-            if(QDir dir{QString(jsonDir.absolutePath() + "/logs")}; !dir.exists()) {
-                jsonDir.mkdir("logs");
-            }
+        // if(jsonDir.cdUp()) 
+        // {
+        //     if(QDir dir{QString(jsonDir.absolutePath() + "/logs")}; !dir.exists()) {
+        //         jsonDir.mkdir("logs");
+        //     }
 
-            jsonDir.cd(QString(jsonDir.absolutePath() + "/logs"));
-            auto fileName = QDateTime::currentDateTime().toString(Qt::ISODate);
-            file = std::make_unique<QFile>(QString(jsonDir.absolutePath() + '/' + fileName + ".json"));
-            std::cout << fileName.toStdString() << std::endl;
+        //     jsonDir.cd(QString(jsonDir.absolutePath() + "/logs"));
+        //     auto fileName = QDateTime::currentDateTime().toString(Qt::ISODate);
+        //     file = std::make_unique<QFile>(QString(jsonDir.absolutePath() + '/' + fileName + ".json"));        
+        // }
+
+        auto logsDirPath = fs::current_path().parent_path() / "logs";
+
+        if(!fs::exists(logsDirPath)) {
+            fs::create_directory(logsDirPath);
         }
+
+        auto now = std::chrono::system_clock::now();
+        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+        std::tm *now_tm = std::localtime(&now_time);
+
+        std::stringstream sstream;
+        sstream << std::put_time(now_tm, "%Y-%m-%d_%H:%M:%S.json");
+        auto logPath = logsDirPath / sstream.view();
+        logfile_ = std::make_unique<std::ofstream>(logPath);
+    }
+    void closeLog() {
+        if (file->isOpen()) file->close();
     }
     void log(double data) 
     {
-        assert(file && "Log file doesn't exists");
+        if(!logfile_->is_open()) {
+            throw std::runtime_error("Log file doesn't exist");
+        }
 
         QJsonObject jsonObj;
         jsonObj["filtered_brightness"] = data;
 
         QJsonDocument jsonDoc(jsonObj);
-        QTextStream out(file.get());
-        out << jsonDoc.toJson() << "\n";
+
+        QByteArray jsonByteArray = jsonDoc.toJson();
+
+        logfile_->write(jsonByteArray.data(), jsonByteArray.size());
     }
 
-    void log(const std::vector<double>& data) 
+    void log(const std::vector<double>& data, const std::vector<double>& temperature) 
     {
-        QJsonArray jsonArray;
-
-        std::copy(std::begin(data), std::end(data), std::back_inserter(jsonArray));
-        QJsonDocument jsonDoc(jsonArray);
-
-        if (file->open(QIODevice::WriteOnly)) {
-            QTextStream stream(file.get());
-            stream << jsonDoc.toJson();
-            file->close();
-        } 
-        else {
-            std::cerr << "Failed to open file for writing: " << std::endl;
+        if(!logfile_->is_open()) {
+            throw std::runtime_error("Log file doesn't exist");
         }
 
-    }
+        std::vector<std::pair<double, double>> mergedData;
+        mergedData.reserve(data.size());
 
-    void destroyLog() 
-    {
-        if (file->isOpen()) file->close();
+        std::transform(std::begin(data), std::end(data), std::begin(temperature), 
+            std::back_inserter(mergedData),
+            [](double a, double b){return std::make_pair(a,b);});
+
+        QJsonArray jsonArray;
+
+        for (auto&& pair : mergedData) {
+            QJsonObject jsonObject;
+            jsonObject["brightness"] = pair.first;
+            jsonObject["temperature"] = pair.second;
+            jsonArray.append(jsonObject);
+        }
+        QJsonDocument jsonDoc(jsonArray);
+
+        QByteArray jsonByteArray = jsonDoc.toJson();
+
+        logfile_->write(jsonByteArray.data(), jsonByteArray.size());
+
+        closeLog();
     }
 private:
     Logger():jsonDir(QCoreApplication::applicationDirPath()){}
-    ~Logger(){}
+    ~Logger(){ if (file->isOpen()) file->close(); }
     Logger(const Logger&){}
     Logger& operator=(const Logger&);
 
     QDir jsonDir;
     std::unique_ptr<QFile> file;
+    std::unique_ptr<std::ofstream> logfile_;
 };
-
-// inline auto&& logger = Logger::getInstance();
 
 } //namespace app
 

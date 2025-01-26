@@ -18,12 +18,24 @@ void Core::receiveTemperature(double temperature) noexcept
 
 bool Core::process()
 {
+    static bool isLoggerCreated = false;
+
     while(process_unit_->process() != IProcessing::state::DONE) {
-        Q_EMIT requestTemperature();
+        if(bleIsReady_) {
+            Q_EMIT requestTemperature();
+        }
         if(statement_ == CoreStatement::HALT) {
             offFSM();
+            if(isLoggerCreated) {
+                Logger::getInstance().log(global_data_, temperature_data_);
+                isLoggerCreated = false;
+            }
         }
         else {
+            if(!isLoggerCreated) {
+                Logger::getInstance().createLog();
+                isLoggerCreated = true;
+            }
             onFSM();
             callEvent();
             auto processParams = process_unit_->getProcessParams();
@@ -31,6 +43,7 @@ bool Core::process()
             json_["filtered"] = processParams.filtered;
             json_["temperature"] = temperature_;
             global_data_.push_back(processParams.filtered);
+            temperature_data_.push_back(temperature_);
         }
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
@@ -38,15 +51,13 @@ bool Core::process()
         QThread::msleep(20); //TODO Need to implement via timer
         QCoreApplication::processEvents();
     }
-    // logger.log(global_data_);
     // Q_EMIT exit();
 
     return true;
 }
 
-void Core::bleDeviceConnected()
-{
-    
+void Core::setBlEStatus() {
+    bleIsReady_ = true;
 }
 
 void Core::receiveData(const QJsonDocument& json)
@@ -89,7 +100,6 @@ void Core::dispatchEvent()
     break;
 
     case EventType::CALIBRATION:
-        // logger.createLog();
         active_event_ = std::make_unique<Calibration>(process_unit_);
     break;
 
@@ -106,7 +116,6 @@ void Core::dispatchEvent()
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
-        // Q_EMIT requestTemperature();
     break;
     
     default:

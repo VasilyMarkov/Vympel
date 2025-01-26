@@ -30,7 +30,7 @@ public Q_SLOTS:
     void receiveData(const QJsonDocument&) override;
     void receiveTemperature(double) noexcept;
     bool process();
-    void bleDeviceConnected();
+    void setBlEStatus();
 Q_SIGNALS:
     void sendData(const QJsonDocument&) const override;
     void exit();
@@ -50,7 +50,9 @@ private:
     std::unique_ptr<Event> active_event_;
     QJsonObject json_;
     std::vector<double> global_data_;
+    std::vector<double> temperature_data_;
     double temperature_;
+    bool bleIsReady_ = false;
 };
 
 } //namespace app

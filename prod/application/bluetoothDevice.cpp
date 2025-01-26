@@ -73,7 +73,6 @@ void BLEInterface::run() {
 
 void BLEInterface::write(const QByteArray& data)
 {
-    
     const QString RX_CHAR_UUID("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
     auto characteristic = modbus_service_->characteristic(QBluetoothUuid(RX_CHAR_UUID));
     if (characteristic.isValid()) {
@@ -206,6 +205,7 @@ void BLEInterface::onServiceStateChanged(QLowEnergyService::ServiceState service
 
 
         Q_EMIT deviceConnected();
+        Q_EMIT isReady();
         // write(createModbusPacket(68, 2));
     }
 }

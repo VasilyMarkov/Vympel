@@ -64,7 +64,6 @@ private:
     QHash<QString, std::shared_ptr<QVariantHash>> config_store_;
 };
 
-inline auto&& configReader = ConfigReader::getInstance();
 
 } //namespace app
 

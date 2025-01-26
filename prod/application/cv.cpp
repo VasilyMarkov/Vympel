@@ -10,7 +10,7 @@ using namespace constants;
 namespace fs = std::filesystem;
 
 CameraProcessingModule::CameraProcessingModule():
-    capture_((fs::current_path().parent_path() / configReader.get("files", "videoFile").toString().toStdString())), 
+    capture_((fs::current_path().parent_path() / ConfigReader::getInstance().get("files", "videoFile").toString().toStdString())), 
     filter_(filter::cutoff_frequency, filter::sample_rate)
 {
 
@@ -64,8 +64,8 @@ NetLogic::NetLogic():
 {
     connect(cameraSocket_.get(), &UdpSocket::sendData, this, &NetLogic::receiveData, Qt::QueuedConnection);
 
-    cameraSocket_->setReceiverParameters(QHostAddress(configReader.get("network", "clientIp").toString()), 
-                                         configReader.get("network", "videoPort").toInt());
+    cameraSocket_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "clientIp").toString()), 
+                                         ConfigReader::getInstance().get("network", "videoPort").toInt());
 }
 
 void NetLogic::receiveData(const QJsonDocument& json) {
