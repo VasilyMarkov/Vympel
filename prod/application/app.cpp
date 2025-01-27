@@ -14,7 +14,7 @@ app::Application::Application(const QCoreApplication& q_core_app)
                                    ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
     
     
-    core_ = std::make_unique<Core>(std::make_shared<app::NetProcessing>());
+    core_ = std::make_unique<Core>(std::make_shared<app::TestProcessUnit>());
     core_->moveToThread(&core_thread_);
 
     bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
@@ -42,10 +42,10 @@ app::Application::Application(const QCoreApplication& q_core_app)
     connect(bluetoothDevice_.get(), &ble::BLEInterface::isReady,
         core_.get(), &app::Core::setBlEStatus, Qt::QueuedConnection);
 
-    auto camera_python_process_path = fs::current_path().parent_path() / 
-        ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
-    QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
-    camera_python_.start ("python3", args);
+    // auto camera_python_process_path = fs::current_path().parent_path() / 
+    //     ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
+    // QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
+    // camera_python_.start ("python3", args);
     
     ble_thread_.start();
     core_thread_.start();

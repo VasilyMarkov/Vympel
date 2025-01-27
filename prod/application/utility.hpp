@@ -14,13 +14,15 @@
 #include <QJsonObject>
 #include <QDebug>
 #include <QVariant>
-
+#include <filesystem>
+#include <fstream>
+#include "configReader.hpp"
 
 namespace app {
 
 namespace constants {
     namespace filter {
-        constexpr double cutoff_frequency = 10.0; //Hz
+        constexpr double cutoff_frequency = 50.0; //Hz
         constexpr double cutoff_frequency1 = 50.0; //Hz
         constexpr double sample_rate = 1000.0; //Hz
     }
@@ -60,6 +62,41 @@ inline std::vector<double> readInputData() {
         data.push_back(temp);
     }
     
+    return data;
+}
+
+inline std::vector<double> readJsonLog(std::string file_path) {
+    auto path = file_path + ConfigReader::getInstance().get("log_files", "log1").toString().toStdString();
+    std::fstream jsonLogfile(path);
+    
+    std::vector<double> data;
+
+    if(!jsonLogfile.is_open()) {
+        throw std::runtime_error(std::string("Could not open file: ") 
+        + std::string(path));
+    }
+    std::string fileData((std::istreambuf_iterator<char>(jsonLogfile)), 
+        std::istreambuf_iterator<char>());
+    jsonLogfile.close();
+    
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(QByteArray::fromStdString(fileData));
+
+    if (jsonDoc.isNull()) {
+        std::cerr << "Failed to create JSON document." << std::endl;
+        return data;
+    }
+    if (!jsonDoc.isArray()) {
+        std::cerr << "JSON document is not an array." << std::endl;
+        return data;
+    }
+    QJsonArray jsonArray = jsonDoc.array();
+    for (const auto& value : jsonArray) {
+        if (value.isDouble()) {
+            data.push_back(value.toDouble());
+        } else {
+            std::cerr << "Non-double value found in JSON array." << std::endl;
+        }
+    }
     return data;
 }
 

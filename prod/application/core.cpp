@@ -21,6 +21,7 @@ bool Core::process()
     static bool isLoggerCreated = false;
 
     while(process_unit_->process() != IProcessing::state::DONE) {
+        std::cout << process_unit_->getProcessParams().brightness << std::endl;
         if(bleIsReady_) {
             Q_EMIT requestTemperature();
         }

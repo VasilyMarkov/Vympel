@@ -21,5 +21,18 @@
     "files": {
         "videoFile": "files/video.mp4",
         "camera_python_script": "scripts/run_video.py"
+    },
+    "log_files": {
+        "log1": "DecanW-21,8HC-5_0,2.mp4.json",
+        "log2": "DecanW-21,8HC-5_1.mp4.json",
+        "log3": "DecanW-21,8HC-10_0,2.mp4.json",
+        "log4": "DecanW-21,8HC-10_1.mp4.json",
+        "log5": "DecanW-21,8HC+5_0,2.mp4.json",
+        "log6": "DecanW-21,8HC+5_1.mp4.json",
+        "log7": "DecanW-21,8HC+10_0,2.mp4.json",
+        "log8": "DecanW-21,8HC+10_1.mp4.json",
+        "log9": "DecanW-21,8HC0_0,2.mp4.json",
+        "log10": "DecanW-21,8HC0_1.mp4.json",
+        "log11": "video.mp4.json"
     }
 }

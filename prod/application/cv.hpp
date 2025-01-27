@@ -62,6 +62,14 @@ private:
     LowPassFilter filter_;
 };
 
+class TestProcessUnit final: public IProcessing {
+    std::vector<double> test_data_;
+    LowPassFilter filter_;
+public:
+    TestProcessUnit();
+    state process() override;
+};
+
 } //namespace app
 
 #endif //CV_H

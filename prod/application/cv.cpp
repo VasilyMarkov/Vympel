@@ -100,5 +100,25 @@ IProcessing::state NetProcessing::process()
     
 }
 
+TestProcessUnit::TestProcessUnit():
+    test_data_(
+        readJsonLog(
+            fs::path(
+                fs::current_path().parent_path() / "scripts" / "data/"
+            )
+        )
+    ), 
+    filter_(filter::cutoff_frequency, filter::sample_rate) {}
+
+IProcessing::state TestProcessUnit::process() 
+{
+    if(global_tick_ == test_data_.size()) return IProcessing::state::DONE;
+
+    process_params_.brightness = test_data_[global_tick_];
+    process_params_.filtered = filter_.filter(process_params_.brightness);
+
+    ++global_tick_;
+    return IProcessing::state::WORKING;
+}
 
 } // namespace app
