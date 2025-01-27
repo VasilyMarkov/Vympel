@@ -38,6 +38,7 @@ std::optional<EventType> Calibration::operator()()
         process_unit_.lock()->getCalcParams().event_completeness.calibration = true;
         auto [mean, std_deviation] = meanVar(data_);
         process_unit_.lock()->getCalcParams().mean_filtered = mean;
+        process_unit_.lock()->getCalcParams().std_dev_filtered = std_deviation;
         std::cout << mean << ' ' << std_deviation << std::endl;
         return EventType::MEASHUREMENT;    
     }
@@ -47,43 +48,60 @@ std::optional<EventType> Calibration::operator()()
 }
 
 Meashurement::Meashurement(std::weak_ptr<IProcessing> cv): 
-    Event(cv)
+    Event(cv), mean_data_(15, 0)
 {
     std::cout << "measure" << std::endl;
-    mean_data.reserve(100);
     coeffs.resize(5);
 }
 
 std::optional<EventType> Meashurement::operator()()
 {
     auto filtered = process_unit_.lock()->getProcessParams().filtered;
+
     global_data_.push_back(filtered);
 
-    if(mean_data.size() == mean_data.capacity()) {
-        auto mean = std::accumulate(std::begin(mean_data), std::end(mean_data), 0.0)/mean_data.size();
+    auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
+    auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
+    // auto std = 20000;
+    auto threshold = mean + std*ConfigReader::getInstance().get("parameters", "sigma_threshold").toInt();
+        
+    mean_data_.pop_front();
+    mean_data_.push_back(filtered);
 
-        auto isPositiveGrowth = [](double coeff)
-        {
-            static double local_coeff = 0;
-            auto greater = coeff > 1.1*local_coeff;
-            local_coeff = coeff;
-            return greater;
-        };
-
-        coeffs.pop_front();
-        coeffs.push_back(isPositiveGrowth(mean));
-
-        auto cnt = std::count_if(std::begin(coeffs), std::end(coeffs), [](bool val){return val == true;});
-
-        if(cnt > 3) {
-            std::cout << "START: " << process_unit_.lock()->getTick() << std::endl;
+    if(local_tick_ == mean_data_.size() - 1) {
+        auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
+        if(mean_window > threshold) {
+            std::cout << "COND POINT: " << process_unit_.lock()->getTick() << std::endl;
             return EventType::CONDENSATION;   
         }
-
-        mean_data.clear();
+        local_tick_ = 0;
     }
 
-    mean_data.push_back(filtered);
+    // if(mean_data.size() == mean_data.capacity()) {
+    //     auto mean = std::accumulate(std::begin(mean_data), std::end(mean_data), 0.0)/mean_data.size();
+
+    //     auto isPositiveGrowth = [](double coeff)
+    //     {
+    //         static double local_coeff = 0;
+    //         auto greater = coeff > 1.1*local_coeff;
+    //         local_coeff = coeff;
+    //         return greater;
+    //     };
+
+    //     coeffs.pop_front();
+    //     coeffs.push_back(isPositiveGrowth(mean));
+
+    //     auto cnt = std::count_if(std::begin(coeffs), std::end(coeffs), [](bool val){return val == true;});
+
+    //     if(cnt > 3) {
+    //         std::cout << "START: " << process_unit_.lock()->getTick() << std::endl;
+    //         return EventType::CONDENSATION;   
+    //     }
+
+    //     mean_data.clear();
+    // }
+
+    // mean_data.push_back(filtered);
 
     ++local_tick_;
     return std::nullopt;

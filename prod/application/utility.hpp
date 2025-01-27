@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <vector>
+#include <deque>
 #include <unordered_map>
 #include <map>
 #include <iostream>
@@ -31,6 +32,14 @@ namespace constants {
 template <typename T>
 void print(const std::vector<T>& vector) {
     for(auto&& el:vector) {
+        std::cout << el << ' ';
+    }
+    std::cout << std::endl;
+}
+
+template <typename T>
+void print(const std::deque<T>& deque) {
+    for(auto&& el:deque) {
         std::cout << el << ' ';
     }
     std::cout << std::endl;

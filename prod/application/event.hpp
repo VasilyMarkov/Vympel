@@ -48,7 +48,7 @@ public:
 };
 
 class Meashurement final: public Event {
-    std::vector<double> mean_data;
+    std::deque<double> mean_data_;
     std::deque<bool> coeffs;
     size_t local_tick_ = 0;
 public:
