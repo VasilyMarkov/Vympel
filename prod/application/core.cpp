@@ -21,7 +21,6 @@ bool Core::process()
     static bool isLoggerCreated = false;
 
     while(process_unit_->process() != IProcessing::state::DONE) {
-        std::cout << process_unit_->getProcessParams().brightness << std::endl;
         if(bleIsReady_) {
             Q_EMIT requestTemperature();
         }
@@ -73,7 +72,6 @@ std::shared_ptr<IProcessing> Core::getProcessUnit() const {
 void Core::toggle(EventType mode)
 {
     if (mode_ == mode) return;
-    
     mode_ = mode;
     dispatchEvent();
 }
@@ -85,6 +83,7 @@ void Core::callEvent()
     auto event_result = (*active_event_)();
 
     if (event_result != std::nullopt) {
+        
         toggle(event_result.value());
     }
 }
@@ -92,7 +91,6 @@ void Core::callEvent()
 void Core::dispatchEvent()
 {
     active_event_.reset(nullptr);
-    
     switch (mode_)
     {
     case EventType::IDLE:
@@ -128,7 +126,7 @@ void Core::dispatchEvent()
 void Core::onFSM()
 {
     if(!isOnFSM) {
-        mode_ = EventType::CALIBRATION;
+        toggle(EventType::CALIBRATION);
         isOnFSM = true;
     }
 }
@@ -136,7 +134,7 @@ void Core::onFSM()
 void Core::offFSM()
 {
     if(isOnFSM) {
-        mode_ = EventType::IDLE;
+        toggle(EventType::IDLE);
         isOnFSM = false;
     }
 }

@@ -47,7 +47,7 @@ app::Application::Application(const QCoreApplication& q_core_app)
     // QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
     // camera_python_.start ("python3", args);
     
-    ble_thread_.start();
+    // ble_thread_.start();
     core_thread_.start();
 }
 

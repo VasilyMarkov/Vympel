@@ -10,6 +10,7 @@ Event::Event(std::weak_ptr<IProcessing> cv):
 Idle::Idle(std::weak_ptr<IProcessing> cv): 
     Event(cv)
 {  
+    std::cout << "idle" << std::endl;
     global_data_.clear();
 }
 
@@ -27,13 +28,13 @@ Calibration::Calibration(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> Calibration::operator()()
 {
-
     auto filtered = process_unit_.lock()->getProcessParams().filtered;
     global_data_.push_back(filtered);
 
-    if(process_unit_.lock()->getTick() - start_tick_ >= constants::buffer::CALIB_SIZE) 
+    auto calib_size = ConfigReader::getInstance().get("parameters", "calibration_size_buffer").toInt();
+
+    if(process_unit_.lock()->getTick() - start_tick_ >= calib_size) 
     {
-        // process_unit_.lock()->getCalcParams().mean_filtered = std::accumulate(std::begin(data_), std::end(data_), 0)/data_.size();
         process_unit_.lock()->getCalcParams().event_completeness.calibration = true;
         auto [mean, std_deviation] = meanVar(data_);
         process_unit_.lock()->getCalcParams().mean_filtered = mean;
@@ -144,7 +145,6 @@ End::End(std::weak_ptr<IProcessing> cv):Event(cv)
     std::copy_if(std::begin(analize_data), std::end(analize_data), std::back_inserter(lower_bound), 
         [&max_it](double value){return value < 0.96*(*max_it) && value >  0.94*(*max_it);});
     v_tick = start_point +  lower_bound.size()/2;
-    // std::cout << "V_point: " << v_tick << std::endl;
     global_data_.clear();
 }
 

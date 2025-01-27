@@ -34,5 +34,10 @@
         "log9": "DecanW-21,8HC0_0,2.mp4.json",
         "log10": "DecanW-21,8HC0_1.mp4.json",
         "log11": "video.mp4.json"
+    },
+    "parameters": {
+        "filter_cutoff_freq": 50,
+        "calibration_size_buffer": 75,
+        "sigma_threshold": 4
     }
 }
