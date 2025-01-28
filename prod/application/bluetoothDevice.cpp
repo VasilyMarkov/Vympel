@@ -2,9 +2,27 @@
 #include <QDebug>
 #include <QBluetoothAddress>
 #include <QBluetoothUuid>
+#include <QtConcurrent>
 #include "bluetoothDevice.hpp"
 #include "utility.hpp"
 
+void print(const QByteArray& bytearray) {
+    for(auto&& el : bytearray) {
+        std::cout << static_cast<uint8_t>(el) << ' ';
+    }
+    std::cout << std::endl;
+}
+
+QString byteArrayToHexString(const QByteArray &byteArray) {
+    QString hexString;
+    for (char byte : byteArray) {
+        if (!hexString.isEmpty()) {
+            hexString.append(' ');
+        }
+        hexString.append(QString("%1").arg(static_cast<unsigned char>(byte), 2, 16, QChar('0')).toUpper());
+    }
+    return hexString;
+}
 
 namespace app 
 {
@@ -30,6 +48,43 @@ QByteArray createModbusPacket(uint16_t first_register_address, uint16_t register
     modbus_pdu.insert(0, static_cast<char>(0x00));
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
+    
+    return modbus_pdu;
+}
+
+QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
+{
+    QByteArray modbus_pdu;
+    modbus_pdu.resize(9);
+    qDebug() << "REG ADDR: " << first_register_address;
+    modbus_pdu[0] = 1; //modbus address
+    modbus_pdu[1] = 16; //function code
+    modbus_pdu[2] = static_cast<char>((first_register_address >> 8) & 0xFF); 
+    modbus_pdu[3] = static_cast<char>(first_register_address & 0xFF); 
+    modbus_pdu[4] = 0;
+    modbus_pdu[5] = 1;
+    modbus_pdu[6] = 2;
+    modbus_pdu[7] = 0;
+    modbus_pdu[8] = 1;
+
+    std::vector<uint8_t> v_data(std::begin(modbus_pdu), std::end(modbus_pdu));
+
+    auto crc = crc16(v_data, v_data.size());
+
+    modbus_pdu.push_back(static_cast<char>(crc & 0xFF));       // Low byte
+    modbus_pdu.push_back(static_cast<char>((crc >> 8) & 0xFF)); // High byte
+
+    modbus_pdu.insert(4, static_cast<char>(0xF2));
+    modbus_pdu.insert(2, static_cast<char>(0xEF));
+    modbus_pdu.insert(0, static_cast<char>(0x00));
+    modbus_pdu.insert(0, static_cast<char>(0x0A));
+    modbus_pdu.push_back(static_cast<char>(0x0D));
+    modbus_pdu[6] = 0x10;
+
+    // qDebug() << "Output" << modbus_pdu.toHex();
+    // print(modbus_pdu);
+    qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
+    // qDebug() << "Output" << QString(modbus_pdu).toHex();
     return modbus_pdu;
 }
 
@@ -215,7 +270,7 @@ void BLEInterface::onCharacteristicChanged(
     const QByteArray& value
 )
 {
-    // std::cout << "Characteristic Changed: " << std::endl;
+    qDebug() << "Input:" << value;
     if (value.isEmpty()) {
         std::cout << "value empty" << std::endl;
         return;
@@ -227,10 +282,11 @@ void BLEInterface::onCharacteristicChanged(
         std::vector<uint8_t> payload(dat.begin()+3, dat.begin()+7);
         std::rotate(std::begin(payload), std::begin(payload)+2, std::end(payload));
         float rvalue{};
-        std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
-        
+        uint32_t uintvalue{};
+        std::memcpy(&uintvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
+        std::cout << uintvalue << std::endl;
         // std::cout << rvalue << std::endl;
-        qDebug() << value.toHex();
+        // qDebug() << value.toHex();
         auto crc = crc16(dat, dat.size());
         crc = (crc >> 8) | (crc << 8);
         
@@ -241,9 +297,23 @@ void BLEInterface::onCharacteristicChanged(
 
         // std::cout << std::hex << crc <<std::endl;
         // std::cout << std::hex << value_crc <<std::endl;
+        static bool called = false;
+        if(!called) {
+            called = true;
+            std::cout << "RUN" << std::endl;
+            QtConcurrent::run([this](){
+                // QThread::msleep(9000);
+                slowHeating();
+                std::cout << "WRITE" << std::endl;
+            });
+            
+        }
+        // else if(uintvalue != 3) {
+        //     called = false;
+        // }
         if(crc == value_crc) {
             // std::cout << rvalue << std::endl;
-            Q_EMIT sendTemperature(rvalue);
+            Q_EMIT sendTemperature(uintvalue);
         }
     }
 }
@@ -303,6 +373,15 @@ void BLEInterface::searchCharacteristic(){
 
 void BLEInterface::temperature() {
     write(createModbusPacket(TEMPERATURE_REGISTER, 2));
+}
+
+void BLEInterface::slowCooling() {
+    // write(createModbusPacket(IR, 2));
+    write(writeModbusRegister(HR, 1));
+}
+
+void BLEInterface::slowHeating() {
+    write(writeModbusRegister(HR, 1));
 }
 
 } //namespace ble
