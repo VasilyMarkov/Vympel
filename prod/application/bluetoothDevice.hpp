@@ -53,7 +53,9 @@ public:
     void write(const QByteArray&);
     void temperature();
     void slowCooling();
+    void fastCooling();
     void slowHeating();
+    void fastHeating();
 public Q_SLOTS:
     void requestTemperature();
     void run();

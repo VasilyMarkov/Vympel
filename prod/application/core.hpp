@@ -45,7 +45,9 @@ Q_SIGNALS:
     void exit();
     void requestTemperature();
     void requestSlowCooling();
+    void requestFastCooling();
     void requestSlowHeating();
+    void requestFastHeating();
 private:
     /**********FSM***********/
     void callEvent();

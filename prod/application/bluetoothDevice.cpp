@@ -32,13 +32,13 @@ QByteArray modify(const QByteArray& pdu) {
     static const std::unordered_set bytes = {0xA, 0xD, 0x10};
     QByteArray result;
     result.reserve(pdu.size());
-    for(auto&& byte : pdu) {
-        if(bytes.contains(byte)) {
+    for(auto&& val : pdu) {
+        if(bytes.contains(val)) {
             result.push_back(0x10);
-            result.push_back(0xFF-byte);    
+            result.push_back(0xFF-val);    
         }
         else {
-            result.push_back(byte);
+            result.push_back(val);
         }
     }
     return result;
@@ -67,36 +67,89 @@ QByteArray createModbusPacket(uint16_t first_register_address, uint16_t register
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
     
-    return modify(modbus_pdu);
+    return modbus_pdu;
 }
 
 QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
 {
     QByteArray modbus_pdu;
-    modbus_pdu.resize(9);
-    qDebug() << "REG ADDR: " << first_register_address;
-    modbus_pdu[0] = 1; //modbus address
-    modbus_pdu[1] = 16; //function code
-    modbus_pdu[2] = static_cast<char>((first_register_address >> 8) & 0xFF); 
-    modbus_pdu[3] = static_cast<char>(first_register_address & 0xFF); 
-    modbus_pdu[4] = 0;
-    modbus_pdu[5] = 1;
-    modbus_pdu[6] = 2;
-    modbus_pdu[7] = 0;
-    modbus_pdu[8] = 1;
+    modbus_pdu.resize(10);
+    
+    static uint8_t cnt = 0;
 
-    std::vector<uint8_t> v_data(std::begin(modbus_pdu), std::end(modbus_pdu));
+    modbus_pdu[0] = cnt++; //modbus address
+    modbus_pdu[1] = 1; //modbus address
+    modbus_pdu[2] = 16; //function code
+    modbus_pdu[3] = static_cast<char>((first_register_address >> 8) & 0xFF); 
+    modbus_pdu[4] = static_cast<char>(first_register_address & 0xFF); 
+    modbus_pdu[5] = 0;
+    modbus_pdu[6] = 1;
+    modbus_pdu[7] = 2;
+    modbus_pdu[8] = 0;
+    modbus_pdu[9] = 1;
+
+    std::vector<uint8_t> v_data(std::begin(modbus_pdu)+1, std::end(modbus_pdu));
 
     auto crc = crc16(v_data, v_data.size());
 
     modbus_pdu.push_back(static_cast<char>(crc & 0xFF));       // Low byte
     modbus_pdu.push_back(static_cast<char>((crc >> 8) & 0xFF)); // High byte
-    modbus_pdu.insert(0, static_cast<char>(0x00));
+    // qDebug() << "1:" << byteArrayToHexString(modbus_pdu);
+    modbus_pdu = modify(modbus_pdu);
+    // qDebug() << "2:" << byteArrayToHexString(modbus_pdu);
+
+
+    // modbus_pdu.insert(0, static_cast<char>(0x00));
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
 
-    qDebug() << "Output" << byteArrayToHexString(modify(modbus_pdu));
-    return modify(modbus_pdu);
+    qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
+    return modbus_pdu;
+}
+
+QByteArray setTemratureSpeed(float value)
+{
+    QByteArray modbus_pdu;
+    modbus_pdu.resize(12);
+
+    static uint8_t cnt = 0;
+    uint16_t first_register_address = 64;
+    uint16_t registers_size = 2;
+
+
+    union {
+        uint8_t c[4];
+        float f;
+    } u;
+    u.f = value;
+
+    modbus_pdu[0] = cnt++; //modbus address
+    modbus_pdu[1] = 1; //modbus address
+    modbus_pdu[2] = 16; //function code
+    modbus_pdu[3] = static_cast<char>((first_register_address >> 8) & 0xFF); 
+    modbus_pdu[4] = static_cast<char>(first_register_address & 0xFF); 
+    modbus_pdu[5] = 0;
+    modbus_pdu[6] = registers_size;
+    modbus_pdu[7] = sizeof(float);
+    modbus_pdu[8] = u.c[1];
+    modbus_pdu[9] = u.c[0];
+    modbus_pdu[10] = u.c[3];
+    modbus_pdu[11] = u.c[2]; 
+
+    std::vector<uint8_t> v_data(std::begin(modbus_pdu)+1, std::end(modbus_pdu));
+
+    auto crc = crc16(v_data, v_data.size());
+
+    modbus_pdu.push_back(static_cast<char>(crc & 0xFF));       // Low byte
+    modbus_pdu.push_back(static_cast<char>((crc >> 8) & 0xFF)); // High byte
+
+    modbus_pdu = modify(modbus_pdu);
+
+    modbus_pdu.insert(0, static_cast<char>(0x0A));
+    modbus_pdu.push_back(static_cast<char>(0x0D));
+
+    qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
+    return modbus_pdu;
 }
 
 namespace ble 
@@ -294,10 +347,8 @@ void BLEInterface::onCharacteristicChanged(
         std::rotate(std::begin(payload), std::begin(payload)+2, std::end(payload));
         float rvalue{};
         uint32_t uintvalue{};
-        std::memcpy(&uintvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
-        std::cout << uintvalue << std::endl;
-        // std::cout << rvalue << std::endl;
-        // qDebug() << value.toHex();
+        std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
+
         auto crc = crc16(dat, dat.size());
         crc = (crc >> 8) | (crc << 8);
         
@@ -308,23 +359,23 @@ void BLEInterface::onCharacteristicChanged(
 
         // std::cout << std::hex << crc <<std::endl;
         // std::cout << std::hex << value_crc <<std::endl;
-        static bool called = false;
-        if(!called) {
-            called = true;
-            std::cout << "RUN" << std::endl;
-            QtConcurrent::run([this](){
-                // QThread::msleep(9000);
-                slowHeating();
-                std::cout << "WRITE" << std::endl;
-            });
+        // static bool called = false;
+        // if(!called) {
+        //     called = true;
+        //     std::cout << "RUN" << std::endl;
+        //     QtConcurrent::run([this](){
+        //         // QThread::msleep(9000);
+        //         slowHeating();
+        //         std::cout << "WRITE" << std::endl;
+        //     });
             
-        }
+        // }
         // else if(uintvalue != 3) {
         //     called = false;
         // }
         if(crc == value_crc) {
             // std::cout << rvalue << std::endl;
-            Q_EMIT sendTemperature(uintvalue);
+            Q_EMIT sendTemperature(rvalue);
         }
     }
 }
@@ -389,10 +440,23 @@ void BLEInterface::temperature() {
 void BLEInterface::slowCooling() {
     // write(createModbusPacket(IR, 2));
     write(writeModbusRegister(HR, 1));
+    // write(writeModbusRegister(HR, 1));
+    write(setTemratureSpeed(1.0));
+
 }
 
 void BLEInterface::slowHeating() {
     write(writeModbusRegister(HR, 1));
+}
+
+void BLEInterface::fastHeating() {
+    write(setTemratureSpeed(1.0));
+}
+
+void BLEInterface::fastCooling() {
+    // write(writeModbusRegister(HR, -1.0));
+    write(setTemratureSpeed(2.0));
+
 }
 
 } //namespace ble

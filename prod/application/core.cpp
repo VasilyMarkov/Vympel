@@ -22,21 +22,37 @@ bool Core::process()
 
     while(process_unit_->process() != IProcessing::state::DONE) {
         if(bleIsReady_) {
-            // Q_EMIT requestTemperature();
+            // // Q_EMIT requestTemperature();
+            // std::cout << temperature_ << std::endl;
             
         }
         if(statement_ == CoreStatement::HALT) {
             offFSM();
             if(isLoggerCreated) {
-                Logger::getInstance().log(global_data_, temperature_data_);
+                // Logger::getInstance().log(global_data_, temperature_data_);
                 isLoggerCreated = false;
             }
         }
         else {
-            
             if(!isLoggerCreated) {
-                Q_EMIT requestSlowCooling();
-                Logger::getInstance().createLog();
+                Q_EMIT requestFastCooling();
+                // Logger::getInstance().createLog();
+            // switch(h_statement_) {
+            //     case HygorvisionStatement::SLOW_COOLING:
+            //         Q_EMIT requestSlowCooling();
+            //     break;
+            //     case HygorvisionStatement::SLOW_HEATING:
+            //         Q_EMIT requestSlowHeating();
+            //     break;
+            //     case HygorvisionStatement::FAST_COOLING:
+            //         Q_EMIT requestFastCooling();
+            //     break;
+            //     case HygorvisionStatement::FAST_HEATING:
+            //         Q_EMIT requestFastHeating();
+            //     break;
+            //     default:
+            //     break;
+            // }
                 isLoggerCreated = true;
             }
             onFSM();
@@ -48,18 +64,6 @@ bool Core::process()
             global_data_.push_back(processParams.filtered);
             temperature_data_.push_back(temperature_);
         }
-
-        switch(h_statement_) {
-            case HygorvisionStatement::SLOW_COOLING:
-                Q_EMIT requestSlowCooling();
-            break;
-            case HygorvisionStatement::SLOW_HEATING:
-                Q_EMIT requestSlowHeating();
-            break;
-            default:
-            break;
-        }
-
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
         Q_EMIT sendData(QJsonDocument(json_));

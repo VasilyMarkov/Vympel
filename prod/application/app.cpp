@@ -43,13 +43,21 @@ app::Application::Application(const QCoreApplication& q_core_app)
         bluetoothDevice_.get(), &ble::BLEInterface::slowCooling, Qt::QueuedConnection);
     connect(core_.get(), &app::Core::requestSlowHeating, 
         bluetoothDevice_.get(), &ble::BLEInterface::slowHeating, Qt::QueuedConnection);
+
+    connect(core_.get(), &app::Core::requestFastCooling, 
+        bluetoothDevice_.get(), &ble::BLEInterface::fastCooling, Qt::QueuedConnection);
+
+    connect(core_.get(), &app::Core::requestFastHeating, 
+        bluetoothDevice_.get(), &ble::BLEInterface::fastHeating, Qt::QueuedConnection);
+
+
     connect(bluetoothDevice_.get(), &ble::BLEInterface::isReady,
         core_.get(), &app::Core::setBlEStatus, Qt::QueuedConnection);
 
-    auto camera_python_process_path = fs::current_path().parent_path() / 
-        ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
-    QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
-    camera_python_.start ("python3", args);
+    // auto camera_python_process_path = fs::current_path().parent_path() / 
+    //     ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
+    // QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
+    // camera_python_.start ("python3", args);
     
     ble_thread_.start();
     core_thread_.start();

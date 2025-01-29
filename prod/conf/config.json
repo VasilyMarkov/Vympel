@@ -5,7 +5,7 @@
         "senderPort": 65001,
         "hostIp": "192.168.111.194",
         "hostPort": 65002,
-        "cameraIp": "192.168.111.193",
+        "cameraIp": "192.168.111.207",
         "cameraPort": 65003,
         "videoPort": 65004,
         "serviceProgramPort": 65005,
