@@ -17,7 +17,16 @@ namespace app {
 
 enum class CoreStatement {
     WORK,
-    HALT
+    HALT,
+
+};
+
+enum class HygorvisionStatement {
+    NO_STATE,
+    SLOW_COOLING,
+    SLOW_HEATING,
+    FAST_COOLING,
+    FAST_HEATING
 };
 
 class Core final: public QObject, IReceiver, ISender {
@@ -35,6 +44,8 @@ Q_SIGNALS:
     void sendData(const QJsonDocument&) const override;
     void exit();
     void requestTemperature();
+    void requestSlowCooling();
+    void requestSlowHeating();
 private:
     /**********FSM***********/
     void callEvent();
@@ -43,8 +54,10 @@ private:
     void onFSM();
     void offFSM();
     bool isOnFSM = false;
+    void callOnce(CoreStatement);
     /************************/
     CoreStatement statement_ = CoreStatement::HALT;
+    HygorvisionStatement h_statement_ = HygorvisionStatement::NO_STATE;
     EventType mode_ = EventType::IDLE;
     std::shared_ptr<IProcessing> process_unit_;
     std::unique_ptr<Event> active_event_;

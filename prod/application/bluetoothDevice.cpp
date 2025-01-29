@@ -3,6 +3,7 @@
 #include <QBluetoothAddress>
 #include <QBluetoothUuid>
 #include <QtConcurrent>
+#include <unordered_set>
 #include "bluetoothDevice.hpp"
 #include "utility.hpp"
 
@@ -27,6 +28,23 @@ QString byteArrayToHexString(const QByteArray &byteArray) {
 namespace app 
 {
 
+QByteArray modify(const QByteArray& pdu) {
+    static const std::unordered_set bytes = {0xA, 0xD, 0x10};
+    QByteArray result;
+    result.reserve(pdu.size());
+    for(auto&& byte : pdu) {
+        if(bytes.contains(byte)) {
+            result.push_back(0x10);
+            result.push_back(0xFF-byte);    
+        }
+        else {
+            result.push_back(byte);
+        }
+    }
+    return result;
+}
+
+
 QByteArray createModbusPacket(uint16_t first_register_address, uint16_t registers_amount)
 {
     QByteArray modbus_pdu;
@@ -49,7 +67,7 @@ QByteArray createModbusPacket(uint16_t first_register_address, uint16_t register
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
     
-    return modbus_pdu;
+    return modify(modbus_pdu);
 }
 
 QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
@@ -73,19 +91,12 @@ QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
 
     modbus_pdu.push_back(static_cast<char>(crc & 0xFF));       // Low byte
     modbus_pdu.push_back(static_cast<char>((crc >> 8) & 0xFF)); // High byte
-
-    modbus_pdu.insert(4, static_cast<char>(0xF2));
-    modbus_pdu.insert(2, static_cast<char>(0xEF));
     modbus_pdu.insert(0, static_cast<char>(0x00));
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
-    modbus_pdu[6] = 0x10;
 
-    // qDebug() << "Output" << modbus_pdu.toHex();
-    // print(modbus_pdu);
-    qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
-    // qDebug() << "Output" << QString(modbus_pdu).toHex();
-    return modbus_pdu;
+    qDebug() << "Output" << byteArrayToHexString(modify(modbus_pdu));
+    return modify(modbus_pdu);
 }
 
 namespace ble 

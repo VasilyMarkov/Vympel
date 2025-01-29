@@ -22,7 +22,8 @@ bool Core::process()
 
     while(process_unit_->process() != IProcessing::state::DONE) {
         if(bleIsReady_) {
-            Q_EMIT requestTemperature();
+            // Q_EMIT requestTemperature();
+            
         }
         if(statement_ == CoreStatement::HALT) {
             offFSM();
@@ -32,7 +33,9 @@ bool Core::process()
             }
         }
         else {
+            
             if(!isLoggerCreated) {
+                Q_EMIT requestSlowCooling();
                 Logger::getInstance().createLog();
                 isLoggerCreated = true;
             }
@@ -45,6 +48,18 @@ bool Core::process()
             global_data_.push_back(processParams.filtered);
             temperature_data_.push_back(temperature_);
         }
+
+        switch(h_statement_) {
+            case HygorvisionStatement::SLOW_COOLING:
+                Q_EMIT requestSlowCooling();
+            break;
+            case HygorvisionStatement::SLOW_HEATING:
+                Q_EMIT requestSlowHeating();
+            break;
+            default:
+            break;
+        }
+
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
         Q_EMIT sendData(QJsonDocument(json_));
@@ -54,6 +69,10 @@ bool Core::process()
     // Q_EMIT exit();
 
     return true;
+}
+
+void Core::callOnce(CoreStatement) {
+    
 }
 
 void Core::setBlEStatus() {
