@@ -41,3 +41,10 @@ target_link_libraries(application PRIVATE
     Qt6::Network
     Qt6::Concurrent
 )
+
+if(NOT_BLE)
+    target_compile_definitions(application PRIVATE NOT_BLE)
+    message("NOT_BLE: ON")
+else()
+    message("NOT_BLE: OFF")
+endif()

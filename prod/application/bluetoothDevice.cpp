@@ -94,12 +94,7 @@ QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
 
     modbus_pdu.push_back(static_cast<char>(crc & 0xFF));       // Low byte
     modbus_pdu.push_back(static_cast<char>((crc >> 8) & 0xFF)); // High byte
-    // qDebug() << "1:" << byteArrayToHexString(modbus_pdu);
     modbus_pdu = modify(modbus_pdu);
-    // qDebug() << "2:" << byteArrayToHexString(modbus_pdu);
-
-
-    // modbus_pdu.insert(0, static_cast<char>(0x00));
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
 

@@ -22,6 +22,9 @@ public:
     Application(const QCoreApplication&);
     ~Application();
 private:
+    void runCore();
+    void runBle();
+private:
     std::unique_ptr<UdpSocket> socket_;
     std::unique_ptr<UdpSocket> ble_socket_;
     std::unique_ptr<Core> core_;
@@ -29,6 +32,7 @@ private:
     QThread core_thread_;
     QThread ble_thread_;
     QProcess camera_python_;
+    const QCoreApplication& q_core_app_;
 };
 
 } // namespace app
