@@ -60,9 +60,9 @@ IProcessing::state CameraProcessingModule::process()
 }
 
 NetLogic::NetLogic():
-    cameraSocket_(std::make_unique<UdpSocket>())
+    cameraSocket_(std::make_unique<UdpHandler>())
 {
-    connect(cameraSocket_.get(), &UdpSocket::sendData, this, &NetLogic::receiveData, Qt::QueuedConnection);
+    connect(cameraSocket_.get(), &UdpHandler::sendData, this, &NetLogic::receiveData, Qt::QueuedConnection);
 
     cameraSocket_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "clientIp").toString()), 
                                          ConfigReader::getInstance().get("network", "videoPort").toInt());

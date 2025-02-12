@@ -6,7 +6,7 @@
 #include <QThread>
 #include <QProcess>
 #include "core.hpp"
-#include "udp.hpp"
+#include "network.hpp"
 #include "cv.hpp"
 #include "utility.hpp"
 #include "bluetoothDevice.hpp"
@@ -25,8 +25,9 @@ private:
     void runCore();
     void runBle();
 private:
-    std::unique_ptr<UdpSocket> socket_;
-    std::unique_ptr<UdpSocket> ble_socket_;
+    std::unique_ptr<UdpHandler> udp_handler_;
+    std::unique_ptr<TcpHandler> tcp_handler_;
+    std::unique_ptr<UdpHandler> ble_socket_;
     std::unique_ptr<Core> core_;
     std::unique_ptr<ble::BLEInterface> bluetoothDevice_;
     QThread core_thread_;

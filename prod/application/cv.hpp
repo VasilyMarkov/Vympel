@@ -10,7 +10,7 @@
 #include "LibCamera.h"
 #include "interface.hpp"
 #include "utility.hpp"
-#include "udp.hpp"
+#include "network.hpp"
 #include <queue>
 
 namespace app {
@@ -50,7 +50,7 @@ public Q_SLOTS:
     void receiveData(const QJsonDocument&) override;
 private:
     std::queue<dataCV> receiveBuffer_;
-    std::unique_ptr<UdpSocket> cameraSocket_;
+    std::unique_ptr<UdpHandler> cameraSocket_;
 };
 
 class NetProcessing: public IProcessing {

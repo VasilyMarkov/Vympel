@@ -9,15 +9,22 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
     qRegisterMetaType<app::process_params_t>();
     qRegisterMetaType<app::EventType>();
 
-    socket_ = std::make_unique<UdpSocket>();
-    socket_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()), 
+    udp_handler_ = std::make_unique<UdpHandler>();
+    udp_handler_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()), 
                                    ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
-    socket_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()), 
+    udp_handler_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()), 
                                    ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
+
+    tcp_handler_ = std::make_unique<TcpHandler>();
 #ifndef NOT_BLE
     runBle();
 #endif
     runCore();
+
+    auto camera_python_process_path = fs::current_path().parent_path() / 
+        ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
+    QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
+    camera_python_.start ("python3", args);
 }
 
 void Application::runCore() {
@@ -38,10 +45,10 @@ void Application::runCore() {
         core_.get(), &QObject::deleteLater, Qt::QueuedConnection);
     connect(&core_thread_, &QThread::finished,
         &q_core_app_, &QCoreApplication::quit, Qt::QueuedConnection);
-    connect(socket_.get(), &app::UdpSocket::sendData, 
+    connect(udp_handler_.get(), &app::UdpHandler::sendData, 
         core_.get(), &app::Core::receiveData, Qt::QueuedConnection);
     connect(core_.get(), &app::Core::sendData, 
-        socket_.get(), &app::UdpSocket::receiveData, Qt::QueuedConnection);
+        udp_handler_.get(), &app::UdpHandler::receiveData, Qt::QueuedConnection);
 
     core_thread_.start();
 }

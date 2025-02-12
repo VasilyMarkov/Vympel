@@ -9,7 +9,9 @@
         "cameraPort": 65003,
         "videoPort": 65004,
         "serviceProgramPort": 65005,
-        "controlFromServiceProgramPort": 65006
+        "controlFromServiceProgramPort": 65006,
+        "cameraTcpPort": 65007,
+        "ServiceProgramPort": 65008
     },
     "camera": {
         "width": 640,

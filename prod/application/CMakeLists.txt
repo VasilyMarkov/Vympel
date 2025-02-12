@@ -23,7 +23,7 @@ add_executable(application
     event.cpp
     LibCamera.cpp
     main.cpp
-    udp.cpp
+    network.cpp
 )
 
 target_include_directories(application PRIVATE 
