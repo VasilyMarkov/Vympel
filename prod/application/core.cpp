@@ -112,7 +112,7 @@ void Core::dispatchEvent()
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
-        Q_EMIT() setRateTemprature(-1.5);
+        Q_EMIT setRateTemprature(-1.5);
     break;
 
     case EventType::MEASHUREMENT:
@@ -124,7 +124,7 @@ void Core::dispatchEvent()
 
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_);
-        Q_EMIT() setRateTemprature(1.5);
+        Q_EMIT setRateTemprature(1.5);
     break;
 
     case EventType::END:
