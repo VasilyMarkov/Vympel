@@ -21,7 +21,7 @@ enum class CoreStatement {
 
 };
 
-enum class HygorvisionStatement {
+enum class HygrovisionStatement {
     NO_STATE,
     SLOW_COOLING,
     SLOW_HEATING,
@@ -55,11 +55,11 @@ private:
     void dispatchEvent();
     void onFSM();
     void offFSM();
-    bool isOnFSM = false;
+    void changeHygroVisionStatement(HygrovisionStatement);
     void callOnce(CoreStatement);
     /************************/
     CoreStatement statement_ = CoreStatement::HALT;
-    HygorvisionStatement h_statement_ = HygorvisionStatement::NO_STATE;
+    HygrovisionStatement h_statement_ = HygrovisionStatement::NO_STATE;
     EventType mode_ = EventType::IDLE;
     std::shared_ptr<IProcessing> process_unit_;
     std::unique_ptr<Event> active_event_;
@@ -68,6 +68,7 @@ private:
     std::vector<double> temperature_data_;
     double temperature_;
     bool bleIsReady_ = false;
+    bool isOnFSM = false;
 };
 
 } //namespace app

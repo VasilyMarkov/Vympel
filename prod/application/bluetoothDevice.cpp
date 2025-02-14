@@ -98,7 +98,7 @@ QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
 
-    qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
+    // qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
     return modbus_pdu;
 }
 
@@ -143,7 +143,7 @@ QByteArray setTemratureSpeed(float value)
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
 
-    qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
+    // qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
     return modbus_pdu;
 }
 
@@ -192,9 +192,9 @@ void BLEInterface::write(const QByteArray& data)
     if (characteristic.isValid()) {
         modbus_service_->writeCharacteristic(characteristic, data);
     }
-    if(modbus_service_ && writeCharacteristic_.isValid()) {
-        modbus_service_->writeCharacteristic(writeCharacteristic_, data, writeMode_);
-    }
+    // if(modbus_service_ && writeCharacteristic_.isValid()) {
+    //     modbus_service_->writeCharacteristic(writeCharacteristic_, data, writeMode_);
+    // }
 }
 
 void BLEInterface::requestTemperature() 
@@ -329,7 +329,7 @@ void BLEInterface::onCharacteristicChanged(
     const QByteArray& value
 )
 {
-    qDebug() << "Input:" << value;
+    // qDebug() << "Input:" << value;
     if (value.isEmpty()) {
         std::cout << "value empty" << std::endl;
         return;
@@ -449,8 +449,7 @@ void BLEInterface::fastHeating() {
 }
 
 void BLEInterface::fastCooling() {
-    // write(writeModbusRegister(HR, -1.0));
-    write(setTemratureSpeed(2.0));
+    write(setTemratureSpeed(-1.0));
 
 }
 

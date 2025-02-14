@@ -25,6 +25,7 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
         ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
     QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
     camera_python_.start ("python3", args);
+
 }
 
 void Application::runCore() {
@@ -50,15 +51,6 @@ void Application::runCore() {
     connect(core_.get(), &app::Core::sendData, 
         udp_handler_.get(), &app::UdpHandler::receiveData, Qt::QueuedConnection);
 
-    core_thread_.start();
-}
-
-void Application::runBle() {
-    bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
-    bluetoothDevice_->moveToThread(&ble_thread_);
-
-    connect(&ble_thread_, &QThread::started, 
-        bluetoothDevice_.get(), &ble::BLEInterface::run, Qt::QueuedConnection);
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
         core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);
     connect(core_.get(), &app::Core::requestTemperature, 
@@ -73,6 +65,16 @@ void Application::runBle() {
         bluetoothDevice_.get(), &ble::BLEInterface::fastHeating, Qt::QueuedConnection);
     connect(bluetoothDevice_.get(), &ble::BLEInterface::isReady,
         core_.get(), &app::Core::setBlEStatus, Qt::QueuedConnection);
+
+    core_thread_.start();
+}
+
+void Application::runBle() {
+    bluetoothDevice_ = std::make_unique<ble::BLEInterface>();
+    bluetoothDevice_->moveToThread(&ble_thread_);
+
+    connect(&ble_thread_, &QThread::started, 
+        bluetoothDevice_.get(), &ble::BLEInterface::run, Qt::QueuedConnection);
 
     ble_thread_.start();
 }

@@ -22,7 +22,7 @@ bool Core::process()
 
     while(process_unit_->process() != IProcessing::state::DONE) {
         if(bleIsReady_) {
-            // // Q_EMIT requestTemperature();
+            Q_EMIT requestTemperature();
             // std::cout << temperature_ << std::endl;
             
         }
@@ -35,24 +35,27 @@ bool Core::process()
         }
         else {
             if(!isLoggerCreated) {
-                Q_EMIT requestFastCooling();
+                // Q_EMIT requestFastHeating();
                 // Logger::getInstance().createLog();
-            // switch(h_statement_) {
-            //     case HygorvisionStatement::SLOW_COOLING:
-            //         Q_EMIT requestSlowCooling();
-            //     break;
-            //     case HygorvisionStatement::SLOW_HEATING:
-            //         Q_EMIT requestSlowHeating();
-            //     break;
-            //     case HygorvisionStatement::FAST_COOLING:
-            //         Q_EMIT requestFastCooling();
-            //     break;
-            //     case HygorvisionStatement::FAST_HEATING:
-            //         Q_EMIT requestFastHeating();
-            //     break;
-            //     default:
-            //     break;
-            // }
+                static bool cool = true;
+                static bool heat = true;
+                std::cout << (int)h_statement_ << std::endl;
+                if(h_statement_ == HygrovisionStatement::FAST_COOLING) {
+                    if(cool) {
+                        std::cout << "cooling" << std::endl;
+                        Q_EMIT requestFastCooling();
+                        cool = false;
+                        heat = true;
+                    }
+                }
+                else if(h_statement_ == HygrovisionStatement::FAST_HEATING) {
+                    if(heat) {      
+                        std::cout << "heating" << std::endl;   
+                        Q_EMIT requestFastHeating();
+                        heat = false;
+                        cool = true;
+                    }
+                }
                 isLoggerCreated = true;
             }
             onFSM();
@@ -60,6 +63,7 @@ bool Core::process()
             auto processParams = process_unit_->getProcessParams();
             json_["brightness"] = processParams.brightness;
             json_["filtered"] = processParams.filtered;
+            std::cout << processParams.filtered << std::endl;
             json_["temperature"] = temperature_;
             global_data_.push_back(processParams.filtered);
             temperature_data_.push_back(temperature_);
@@ -75,6 +79,13 @@ bool Core::process()
     return true;
 }
 
+void Core::changeHygroVisionStatement(HygrovisionStatement newStatement) {
+    if(h_statement_ != newStatement) {
+        h_statement_ == newStatement;
+    }
+    return;
+}
+
 void Core::callOnce(CoreStatement) {
     
 }
@@ -86,6 +97,7 @@ void Core::setBlEStatus() {
 void Core::receiveData(const QJsonDocument& json)
 {
     statement_ = static_cast<CoreStatement>(json["statement"].toInt());
+    h_statement_ = static_cast<HygrovisionStatement>(json["h_statement"].toInt());
 }
 
 std::shared_ptr<IProcessing> Core::getProcessUnit() const {
