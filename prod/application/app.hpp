@@ -25,7 +25,7 @@ private:
     void runCore();
     void runBle();
 private:
-    std::unique_ptr<UdpHandler> udp_handler_;
+    std::unique_ptr<CommandHandler> udp_handler_;
     std::unique_ptr<TcpHandler> tcp_handler_;
     std::unique_ptr<UdpHandler> ble_socket_;
     std::unique_ptr<Core> core_;

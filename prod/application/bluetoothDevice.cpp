@@ -102,7 +102,7 @@ QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
     return modbus_pdu;
 }
 
-QByteArray setTemratureSpeed(float value)
+QByteArray setTempratureSpeed(float value)
 {
     QByteArray modbus_pdu;
     modbus_pdu.resize(12);
@@ -143,7 +143,6 @@ QByteArray setTemratureSpeed(float value)
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
 
-    // qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
     return modbus_pdu;
 }
 
@@ -185,7 +184,7 @@ void BLEInterface::run() {
     deviceDiscoveryAgent_->start();
 }
 
-void BLEInterface::write(const QByteArray& data)
+void BLEInterface::writeDataToCharachteristic(const QByteArray& data)
 {
     const QString RX_CHAR_UUID("6e400002-b5a3-f393-e0a9-e50e24dcca9e");
     auto characteristic = modbus_service_->characteristic(QBluetoothUuid(RX_CHAR_UUID));
@@ -203,7 +202,7 @@ void BLEInterface::requestTemperature()
     auto characteristic = modbus_service_->characteristic(QBluetoothUuid(RX_SERVICE_UUID));
     if (characteristic.isValid()) {
         searchCharacteristic();
-        write(createModbusPacket(68, 2));
+        writeDataToCharachteristic(createModbusPacket(68, 2));
     }
 }
 
@@ -320,7 +319,7 @@ void BLEInterface::onServiceStateChanged(QLowEnergyService::ServiceState service
 
         Q_EMIT deviceConnected();
         Q_EMIT isReady();
-        // write(createModbusPacket(68, 2));
+        // writeDataToCharachteristic(createModbusPacket(68, 2));
     }
 }
 
@@ -428,29 +427,14 @@ void BLEInterface::searchCharacteristic(){
     }
 }
 
+void BLEInterface::changeRateTemprature(double rate) {
+    writeDataToCharachteristic(setTempratureSpeed(rate));
+    std::cout << rate << std::endl;
+    // writeDataToCharachteristic(QByteArray());
+}
+
 void BLEInterface::temperature() {
-    write(createModbusPacket(TEMPERATURE_REGISTER, 2));
-}
-
-void BLEInterface::slowCooling() {
-    // write(createModbusPacket(IR, 2));
-    write(writeModbusRegister(HR, 1));
-    // write(writeModbusRegister(HR, 1));
-    write(setTemratureSpeed(1.0));
-
-}
-
-void BLEInterface::slowHeating() {
-    write(writeModbusRegister(HR, 1));
-}
-
-void BLEInterface::fastHeating() {
-    write(setTemratureSpeed(1.0));
-}
-
-void BLEInterface::fastCooling() {
-    write(setTemratureSpeed(-1.0));
-
+    writeDataToCharachteristic(createModbusPacket(TEMPERATURE_REGISTER, 2));
 }
 
 } //namespace ble

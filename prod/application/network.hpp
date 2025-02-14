@@ -6,6 +6,7 @@
 #include <QTcpServer>
 #include <QJsonObject>
 #include <atomic>
+#include <unordered_map>
 #include "interface.hpp"
 
 namespace app {
@@ -27,7 +28,7 @@ Q_SIGNALS:
     void sendData(const QJsonDocument&); 
 };
 
-class UdpHandler final: public QObject {
+class UdpHandler: public QObject {
     Q_OBJECT
 public:
     UdpHandler() noexcept;
@@ -35,15 +36,26 @@ public:
     void setSenderParameters(const QHostAddress&, quint16);
     void setReceiverParameters(const QHostAddress&, quint16);
 private Q_SLOTS:
-    void receivePortData();
+    virtual void receivePortData();
 public Q_SLOTS:
     void receiveData(const QJsonDocument&);
-private:
+protected:
     QUdpSocket udp_socket_;
     QHostAddress senderAddr_ = QHostAddress::LocalHost;
     quint16 senderPort_ = 1024;
 Q_SIGNALS:
     void sendData(const QJsonDocument&); 
+};
+
+class CommandHandler: public UdpHandler {
+    Q_OBJECT
+public:
+    CommandHandler() noexcept;
+private:
+    void receivePortData() override;
+Q_SIGNALS:
+    void setRateTemprature(double);
+    void setCoreStatement(int);
 };
 
 }

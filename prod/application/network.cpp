@@ -22,6 +22,8 @@ void UdpHandler::receivePortData()
     datagram.resize(udp_socket_.pendingDatagramSize());
     udp_socket_.readDatagram(datagram.data(), datagram.size(), nullptr, nullptr);
     emit sendData(QJsonDocument::fromJson(datagram, nullptr));
+
+    auto jdoc = QJsonDocument::fromJson(datagram, nullptr);
 }
 
 void UdpHandler::receiveData(const QJsonDocument& json) {
@@ -41,6 +43,31 @@ void UdpHandler::setReceiverParameters(const QHostAddress& receiverIp = QHostAdd
     if (receiverPort <= RESERVE_PORTS) throw std::runtime_error("Invalid receiver port");
 
     udp_socket_.bind(receiverIp, receiverPort);
+}
+
+CommandHandler::CommandHandler() noexcept {}
+
+void CommandHandler::receivePortData()
+{
+    QByteArray datagram;
+    datagram.resize(udp_socket_.pendingDatagramSize());
+    udp_socket_.readDatagram(datagram.data(), datagram.size(), nullptr, nullptr);
+    // emit sendData(QJsonDocument::fromJson(datagram, nullptr));
+
+    auto command = QJsonDocument::fromJson(datagram, nullptr)["commands"].toInt();
+    switch(command) {
+        case 1:
+            Q_EMIT setCoreStatement(1);
+        break;
+        case 2:
+            Q_EMIT setCoreStatement(2);
+        break;
+        case 3:
+            Q_EMIT setRateTemprature(QJsonDocument::fromJson(datagram, nullptr)["tempratureRate"].toDouble());
+        break;
+        default:
+        break;
+    }
 }
 
 TcpHandler::TcpHandler() {

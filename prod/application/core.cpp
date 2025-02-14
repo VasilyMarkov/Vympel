@@ -26,7 +26,7 @@ bool Core::process()
             // std::cout << temperature_ << std::endl;
             
         }
-        if(statement_ == CoreStatement::HALT) {
+        if(statement_ == CoreStatement::halt) {
             offFSM();
             if(isLoggerCreated) {
                 // Logger::getInstance().log(global_data_, temperature_data_);
@@ -37,34 +37,14 @@ bool Core::process()
             if(!isLoggerCreated) {
                 // Q_EMIT requestFastHeating();
                 // Logger::getInstance().createLog();
-                static bool cool = true;
-                static bool heat = true;
-                std::cout << (int)h_statement_ << std::endl;
-                if(h_statement_ == HygrovisionStatement::FAST_COOLING) {
-                    if(cool) {
-                        std::cout << "cooling" << std::endl;
-                        Q_EMIT requestFastCooling();
-                        cool = false;
-                        heat = true;
-                    }
-                }
-                else if(h_statement_ == HygrovisionStatement::FAST_HEATING) {
-                    if(heat) {      
-                        std::cout << "heating" << std::endl;   
-                        Q_EMIT requestFastHeating();
-                        heat = false;
-                        cool = true;
-                    }
-                }
-                isLoggerCreated = true;
             }
             onFSM();
             callEvent();
             auto processParams = process_unit_->getProcessParams();
             json_["brightness"] = processParams.brightness;
             json_["filtered"] = processParams.filtered;
-            std::cout << processParams.filtered << std::endl;
             json_["temperature"] = temperature_;
+            // std::cout << processParams.filtered << std::endl;
             global_data_.push_back(processParams.filtered);
             temperature_data_.push_back(temperature_);
         }
@@ -79,13 +59,6 @@ bool Core::process()
     return true;
 }
 
-void Core::changeHygroVisionStatement(HygrovisionStatement newStatement) {
-    if(h_statement_ != newStatement) {
-        h_statement_ == newStatement;
-    }
-    return;
-}
-
 void Core::callOnce(CoreStatement) {
     
 }
@@ -96,8 +69,12 @@ void Core::setBlEStatus() {
 
 void Core::receiveData(const QJsonDocument& json)
 {
-    statement_ = static_cast<CoreStatement>(json["statement"].toInt());
-    h_statement_ = static_cast<HygrovisionStatement>(json["h_statement"].toInt());
+    // statement_ = static_cast<CoreStatement>(json["statement"].toInt());
+    // h_statement_ = static_cast<HygrovisionStatement>(json["h_statement"].toInt());
+}
+
+void Core::setCoreStatement(int state) {
+    statement_ = static_cast<CoreStatement>(state);
 }
 
 std::shared_ptr<IProcessing> Core::getProcessUnit() const {
@@ -135,6 +112,7 @@ void Core::dispatchEvent()
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
+        Q_EMIT() setRateTemprature(-1.5);
     break;
 
     case EventType::MEASHUREMENT:
@@ -146,6 +124,7 @@ void Core::dispatchEvent()
 
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_);
+        Q_EMIT() setRateTemprature(1.5);
     break;
 
     case EventType::END:

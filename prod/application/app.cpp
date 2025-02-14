@@ -9,7 +9,7 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
     qRegisterMetaType<app::process_params_t>();
     qRegisterMetaType<app::EventType>();
 
-    udp_handler_ = std::make_unique<UdpHandler>();
+    udp_handler_ = std::make_unique<CommandHandler>();
     udp_handler_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()), 
                                    ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
     udp_handler_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()), 
@@ -40,31 +40,33 @@ void Application::runCore() {
 
     connect(&core_thread_, &QThread::started, 
         core_.get(), &app::Core::process, Qt::QueuedConnection);
+
     connect(core_.get(), &app::Core::exit, 
         &core_thread_, &QThread::quit, Qt::QueuedConnection);
+
     connect(&core_thread_, &QThread::finished, 
         core_.get(), &QObject::deleteLater, Qt::QueuedConnection);
+
     connect(&core_thread_, &QThread::finished,
         &q_core_app_, &QCoreApplication::quit, Qt::QueuedConnection);
-    connect(udp_handler_.get(), &app::UdpHandler::sendData, 
-        core_.get(), &app::Core::receiveData, Qt::QueuedConnection);
+
+    connect(udp_handler_.get(), &app::CommandHandler::setCoreStatement, 
+        core_.get(), &app::Core::setCoreStatement, Qt::QueuedConnection);
+
     connect(core_.get(), &app::Core::sendData, 
         udp_handler_.get(), &app::UdpHandler::receiveData, Qt::QueuedConnection);
 
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
         core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);
+
     connect(core_.get(), &app::Core::requestTemperature, 
         bluetoothDevice_.get(), &ble::BLEInterface::temperature, Qt::QueuedConnection);
-    connect(core_.get(), &app::Core::requestSlowCooling, 
-        bluetoothDevice_.get(), &ble::BLEInterface::slowCooling, Qt::QueuedConnection);
-    connect(core_.get(), &app::Core::requestSlowHeating, 
-        bluetoothDevice_.get(), &ble::BLEInterface::slowHeating, Qt::QueuedConnection);
-    connect(core_.get(), &app::Core::requestFastCooling, 
-        bluetoothDevice_.get(), &ble::BLEInterface::fastCooling, Qt::QueuedConnection);
-    connect(core_.get(), &app::Core::requestFastHeating, 
-        bluetoothDevice_.get(), &ble::BLEInterface::fastHeating, Qt::QueuedConnection);
+
     connect(bluetoothDevice_.get(), &ble::BLEInterface::isReady,
         core_.get(), &app::Core::setBlEStatus, Qt::QueuedConnection);
+
+    connect(core_.get(), &app::Core::setRateTemprature, 
+        bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
 
     core_thread_.start();
 }
@@ -75,6 +77,9 @@ void Application::runBle() {
 
     connect(&ble_thread_, &QThread::started, 
         bluetoothDevice_.get(), &ble::BLEInterface::run, Qt::QueuedConnection);
+
+    connect(udp_handler_.get(), &app::CommandHandler::setRateTemprature, 
+        bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
 
     ble_thread_.start();
 }
