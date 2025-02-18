@@ -2,6 +2,7 @@
 #define CORE_H
 
 #include <QObject>
+#include <QProcess>
 #include <iostream>
 #include <memory>
 #include <list>
@@ -38,6 +39,7 @@ Q_SIGNALS:
     void exit();
     void requestTemperature();
     void setRateTemprature(double);
+    void runOptimizationProcess();
 private:
     /**********FSM***********/
     void callEvent();

@@ -24,12 +24,15 @@ public:
 private:
     void runCore();
     void runBle();
+private Q_SLOTS:
+    void runOptimizationProcess();
 private:
     std::unique_ptr<CommandHandler> udp_handler_;
     std::unique_ptr<TcpHandler> tcp_handler_;
     std::unique_ptr<UdpHandler> ble_socket_;
     std::unique_ptr<Core> core_;
     std::unique_ptr<ble::BLEInterface> bluetoothDevice_;
+    std::unique_ptr<QProcess> optimization_script_;
     QThread core_thread_;
     QThread ble_thread_;
     QProcess camera_python_;
