@@ -43,7 +43,7 @@ while True:
     jdata['brightness'] = float(brightness)
     jdata['valid'] = True
     # data.append(float(brightness))
-    cv.imshow('frame', frame)
+    # cv.imshow('frame', frame)
     
     frame_cnt += 1
 
@@ -51,8 +51,8 @@ while True:
     bytes_data = json_data.encode('utf-8')
     sock.sendto(bytes_data, server_address) 
 
-    if cv.waitKey(1) == ord('q'):
-    	break
+    # if cv.waitKey(1) == ord('q'):
+    # 	break
 
 # with open("log", 'w') as json_file:
 #     json.dump(data, json_file, indent=4)

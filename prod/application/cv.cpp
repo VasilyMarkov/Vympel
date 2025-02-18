@@ -105,7 +105,8 @@ TestProcessUnit::TestProcessUnit():
         readJsonLog(
             fs::path(
                 fs::current_path().parent_path() / "scripts" / "data/"
-            )
+            ),
+            "log1"
         )
     ), 
     filter_(filter::cutoff_frequency, filter::sample_rate) {}

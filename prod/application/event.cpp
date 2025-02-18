@@ -91,13 +91,15 @@ app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> app::Сondensation::operator()()
 {
-
+    if(process_unit_.lock()->getTick() >= 2000) {
+        return EventType::END;
+    }
     return std::nullopt;
 }
 
 End::End(std::weak_ptr<IProcessing> cv):Event(cv)
 {
-
+    std::cout << "End" << std::endl;
 }
 
 std::optional<EventType> End::operator()()

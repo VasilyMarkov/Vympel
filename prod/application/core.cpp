@@ -35,7 +35,6 @@ bool Core::process()
         }
         else {
             if(!isLoggerCreated) {
-                // Q_EMIT requestFastHeating();
                 // Logger::getInstance().createLog();
             }
             onFSM();
@@ -44,14 +43,13 @@ bool Core::process()
             json_["brightness"] = processParams.brightness;
             json_["filtered"] = processParams.filtered;
             json_["temperature"] = temperature_;
-            // std::cout << processParams.filtered << std::endl;
             global_data_.push_back(processParams.filtered);
             temperature_data_.push_back(temperature_);
         }
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
         Q_EMIT sendData(QJsonDocument(json_));
-        QThread::msleep(20); //TODO Need to implement via timer
+        QThread::msleep(10); //TODO Need to implement via timer
         QCoreApplication::processEvents();
     }
     // Q_EMIT exit();
@@ -112,7 +110,7 @@ void Core::dispatchEvent()
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
-        Q_EMIT setRateTemprature(-1.5);
+        // Q_EMIT setRateTemprature(-1.5);
     break;
 
     case EventType::MEASHUREMENT:
@@ -124,7 +122,7 @@ void Core::dispatchEvent()
 
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_);
-        Q_EMIT setRateTemprature(1.5);
+        // Q_EMIT setRateTemprature(1.5);
     break;
 
     case EventType::END:

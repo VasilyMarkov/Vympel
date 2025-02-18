@@ -17,6 +17,7 @@
 #include <QVariant>
 #include <filesystem>
 #include <fstream>
+#include <string_view>
 #include "configReader.hpp"
 
 namespace app {
@@ -74,8 +75,8 @@ inline std::vector<double> readInputData() {
     return data;
 }
 
-inline std::vector<double> readJsonLog(std::string file_path) {
-    auto path = file_path + ConfigReader::getInstance().get("log_files", "log1").toString().toStdString();
+inline std::vector<double> readJsonLog(std::string file_path, QString file_name) {
+    auto path = file_path + ConfigReader::getInstance().get("log_files", file_name).toString().toStdString();
     std::fstream jsonLogfile(path);
     
     std::vector<double> data;
