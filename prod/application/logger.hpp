@@ -82,6 +82,10 @@ public:
             throw std::runtime_error("Log file doesn't exist");
         }
 
+        if(data.empty() || temperature.empty()) {
+            throw std::runtime_error("Error log");
+        }
+
         std::vector<std::pair<double, double>> mergedData;
         mergedData.reserve(data.size());
 
@@ -103,7 +107,7 @@ public:
 
         logfile_->write(jsonByteArray.data(), jsonByteArray.size());
 
-        closeLog();
+        // closeLog();
     }
 private:
     Logger():jsonDir(QCoreApplication::applicationDirPath()){}

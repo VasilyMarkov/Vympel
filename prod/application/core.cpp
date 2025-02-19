@@ -28,14 +28,17 @@ bool Core::process()
         }
         if(statement_ == CoreStatement::halt) {
             offFSM();
+
             if(isLoggerCreated) {
-                // Logger::getInstance().log(global_data_, temperature_data_);
+                Logger::getInstance().log(global_data_, temperature_data_);
+                global_data_.clear();
                 isLoggerCreated = false;
             }
         }
         else {
             if(!isLoggerCreated) {
-                // Logger::getInstance().createLog();
+                Logger::getInstance().createLog();
+                isLoggerCreated = true;
             }
             onFSM();
             callEvent();
@@ -49,7 +52,9 @@ bool Core::process()
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
         Q_EMIT sendData(QJsonDocument(json_));
-        QThread::msleep(10); //TODO Need to implement via timer
+        QThread::msleep(20); //TODO Need to implement via timer
+
+
         QCoreApplication::processEvents();
     }
     // Q_EMIT exit();
@@ -104,13 +109,12 @@ void Core::dispatchEvent()
     switch (mode_)
     {
     case EventType::IDLE:
-        global_data_.clear();
         active_event_ = std::make_unique<Idle>(process_unit_);
     break;
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
-        emit runOptimizationProcess();
+        // emit runOptimizationProcess();
         // Q_EMIT setRateTemprature(-1.5);
     break;
 

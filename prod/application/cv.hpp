@@ -53,6 +53,7 @@ private:
     std::unique_ptr<UdpHandler> cameraSocket_;
 };
 
+
 class NetProcessing: public IProcessing {
 public:
     NetProcessing();
