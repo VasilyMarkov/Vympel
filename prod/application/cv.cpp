@@ -81,9 +81,9 @@ std::optional<dataCV> NetLogic::getValue()
     return value;
 }
 
-NetProcessing::NetProcessing(): filter_(filter::cutoff_frequency, filter::sample_rate) {}
+NetProcessUnit::NetProcessUnit(): filter_(filter::cutoff_frequency, filter::sample_rate) {}
 
-IProcessing::state NetProcessing::process()
+IProcessing::state NetProcessUnit::process()
 {   
     if(auto net_value = netLogic.getValue(); net_value.has_value()) {
         if(!net_value.value().valid) return IProcessing::state::DONE;

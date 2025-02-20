@@ -54,7 +54,7 @@ private:
 };
 
 
-class NetProcessing: public IProcessing {
+class NetProcessUnit: public IProcessing {
 public:
     NetProcessing();
 private:

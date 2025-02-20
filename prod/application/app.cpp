@@ -95,7 +95,7 @@ void Application::runCore() {
         throw std::runtime_error("The core can only be started after the startup BLE");
     }
 #endif
-    core_ = std::make_unique<Core>(std::make_shared<app::NetProcessing>());
+    core_ = std::make_unique<Core>(std::make_shared<app::TestProcessUnit>());
     core_->moveToThread(&core_thread_);
 
     connect(&core_thread_, &QThread::started, 
@@ -115,7 +115,9 @@ void Application::runCore() {
 
     connect(core_.get(), &app::Core::sendData, 
         udp_handler_.get(), &app::UdpHandler::receiveData, Qt::QueuedConnection);
-
+    connect(core_.get(), &app::Core::runOptimizationProcess, 
+        this, &Application::runOptimizationProcess, Qt::QueuedConnection);
+#ifndef NOT_BLE
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
         core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);
 
@@ -127,11 +129,7 @@ void Application::runCore() {
 
     connect(core_.get(), &app::Core::setRateTemprature, 
         bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
-
-
-    connect(core_.get(), &app::Core::runOptimizationProcess, 
-        this, &Application::runOptimizationProcess, Qt::QueuedConnection);
-
+#endif
     core_thread_.start();
 }
 
