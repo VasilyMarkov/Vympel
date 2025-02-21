@@ -5,6 +5,7 @@
 #include <QTcpSocket>
 #include <QTcpServer>
 #include <QJsonObject>
+#include <QTimer>
 #include <atomic>
 #include <unordered_map>
 #include "interface.hpp"
@@ -20,12 +21,16 @@ public:
     ~TcpHandler();
 private:
     void onNewConnection(); 
+private Q_SLOTS:
+    void handlingIncomingTcpPackets();
 private:
     std::unique_ptr<QTcpSocket> tcp_socket_;
     QTcpServer tcp_server_;
     std::atomic_bool isOpenConnection = true;
+    QHostAddress hostIp_;
 Q_SIGNALS:
     void sendData(const QJsonDocument&); 
+    void closeCameraDiscoverHandler();
 };
 
 class UdpHandler: public QObject {
@@ -57,6 +62,21 @@ Q_SIGNALS:
     void setRateTemprature(double);
     void setCoreStatement(int);
 };
+
+class CameraDiscoverHandler: public UdpHandler {
+    Q_OBJECT
+public:
+    explicit CameraDiscoverHandler(const QHostAddress&);
+public Q_SLOTS:
+    void sendBroadcast();
+private:
+    QHostAddress ownIp_;
+    int port_;
+    QTimer timer_;
+Q_SIGNALS:
+};
+
+QHostAddress getOwnIp();
 
 }
 

@@ -56,7 +56,7 @@ private:
 
 class NetProcessUnit: public IProcessing {
 public:
-    NetProcessing();
+    NetProcessUnit();
 private:
     state process() override;
     NetLogic netLogic;

@@ -42,50 +42,59 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
     qRegisterMetaType<app::process_params_t>();
     qRegisterMetaType<app::EventType>();
 
-    udp_handler_ = std::make_unique<CommandHandler>();
-    udp_handler_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString()), 
-                                   ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
-    udp_handler_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()), 
-                                   ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
+    try {
+        auto ownIp = getOwnIp();
 
-    tcp_handler_ = std::make_unique<TcpHandler>();
-    
-#ifndef NOT_BLE
-    runBle();
-#endif
-    runCore();
+        cameraDiscoverSocket_ = std::make_unique<CameraDiscoverHandler>(ownIp);
 
-    auto camera_python_process_path = fs::current_path().parent_path() / 
-        ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
-    QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
-    camera_python_.start ("python3", args);
+        udp_handler_ = std::make_unique<CommandHandler>();
+        udp_handler_->setReceiverParameters(ownIp, 
+                                       ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
+        udp_handler_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()), 
+                                       ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
 
-    optimization_script_ = std::make_unique<QProcess>();
-
-    connect(optimization_script_.get(), &QProcess::started, [this]() {
-        std::vector data = {1.1,2.0,3.0,4.0};
-
-        optimization_script_->write(serializeVector(data));
-        optimization_script_->closeWriteChannel();
+        tcp_handler_ = std::make_unique<TcpHandler>();
+        connect(tcp_handler_.get(), &TcpHandler::closeCameraDiscoverHandler, [this](){cameraDiscoverSocket_.reset();});
         
-    });
+#ifndef NOT_BLE
+        runBle();
+#endif
+        runCore();
 
-    connect(optimization_script_.get(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [this](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-            QByteArray resultData = optimization_script_->readAllStandardOutput();
-            std::vector<double> result = deserializeResult(resultData);
-            print(result);
-            optimization_script_->terminate();
-        } else {
-            qDebug() << "Process failed:" << optimization_script_->errorString();
-        }
-    });
+        auto camera_python_process_path = fs::current_path().parent_path() / 
+            ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
+        QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
+        camera_python_.start ("python3", args);
 
-    connect(optimization_script_.get(), &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
-        qDebug() << "Process error: " + QString::number(error);
-    });
+        optimization_script_ = std::make_unique<QProcess>();
 
+        connect(optimization_script_.get(), &QProcess::started, [this]() {
+            std::vector data = {1.1,2.0,3.0,4.0};
+
+            optimization_script_->write(serializeVector(data));
+            optimization_script_->closeWriteChannel();
+            
+        });
+
+        connect(optimization_script_.get(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                [this](int exitCode, QProcess::ExitStatus exitStatus) {
+            if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+                QByteArray resultData = optimization_script_->readAllStandardOutput();
+                std::vector<double> result = deserializeResult(resultData);
+                print(result);
+                optimization_script_->terminate();
+            } else {
+                qDebug() << "Process failed:" << optimization_script_->errorString();
+            }
+        });
+
+        connect(optimization_script_.get(), &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
+            qDebug() << "Process error: " + QString::number(error);
+        });
+    }
+    catch (const std::exception& ex) {
+        std::cout << ex.what() << std::endl;
+    }
 }
 
 void Application::runCore() {
@@ -117,6 +126,7 @@ void Application::runCore() {
         udp_handler_.get(), &app::UdpHandler::receiveData, Qt::QueuedConnection);
     connect(core_.get(), &app::Core::runOptimizationProcess, 
         this, &Application::runOptimizationProcess, Qt::QueuedConnection);
+
 #ifndef NOT_BLE
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
         core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);

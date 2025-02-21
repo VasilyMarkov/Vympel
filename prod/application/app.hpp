@@ -5,6 +5,7 @@
 #include <QCoreApplication>
 #include <QThread>
 #include <QProcess>
+#include <QTimer>
 #include "core.hpp"
 #include "network.hpp"
 #include "cv.hpp"
@@ -30,6 +31,7 @@ private:
     std::unique_ptr<CommandHandler> udp_handler_;
     std::unique_ptr<TcpHandler> tcp_handler_;
     std::unique_ptr<UdpHandler> ble_socket_;
+    std::unique_ptr<UdpHandler> cameraDiscoverSocket_;
     std::unique_ptr<Core> core_;
     std::unique_ptr<ble::BLEInterface> bluetoothDevice_;
     std::unique_ptr<QProcess> optimization_script_;

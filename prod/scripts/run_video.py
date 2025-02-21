@@ -58,5 +58,5 @@ while True:
 #     json.dump(data, json_file, indent=4)
 
 
-# cap.release()
-# cv.destroyAllWindows()
+cap.release()
+cv.destroyAllWindows()

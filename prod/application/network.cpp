@@ -1,5 +1,6 @@
 #include <iostream>
 #include <QtConcurrent>
+#include <QNetworkInterface>
 #include "network.hpp"
 #include "configReader.hpp"
 
@@ -70,10 +71,23 @@ void CommandHandler::receivePortData()
     }
 }
 
+CameraDiscoverHandler::CameraDiscoverHandler(const QHostAddress& ownIp): 
+    ownIp_(ownIp), 
+    port_(ConfigReader::getInstance().get("network", "cameraDiscoverPort").toInt())  
+{
+    QObject::connect(&timer_, &QTimer::timeout, this, &CameraDiscoverHandler::sendBroadcast);
+    timer_.start(2000);
+}
+
+void CameraDiscoverHandler::sendBroadcast() {
+    QByteArray datagram = ownIp_.toString().toUtf8();
+    udp_socket_.writeDatagram({}, QHostAddress::Broadcast, port_);
+}
+
 TcpHandler::TcpHandler() {
     connect(&tcp_server_, &QTcpServer::newConnection, this, &TcpHandler::onNewConnection);
 
-    if (auto port = ConfigReader::getInstance().get("network", "cameraTcpPort").toInt(); tcp_server_.listen(QHostAddress::Any, port)) {
+    if (auto port =  ConfigReader::getInstance().get("network", "cameraTcpPort").toInt(); tcp_server_.listen(QHostAddress::Any, port)) {
         qDebug() << "Server started on port" << port;
     } else {
         qDebug() << "Server failed to start:" << tcp_server_.errorString();
@@ -83,25 +97,39 @@ TcpHandler::TcpHandler() {
 void TcpHandler::onNewConnection() {
     QTcpSocket *socket = tcp_server_.nextPendingConnection();
     connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
-    QPointer<QTcpSocket> socketPtr(socket);
+    connect(socket, &QTcpSocket::readyRead, this, &TcpHandler::handlingIncomingTcpPackets);
 
-    QtConcurrent::run([this, socketPtr](){
-        while(isOpenConnection) {
-            QMetaObject::invokeMethod(this, [socketPtr]() {
-                if (socketPtr) {
-                    socketPtr->write("connected");
-                    socketPtr->flush();
-                }
-            }, Qt::QueuedConnection);
+    QString clientInfo = QString("%1:%2").arg(socket->peerAddress().toString()).arg(socket->peerPort());
+    qDebug() << "New client connected from:" << clientInfo;
+    hostIp_ = socket->peerAddress();
+    emit closeCameraDiscoverHandler();
+}
 
-            QThread::msleep(500);
-        }
-        return;
-    });
+void TcpHandler::handlingIncomingTcpPackets() {
+    // auto message = QString(tcp_socket_->readAll());
+    // qDebug() << message;
 }
 
 TcpHandler::~TcpHandler() {
     isOpenConnection = false;
 }
+
+
+QHostAddress getOwnIp()
+{
+    auto interfaces = QNetworkInterface::allInterfaces();
+    for(auto&& interface : interfaces) {
+        if(interface.flags().testFlag(QNetworkInterface::IsUp)) {
+            for(auto&& entry: interface.addressEntries()) {
+                if(entry.ip().protocol() == QAbstractSocket::IPv4Protocol && !entry.ip().isLoopback()) {
+                    return entry.ip();
+                }
+            }
+        }
+    }
+    return QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString());
+}
+
+
 
 }
