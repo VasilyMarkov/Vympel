@@ -73,10 +73,36 @@ private:
     QHostAddress ownIp_;
     int port_;
     QTimer timer_;
-Q_SIGNALS:
 };
 
-QHostAddress getOwnIp();
+class CameraConnector: public QObject {
+    Q_OBJECT
+public:
+    CameraConnector();
+private:
+    QUdpSocket socket_;
+    QTimer timer_;
+};
+
+class Network final: public QObject {
+    Q_OBJECT
+public:
+    Network();
+    QHostAddress getOwnIp();
+private:
+    void newTcpConnection();
+    
+private Q_SLOTS:
+    void handlingIncomingTcpPackets();
+private:
+    std::unique_ptr<CameraConnector> cameraConnector_;
+    QUdpSocket udpSocket_;
+    QTcpServer tcpServer_;
+
+    QHostAddress ownIp_;
+    QHostAddress hostIp_;
+};
+
 
 }
 

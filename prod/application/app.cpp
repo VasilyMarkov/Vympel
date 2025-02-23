@@ -43,18 +43,14 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
     qRegisterMetaType<app::EventType>();
 
     try {
-        auto ownIp = getOwnIp();
-
-        cameraDiscoverSocket_ = std::make_unique<CameraDiscoverHandler>(ownIp);
+        network_ = std::make_unique<Network>();
 
         udp_handler_ = std::make_unique<CommandHandler>();
-        udp_handler_->setReceiverParameters(ownIp, 
+
+        udp_handler_->setReceiverParameters(network_->getOwnIp(), 
                                        ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
         udp_handler_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()), 
                                        ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
-
-        tcp_handler_ = std::make_unique<TcpHandler>();
-        connect(tcp_handler_.get(), &TcpHandler::closeCameraDiscoverHandler, [this](){cameraDiscoverSocket_.reset();});
         
 #ifndef NOT_BLE
         runBle();

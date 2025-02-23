@@ -23,6 +23,7 @@ prod/build
 prod/Debug
 prod/Release
 prod/logs/*
+prod/bld
 ble_service/build
 blscanner
 .vscode
