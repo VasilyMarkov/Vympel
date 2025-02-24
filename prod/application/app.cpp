@@ -7,36 +7,6 @@
 
 namespace app {
 
-QByteArray serializeVector(const std::vector<double>& vec) {
-    QByteArray byteArray;
-    QDataStream stream(&byteArray, QIODevice::WriteOnly);
-    
-    stream.setByteOrder(QDataStream::BigEndian);
-    
-    stream << static_cast<quint32>(vec.size());
-    for (double val : vec) {
-        stream << val;
-    }
-    return byteArray;
-}
-
-std::vector<double> deserializeResult(const QByteArray& data) {
-    QDataStream stream(data);
-    stream.setByteOrder(QDataStream::BigEndian);
-
-    quint32 size;
-    stream >> size;
-
-    std::vector<double> result;
-    result.reserve(size);
-    for (quint32 i = 0; i < size; ++i) {
-        double val;
-        stream >> val;
-        result.push_back(val);
-    }
-    return result;
-}
-
 Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core_app)
 {
     qRegisterMetaType<app::process_params_t>();
@@ -47,46 +17,58 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
 
         udp_handler_ = std::make_unique<CommandHandler>();
 
-        udp_handler_->setReceiverParameters(network_->getOwnIp(), 
-                                       ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
-        udp_handler_->setSenderParameters(QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString()), 
-                                       ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
-        
+        connect(&camera_python_, &QProcess::readyReadStandardOutput, [this](){qDebug() << camera_python_.readAllStandardOutput();});
+        connect(&camera_python_, &QProcess::readyReadStandardError, [this](){qDebug() << camera_python_.readAllStandardError();});
+
+        connect(network_.get(), &Network::ready, [this](){
+
+            udp_handler_->setReceiverParameters(network_->getOwnIp(), 
+                ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
+            udp_handler_->setSenderParameters(network_->getHostIp(), 
+                ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
+
+            auto camera_python_process_path = fs::current_path().parent_path() / 
+                ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
+            QStringList args;
+            args << QString::fromStdString(camera_python_process_path.string());
+            args << network_->getHostIp().toString();
+            camera_python_.start ("python3", args);
+
+            runCore();
+        });
+
 #ifndef NOT_BLE
         runBle();
 #endif
-        runCore();
+        
+        // QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string()) << network_->getHostIp();
+        
+        
+        // optimization_script_ = std::make_unique<QProcess>();
 
-        auto camera_python_process_path = fs::current_path().parent_path() / 
-            ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
-        QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string());
-        camera_python_.start ("python3", args);
+        // connect(optimization_script_.get(), &QProcess::started, [this]() {
+        //     std::vector data = {1.1,2.0,3.0,4.0};
 
-        optimization_script_ = std::make_unique<QProcess>();
-
-        connect(optimization_script_.get(), &QProcess::started, [this]() {
-            std::vector data = {1.1,2.0,3.0,4.0};
-
-            optimization_script_->write(serializeVector(data));
-            optimization_script_->closeWriteChannel();
+        //     optimization_script_->write(serializeVector(data));
+        //     optimization_script_->closeWriteChannel();
             
-        });
+        // });
 
-        connect(optimization_script_.get(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-                [this](int exitCode, QProcess::ExitStatus exitStatus) {
-            if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-                QByteArray resultData = optimization_script_->readAllStandardOutput();
-                std::vector<double> result = deserializeResult(resultData);
-                print(result);
-                optimization_script_->terminate();
-            } else {
-                qDebug() << "Process failed:" << optimization_script_->errorString();
-            }
-        });
+        // connect(optimization_script_.get(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+        //         [this](int exitCode, QProcess::ExitStatus exitStatus) {
+        //     if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+        //         QByteArray resultData = optimization_script_->readAllStandardOutput();
+        //         std::vector<double> result = deserializeResult(resultData);
+        //         print(result);
+        //         optimization_script_->terminate();
+        //     } else {
+        //         qDebug() << "Process failed:" << optimization_script_->errorString();
+        //     }
+        // });
 
-        connect(optimization_script_.get(), &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
-            qDebug() << "Process error: " + QString::number(error);
-        });
+        // connect(optimization_script_.get(), &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
+        //     qDebug() << "Process error: " + QString::number(error);
+        // });
     }
     catch (const std::exception& ex) {
         std::cout << ex.what() << std::endl;
@@ -119,9 +101,10 @@ void Application::runCore() {
         core_.get(), &app::Core::setCoreStatement, Qt::QueuedConnection);
 
     connect(core_.get(), &app::Core::sendData, 
-        udp_handler_.get(), &app::UdpHandler::receiveData, Qt::QueuedConnection);
+        udp_handler_.get(), &app::CommandHandler::receiveData, Qt::QueuedConnection);
+
     connect(core_.get(), &app::Core::runOptimizationProcess, 
-        this, &Application::runOptimizationProcess, Qt::QueuedConnection);
+        &optimizationScript_, &OptimizationScript::start);
 
 #ifndef NOT_BLE
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
@@ -153,12 +136,70 @@ void Application::runBle() {
 }
 
 void Application::runOptimizationProcess() {
-    optimization_script_->start ("python3", QStringList() << QString::fromStdString((fs::current_path().parent_path() / "optimization.py").string()));
+    // optimization_script_->start ("python3", QStringList() << QString::fromStdString((fs::current_path().parent_path() / "optimization.py").string()));
 }
 
 Application::~Application()
 {
 
+}
+
+OptimizationScript::OptimizationScript(): 
+    process_(std::make_unique<QProcess>()), 
+    processPath_(QString::fromStdString((fs::current_path().parent_path() / "optimization.py").string()))
+{
+    connect(process_.get(), &QProcess::started, [this]() {
+        process_->write(serializeVector(data_));
+        process_->closeWriteChannel();
+        
+    });
+
+    connect(process_.get(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            [this](int exitCode, QProcess::ExitStatus exitStatus) {
+        if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+            QByteArray resultData = process_->readAllStandardOutput();
+            coefficents_ = deserializeResult(resultData);
+            print(coefficents_);
+            process_->terminate();
+        } else {
+            qDebug() << "Process failed:" << process_->errorString();
+        }
+    });
+}
+
+void OptimizationScript::start(const std::vector<double>& data) {
+    data_ = data;
+    process_->start ("python3", QStringList() << processPath_);
+}
+
+QByteArray OptimizationScript::serializeVector(const std::vector<double>& vec) {
+    QByteArray byteArray;
+    QDataStream stream(&byteArray, QIODevice::WriteOnly);
+    
+    stream.setByteOrder(QDataStream::BigEndian);
+    
+    stream << static_cast<quint32>(vec.size());
+    for (double val : vec) {
+        stream << val;
+    }
+    return byteArray;
+}
+
+std::vector<double> OptimizationScript::deserializeResult(const QByteArray& data) {
+    QDataStream stream(data);
+    stream.setByteOrder(QDataStream::BigEndian);
+
+    quint32 size;
+    stream >> size;
+
+    std::vector<double> result;
+    result.reserve(size);
+    for (quint32 i = 0; i < size; ++i) {
+        double val;
+        stream >> val;
+        result.push_back(val);
+    }
+    return result;
 }
 
 } //namespace app

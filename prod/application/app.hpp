@@ -17,6 +17,23 @@
 
 namespace app
 {
+
+class OptimizationScript final: public QObject {
+    Q_OBJECT
+public:
+    OptimizationScript();
+public Q_SLOTS:
+    void start(const std::vector<double>&);
+private:    
+    QByteArray serializeVector(const std::vector<double>&);
+    std::vector<double> deserializeResult(const QByteArray&);
+private:
+    std::unique_ptr<QProcess> process_;
+    QString processPath_;
+    std::vector<double> data_;
+    std::vector<double> coefficents_;
+};
+
 class Application final: public QObject {
     Q_OBJECT
 public:
@@ -37,8 +54,10 @@ private:
     QThread core_thread_;
     QThread ble_thread_;
     QProcess camera_python_;
+    OptimizationScript optimizationScript_;
     const QCoreApplication& q_core_app_;
 };
+
 
 } // namespace app
 

@@ -39,7 +39,7 @@ Q_SIGNALS:
     void exit();
     void requestTemperature();
     void setRateTemprature(double);
-    void runOptimizationProcess();
+    void runOptimizationProcess(const std::vector<double>&);
 private:
     /**********FSM***********/
     void callEvent();

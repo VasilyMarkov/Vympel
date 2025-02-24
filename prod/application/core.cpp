@@ -114,7 +114,6 @@ void Core::dispatchEvent()
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
-        // emit runOptimizationProcess();
         // Q_EMIT setRateTemprature(-1.5);
     break;
 
@@ -132,9 +131,9 @@ void Core::dispatchEvent()
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
-
-        
-
+        // emit runOptimizationProcess(std::vector<double>(std::next(std::begin(global_data_), 800), std::end(global_data_)));
+        emit runOptimizationProcess(std::vector<double>(std::begin(global_data_), std::end(global_data_)));
+        // emit runOptimizationProcess({1,2,3,4});
     break;
     
     default:

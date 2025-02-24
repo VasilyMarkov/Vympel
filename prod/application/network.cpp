@@ -13,7 +13,6 @@ UdpHandler::UdpHandler() noexcept {
 void UdpHandler::sendPortData(const QByteArray& data)
 {
     if(data.isEmpty()) return;
-
     udp_socket_.writeDatagram(data, senderAddr_, senderPort_);
 }
 
@@ -53,8 +52,6 @@ void CommandHandler::receivePortData()
     QByteArray datagram;
     datagram.resize(udp_socket_.pendingDatagramSize());
     udp_socket_.readDatagram(datagram.data(), datagram.size(), nullptr, nullptr);
-    // emit sendData(QJsonDocument::fromJson(datagram, nullptr));
-
     auto command = QJsonDocument::fromJson(datagram, nullptr)["commands"].toInt();
     switch(command) {
         case 1:
@@ -147,6 +144,7 @@ void Network::newTcpConnection() {
     hostIp_ = socket->peerAddress();
     
     cameraConnector_.reset();
+    emit ready();
 }
 
 QHostAddress Network::getOwnIp()
@@ -162,6 +160,10 @@ QHostAddress Network::getOwnIp()
         }
     }
     return QHostAddress(ConfigReader::getInstance().get("network", "cameraIp").toString());
+}
+
+QHostAddress Network::getHostIp() const {
+    return hostIp_;
 }
 
 void Network::handlingIncomingTcpPackets() {

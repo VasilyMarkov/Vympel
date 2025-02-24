@@ -89,9 +89,11 @@ class Network final: public QObject {
 public:
     Network();
     QHostAddress getOwnIp();
+    QHostAddress getHostIp() const;
 private:
     void newTcpConnection();
-    
+Q_SIGNALS:
+    void ready();
 private Q_SLOTS:
     void handlingIncomingTcpPackets();
 private:
