@@ -18,13 +18,13 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
         udp_handler_ = std::make_unique<CommandHandler>();
 
         connect(&camera_python_, &QProcess::readyReadStandardOutput, [this](){qDebug() << camera_python_.readAllStandardOutput();});
-        connect(&camera_python_, &QProcess::readyReadStandardError, [this](){qDebug() << camera_python_.readAllStandardError();});
+        // connect(&camera_python_, &QProcess::readyReadStandardError, [this](){qDebug() << camera_python_.readAllStandardError();});
 
         connect(network_.get(), &Network::ready, [this](){
 
             udp_handler_->setReceiverParameters(network_->getOwnIp(), 
                 ConfigReader::getInstance().get("network", "controlFromServiceProgramPort").toInt());
-            udp_handler_->setSenderParameters(network_->getHostIp(), 
+            udp_handler_->setSenderParameters(QHostAddress(network_->getHostIp().toIPv4Address()), 
                 ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
 
             auto camera_python_process_path = fs::current_path().parent_path() / 
@@ -40,35 +40,6 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
 #ifndef NOT_BLE
         runBle();
 #endif
-        
-        // QStringList args = QStringList() << QString::fromStdString(camera_python_process_path.string()) << network_->getHostIp();
-        
-        
-        // optimization_script_ = std::make_unique<QProcess>();
-
-        // connect(optimization_script_.get(), &QProcess::started, [this]() {
-        //     std::vector data = {1.1,2.0,3.0,4.0};
-
-        //     optimization_script_->write(serializeVector(data));
-        //     optimization_script_->closeWriteChannel();
-            
-        // });
-
-        // connect(optimization_script_.get(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-        //         [this](int exitCode, QProcess::ExitStatus exitStatus) {
-        //     if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-        //         QByteArray resultData = optimization_script_->readAllStandardOutput();
-        //         std::vector<double> result = deserializeResult(resultData);
-        //         print(result);
-        //         optimization_script_->terminate();
-        //     } else {
-        //         qDebug() << "Process failed:" << optimization_script_->errorString();
-        //     }
-        // });
-
-        // connect(optimization_script_.get(), &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
-        //     qDebug() << "Process error: " + QString::number(error);
-        // });
     }
     catch (const std::exception& ex) {
         std::cout << ex.what() << std::endl;
