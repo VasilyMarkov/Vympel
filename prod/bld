@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-cmake --preset not_ble
-cmake --build --preset not_ble 
+cmake --preset release
+cmake --build --preset release 

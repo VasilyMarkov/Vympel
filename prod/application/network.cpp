@@ -68,50 +68,6 @@ void CommandHandler::receivePortData()
     }
 }
 
-CameraDiscoverHandler::CameraDiscoverHandler(const QHostAddress& ownIp): 
-    ownIp_(ownIp), 
-    port_(ConfigReader::getInstance().get("network", "cameraDiscoverPort").toInt())  
-{
-    QObject::connect(&timer_, &QTimer::timeout, this, &CameraDiscoverHandler::sendBroadcast);
-    timer_.start(2000);
-}
-
-void CameraDiscoverHandler::sendBroadcast() {
-    QByteArray datagram = ownIp_.toString().toUtf8();
-    udp_socket_.writeDatagram({}, QHostAddress::Broadcast, port_);
-}
-
-TcpHandler::TcpHandler() {
-    connect(&tcp_server_, &QTcpServer::newConnection, this, &TcpHandler::onNewConnection);
-
-    if (auto port =  ConfigReader::getInstance().get("network", "cameraTcpPort").toInt(); tcp_server_.listen(QHostAddress::Any, port)) {
-        qDebug() << "Server started on port" << port;
-    } else {
-        qDebug() << "Server failed to start:" << tcp_server_.errorString();
-    }
-}
-
-void TcpHandler::onNewConnection() {
-    QTcpSocket *socket = tcp_server_.nextPendingConnection();
-    connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
-    connect(socket, &QTcpSocket::readyRead, this, &TcpHandler::handlingIncomingTcpPackets);
-
-    QString clientInfo = QString("%1:%2").arg(socket->peerAddress().toString()).arg(socket->peerPort());
-    qDebug() << "New client connected from:" << clientInfo;
-    hostIp_ = socket->peerAddress();
-    emit closeCameraDiscoverHandler();
-}
-
-void TcpHandler::handlingIncomingTcpPackets() {
-    // auto message = QString(tcp_socket_->readAll());
-    // qDebug() << message;
-}
-
-TcpHandler::~TcpHandler() {
-    isOpenConnection = false;
-}
-
-
 CameraConnector::CameraConnector()
 {
     connect(&timer_, &QTimer::timeout, [this](){
@@ -120,17 +76,16 @@ CameraConnector::CameraConnector()
     timer_.start(2000);
 }
 
-Network::Network():
-    ownIp_(getOwnIp())
+Network::Network(): ownIp_(getOwnIp())
 {
     connect(&tcpServer_, &QTcpServer::newConnection, this, &Network::newTcpConnection);
 
     cameraConnector_ = std::make_unique<CameraConnector>();
 
     if (auto port =  ConfigReader::getInstance().get("network", "cameraTcpPort").toInt(); tcpServer_.listen(QHostAddress::Any, port)) {
-        qDebug() << "Server started on port" << port;
+        // qDebug() << "Server started on port" << port;
     } else {
-        qDebug() << "Server failed to start:" << tcpServer_.errorString();
+        // qDebug() << "Server failed to start:" << tcpServer_.errorString();
     }   
 }
 
@@ -140,7 +95,7 @@ void Network::newTcpConnection() {
     connect(socket, &QTcpSocket::readyRead, this, &Network::handlingIncomingTcpPackets);
 
     QString clientInfo = QString("%1:%2").arg(socket->peerAddress().toString()).arg(socket->peerPort());
-    qDebug() << "New client connected from:" << clientInfo;
+    // qDebug() << "New client connected from:" << clientInfo;
     hostIp_ = socket->peerAddress();
     
     cameraConnector_.reset();

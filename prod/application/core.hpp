@@ -27,13 +27,14 @@ class Core final: public QObject, IReceiver, ISender {
     friend class CoreTest;
 public:
     explicit Core(std::shared_ptr<IProcessing>);
-    std::shared_ptr<IProcessing> getProcessUnit() const;
+    std::shared_ptr<IProcessing> getProcessUnit() const noexcept;
 public Q_SLOTS:
     void receiveData(const QJsonDocument&) override;
     void receiveTemperature(double) noexcept;
     bool process();
-    void setBlEStatus();
-    void setCoreStatement(int);
+    void setBlEStatus() noexcept;
+    void setCoreStatement(int) noexcept;
+    void receiveRateTemprature(double) noexcept;
 Q_SIGNALS:
     void sendData(const QJsonDocument&) const override;
     void exit();
@@ -47,7 +48,6 @@ private:
     void dispatchEvent();
     void onFSM();
     void offFSM();
-    void callOnce(CoreStatement);
     /************************/
     CoreStatement statement_ = CoreStatement::halt;
     EventType mode_ = EventType::IDLE;
@@ -59,6 +59,7 @@ private:
     double temperature_;
     bool bleIsReady_ = false;
     bool isOnFSM = false;
+    double temperatureRate_;
 };
 
 } //namespace app

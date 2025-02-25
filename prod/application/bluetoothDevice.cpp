@@ -98,7 +98,6 @@ QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
 
-    // qDebug() << "Output" << byteArrayToHexString(modbus_pdu);
     return modbus_pdu;
 }
 
@@ -191,9 +190,6 @@ void BLEInterface::writeDataToCharachteristic(const QByteArray& data)
     if (characteristic.isValid()) {
         modbus_service_->writeCharacteristic(characteristic, data);
     }
-    // if(modbus_service_ && writeCharacteristic_.isValid()) {
-    //     modbus_service_->writeCharacteristic(writeCharacteristic_, data, writeMode_);
-    // }
 }
 
 void BLEInterface::requestTemperature() 
@@ -319,7 +315,6 @@ void BLEInterface::onServiceStateChanged(QLowEnergyService::ServiceState service
 
         Q_EMIT deviceConnected();
         Q_EMIT isReady();
-        // writeDataToCharachteristic(createModbusPacket(68, 2));
     }
 }
 
@@ -351,24 +346,7 @@ void BLEInterface::onCharacteristicChanged(
         uint8_t lsb_crc = value[value.size()-2];
         uint16_t value_crc = (msb_crc << 8) + lsb_crc;
 
-        // std::cout << std::hex << crc <<std::endl;
-        // std::cout << std::hex << value_crc <<std::endl;
-        // static bool called = false;
-        // if(!called) {
-        //     called = true;
-        //     std::cout << "RUN" << std::endl;
-        //     QtConcurrent::run([this](){
-        //         // QThread::msleep(9000);
-        //         slowHeating();
-        //         std::cout << "WRITE" << std::endl;
-        //     });
-            
-        // }
-        // else if(uintvalue != 3) {
-        //     called = false;
-        // }
         if(crc == value_crc) {
-            // std::cout << rvalue << std::endl;
             Q_EMIT sendTemperature(rvalue);
         }
     }

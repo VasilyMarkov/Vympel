@@ -14,25 +14,6 @@ namespace app {
 
 constexpr int RESERVE_PORTS = 1024;
 
-class TcpHandler final: public QObject {
-    Q_OBJECT
-public:
-    TcpHandler();
-    ~TcpHandler();
-private:
-    void onNewConnection(); 
-private Q_SLOTS:
-    void handlingIncomingTcpPackets();
-private:
-    std::unique_ptr<QTcpSocket> tcp_socket_;
-    QTcpServer tcp_server_;
-    std::atomic_bool isOpenConnection = true;
-    QHostAddress hostIp_;
-Q_SIGNALS:
-    void sendData(const QJsonDocument&); 
-    void closeCameraDiscoverHandler();
-};
-
 class UdpHandler: public QObject {
     Q_OBJECT
 public:
@@ -61,18 +42,6 @@ private:
 Q_SIGNALS:
     void setRateTemprature(double);
     void setCoreStatement(int);
-};
-
-class CameraDiscoverHandler: public UdpHandler {
-    Q_OBJECT
-public:
-    explicit CameraDiscoverHandler(const QHostAddress&);
-public Q_SLOTS:
-    void sendBroadcast();
-private:
-    QHostAddress ownIp_;
-    int port_;
-    QTimer timer_;
 };
 
 class CameraConnector: public QObject {

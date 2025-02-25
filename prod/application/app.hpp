@@ -42,8 +42,6 @@ public:
 private:
     void runCore();
     void runBle();
-private Q_SLOTS:
-    void runOptimizationProcess();
 private:
     std::unique_ptr<CommandHandler> udp_handler_;
     std::unique_ptr<UdpHandler> ble_socket_;

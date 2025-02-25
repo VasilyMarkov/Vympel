@@ -21,11 +21,7 @@ bool Core::process()
     static bool isLoggerCreated = false;
 
     while(process_unit_->process() != IProcessing::state::DONE) {
-        if(bleIsReady_) {
-            Q_EMIT requestTemperature();
-            // std::cout << temperature_ << std::endl;
-            
-        }
+        Q_EMIT requestTemperature();
         if(statement_ == CoreStatement::halt) {
             offFSM();
 
@@ -62,25 +58,24 @@ bool Core::process()
     return true;
 }
 
-void Core::callOnce(CoreStatement) {
-    
-}
-
-void Core::setBlEStatus() {
+void Core::setBlEStatus() noexcept {
     bleIsReady_ = true;
 }
 
 void Core::receiveData(const QJsonDocument& json)
 {
-    // statement_ = static_cast<CoreStatement>(json["statement"].toInt());
-    // h_statement_ = static_cast<HygrovisionStatement>(json["h_statement"].toInt());
+
 }
 
-void Core::setCoreStatement(int state) {
+void Core::setCoreStatement(int state) noexcept {
     statement_ = static_cast<CoreStatement>(state);
 }
 
-std::shared_ptr<IProcessing> Core::getProcessUnit() const {
+void Core::receiveRateTemprature(double temperatureRate) noexcept {
+    temperatureRate_ = temperatureRate;
+}
+
+std::shared_ptr<IProcessing> Core::getProcessUnit() const noexcept {
     return process_unit_;
 }
 
@@ -114,7 +109,7 @@ void Core::dispatchEvent()
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
-        // Q_EMIT setRateTemprature(-1.5);
+        Q_EMIT setRateTemprature(-1.5);
     break;
 
     case EventType::MEASHUREMENT:
@@ -126,14 +121,13 @@ void Core::dispatchEvent()
 
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_);
-        // Q_EMIT setRateTemprature(1.5);
+        Q_EMIT setRateTemprature(1.5);
     break;
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
         // emit runOptimizationProcess(std::vector<double>(std::next(std::begin(global_data_), 800), std::end(global_data_)));
         emit runOptimizationProcess(std::vector<double>(std::begin(global_data_), std::end(global_data_)));
-        // emit runOptimizationProcess({1,2,3,4});
     break;
     
     default:

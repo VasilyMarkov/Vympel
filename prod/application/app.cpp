@@ -100,14 +100,10 @@ void Application::runBle() {
     connect(&ble_thread_, &QThread::started, 
         bluetoothDevice_.get(), &ble::BLEInterface::run, Qt::QueuedConnection);
 
-    connect(udp_handler_.get(), &app::CommandHandler::setRateTemprature, 
-        bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
+    // connect(udp_handler_.get(), &app::CommandHandler::setRateTemprature, 
+    //     bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
 
     ble_thread_.start();
-}
-
-void Application::runOptimizationProcess() {
-    // optimization_script_->start ("python3", QStringList() << QString::fromStdString((fs::current_path().parent_path() / "optimization.py").string()));
 }
 
 Application::~Application()
