@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QProcess>
 #include <QTimer>
+#include <QSocketNotifier>
 #include "core.hpp"
 #include "network.hpp"
 #include "cv.hpp"
@@ -13,17 +14,28 @@
 #include "bluetoothDevice.hpp"
 #include "logger.hpp"
 #include "configReader.hpp"
-
+#include <csignal>
+#include <unistd.h>
 
 namespace app
 {
+
+inline std::array<int, 2> sigintFd_ = {0,0};
+
+static inline void handleSigint(int) {
+    char a = 1;
+    write(sigintFd_[0], &a, sizeof(a));
+}
 
 class OptimizationScript final: public QObject {
     Q_OBJECT
 public:
     OptimizationScript();
+    ~OptimizationScript();
 public Q_SLOTS:
     void start(const std::vector<double>&);
+Q_SIGNALS:
+    void sendCoefficients(const std::vector<double>&);
 private:    
     QByteArray serializeVector(const std::vector<double>&);
     std::vector<double> deserializeResult(const QByteArray&);
@@ -48,7 +60,6 @@ private:
     std::unique_ptr<Network> network_;
     std::unique_ptr<Core> core_;
     std::unique_ptr<ble::BLEInterface> bluetoothDevice_;
-    std::unique_ptr<QProcess> optimization_script_;
     QThread core_thread_;
     QThread ble_thread_;
     QProcess camera_python_;

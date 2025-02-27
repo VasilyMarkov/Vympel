@@ -20,7 +20,9 @@ bool Core::process()
 {
     static bool isLoggerCreated = false;
 
-    while(process_unit_->process() != IProcessing::state::DONE) {
+    while(process_unit_->process() != IProcessing::state::DONE || 
+          !QThread::currentThread()->isInterruptionRequested()) 
+    {
         Q_EMIT requestTemperature();
         if(statement_ == CoreStatement::halt) {
             offFSM();
@@ -48,12 +50,11 @@ bool Core::process()
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
         Q_EMIT sendData(QJsonDocument(json_));
-        QThread::msleep(20); //TODO Need to implement via timer
+        QThread::msleep(20);
 
 
         QCoreApplication::processEvents();
     }
-    // Q_EMIT exit();
 
     return true;
 }

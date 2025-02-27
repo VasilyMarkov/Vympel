@@ -65,8 +65,7 @@ void Application::runCore() {
     connect(&core_thread_, &QThread::finished, 
         core_.get(), &QObject::deleteLater, Qt::QueuedConnection);
 
-    connect(&core_thread_, &QThread::finished,
-        &q_core_app_, &QCoreApplication::quit, Qt::QueuedConnection);
+    connect(&core_thread_, &QThread::finished, core_.get(),  &QObject::deleteLater);
 
     connect(udp_handler_.get(), &app::CommandHandler::setCoreStatement, 
         core_.get(), &app::Core::setCoreStatement, Qt::QueuedConnection);
@@ -76,6 +75,10 @@ void Application::runCore() {
 
     connect(core_.get(), &app::Core::runOptimizationProcess, 
         &optimizationScript_, &OptimizationScript::start);
+
+    connect(udp_handler_.get(), &app::CommandHandler::closeApp, [this]() {
+        QCoreApplication::quit();
+    });
 
 #ifndef NOT_BLE
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
@@ -100,6 +103,7 @@ void Application::runBle() {
     connect(&ble_thread_, &QThread::started, 
         bluetoothDevice_.get(), &ble::BLEInterface::run, Qt::QueuedConnection);
 
+    connect(&ble_thread_, &QThread::finished, bluetoothDevice_.get(),  &QObject::deleteLater);
     // connect(udp_handler_.get(), &app::CommandHandler::setRateTemprature, 
     //     bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
 
@@ -108,13 +112,22 @@ void Application::runBle() {
 
 Application::~Application()
 {
+    if (camera_python_.state() == QProcess::Running) {
+        camera_python_.terminate();
+    }
 
+    core_thread_.terminate();
+    core_thread_.wait(); 
+    ble_thread_.terminate();
+    ble_thread_.wait(); 
 }
 
 OptimizationScript::OptimizationScript(): 
     process_(std::make_unique<QProcess>()), 
     processPath_(QString::fromStdString((fs::current_path().parent_path() / "optimization.py").string()))
 {
+    connect(process_.get(), &QProcess::readyReadStandardError, [this](){qDebug() << process_->readAllStandardError();});
+
     connect(process_.get(), &QProcess::started, [this]() {
         process_->write(serializeVector(data_));
         process_->closeWriteChannel();
@@ -127,6 +140,7 @@ OptimizationScript::OptimizationScript():
             QByteArray resultData = process_->readAllStandardOutput();
             coefficents_ = deserializeResult(resultData);
             print(coefficents_);
+            emit sendCoefficients(coefficents_);
             process_->terminate();
         } else {
             qDebug() << "Process failed:" << process_->errorString();
@@ -167,6 +181,12 @@ std::vector<double> OptimizationScript::deserializeResult(const QByteArray& data
         result.push_back(val);
     }
     return result;
+}
+
+OptimizationScript::~OptimizationScript() {
+    if (process_->state() == QProcess::Running) {
+        process_->kill();
+    }
 }
 
 } //namespace app

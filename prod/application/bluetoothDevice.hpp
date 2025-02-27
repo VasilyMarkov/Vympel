@@ -50,6 +50,7 @@ class BLEInterface final : public QObject
     Q_OBJECT
 public:
     explicit BLEInterface(QObject *parent = 0);
+    ~BLEInterface();
     void writeDataToCharachteristic(const QByteArray&);
     void temperature();
 public Q_SLOTS:

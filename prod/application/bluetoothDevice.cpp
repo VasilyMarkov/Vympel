@@ -415,6 +415,16 @@ void BLEInterface::temperature() {
     writeDataToCharachteristic(createModbusPacket(TEMPERATURE_REGISTER, 2));
 }
 
+BLEInterface::~BLEInterface()
+{
+    low_energy_controller_->disconnectFromDevice();
+    low_energy_controller_->deleteLater();
+    deviceDiscoveryAgent_->stop();
+    deviceDiscoveryAgent_->deleteLater();
+    
+}
+
+
 } //namespace ble
 
 } //namespace app

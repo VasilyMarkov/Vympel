@@ -62,6 +62,8 @@ void CommandHandler::receivePortData()
         break;
         case 3:
             Q_EMIT setRateTemprature(QJsonDocument::fromJson(datagram, nullptr)["tempratureRate"].toDouble());
+        case 4:
+            Q_EMIT closeApp();
         break;
         default:
         break;
@@ -83,10 +85,14 @@ Network::Network(): ownIp_(getOwnIp())
     cameraConnector_ = std::make_unique<CameraConnector>();
 
     if (auto port =  ConfigReader::getInstance().get("network", "cameraTcpPort").toInt(); tcpServer_.listen(QHostAddress::Any, port)) {
-        // qDebug() << "Server started on port" << port;
+        qDebug() << "Server started on port" << port;
     } else {
-        // qDebug() << "Server failed to start:" << tcpServer_.errorString();
+        qCritical() << "Server failed to start:" << tcpServer_.errorString();
     }   
+    if (!tcpServer_.isListening()) {
+        qCritical() << "TCP Server failed to start listening.";
+        return;
+    }
 }
 
 void Network::newTcpConnection() {

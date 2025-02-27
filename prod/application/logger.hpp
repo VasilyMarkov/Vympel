@@ -31,17 +31,6 @@ public:
     }
     void createLog() 
     {
-        // if(jsonDir.cdUp()) 
-        // {
-        //     if(QDir dir{QString(jsonDir.absolutePath() + "/logs")}; !dir.exists()) {
-        //         jsonDir.mkdir("logs");
-        //     }
-
-        //     jsonDir.cd(QString(jsonDir.absolutePath() + "/logs"));
-        //     auto fileName = QDateTime::currentDateTime().toString(Qt::ISODate);
-        //     file = std::make_unique<QFile>(QString(jsonDir.absolutePath() + '/' + fileName + ".json"));        
-        // }
-
         auto logsDirPath = fs::current_path().parent_path() / "logs";
 
         if(!fs::exists(logsDirPath)) {

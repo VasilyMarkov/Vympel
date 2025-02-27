@@ -42,6 +42,7 @@ private:
 Q_SIGNALS:
     void setRateTemprature(double);
     void setCoreStatement(int);
+    void closeApp();
 };
 
 class CameraConnector: public QObject {
