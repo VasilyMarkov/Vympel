@@ -96,13 +96,13 @@ Network::Network(): ownIp_(getOwnIp())
 }
 
 void Network::newTcpConnection() {
-    QTcpSocket *socket = tcpServer_.nextPendingConnection();
-    connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
-    connect(socket, &QTcpSocket::readyRead, this, &Network::handlingIncomingTcpPackets);
+    socket_ = tcpServer_.nextPendingConnection();
+    connect(socket_, &QTcpSocket::disconnected, socket_, &QTcpSocket::deleteLater);
+    connect(socket_, &QTcpSocket::readyRead, this, &Network::handlingIncomingTcpPackets);
 
-    QString clientInfo = QString("%1:%2").arg(socket->peerAddress().toString()).arg(socket->peerPort());
+    QString clientInfo = QString("%1:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
     // qDebug() << "New client connected from:" << clientInfo;
-    hostIp_ = socket->peerAddress();
+    hostIp_ = socket_->peerAddress();
     
     cameraConnector_.reset();
     emit ready();
@@ -131,4 +131,15 @@ void Network::handlingIncomingTcpPackets() {
 
 }
 
+void Network::receiveFuncCoefficients(const std::vector<double>& coefficents) {
+
+    QJsonArray jsonArray;
+    for (const auto& value : coefficents) {
+        jsonArray.append(value);
+    }
+
+    socket_->write(QJsonDocument(jsonArray).toJson());
 }
+
+} // namespace app
+

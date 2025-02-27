@@ -18,6 +18,7 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
         udp_handler_ = std::make_unique<CommandHandler>();
 
         connect(&camera_python_, &QProcess::readyReadStandardOutput, [this](){qDebug() << camera_python_.readAllStandardOutput();});
+        connect(&optimizationScript_, &OptimizationScript::sendCoefficients, network_.get(), &Network::receiveFuncCoefficients);
         // connect(&camera_python_, &QProcess::readyReadStandardError, [this](){qDebug() << camera_python_.readAllStandardError();});
 
         connect(network_.get(), &Network::ready, [this](){
@@ -33,7 +34,7 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
             args << QString::fromStdString(camera_python_process_path.string());
             args << network_->getHostIp().toString();
             camera_python_.start ("python3", args);
-
+            
             runCore();
         });
 
@@ -140,7 +141,7 @@ OptimizationScript::OptimizationScript():
             QByteArray resultData = process_->readAllStandardOutput();
             coefficents_ = deserializeResult(resultData);
             print(coefficents_);
-            emit sendCoefficients(coefficents_);
+            Q_EMIT sendCoefficients(coefficents_);
             process_->terminate();
         } else {
             qDebug() << "Process failed:" << process_->errorString();

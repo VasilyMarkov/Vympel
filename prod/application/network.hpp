@@ -66,11 +66,13 @@ Q_SIGNALS:
     void ready();
 private Q_SLOTS:
     void handlingIncomingTcpPackets();
+public Q_SLOTS:
+    void receiveFuncCoefficients(const std::vector<double>&);
 private:
     std::unique_ptr<CameraConnector> cameraConnector_;
     QUdpSocket udpSocket_;
     QTcpServer tcpServer_;
-
+    QTcpSocket* socket_;
     QHostAddress ownIp_;
     QHostAddress hostIp_;
 };
