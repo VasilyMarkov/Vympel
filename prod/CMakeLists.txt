@@ -12,6 +12,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     Concurrent
 )
 
+find_package(iir)
+
 add_subdirectory(application)
 
 

@@ -40,6 +40,7 @@ target_link_libraries(application PRIVATE
     Qt6::Bluetooth
     Qt6::Network
     Qt6::Concurrent
+    iir::iir
 )
 
 if(NOT_BLE)

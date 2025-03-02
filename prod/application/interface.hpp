@@ -3,10 +3,12 @@
 
 #include <QByteArray>
 #include <QJsonDocument>
+#include "Iir.h"
 
 namespace app {
 
 enum class EventType {
+    NO_STATE,
     IDLE,
     CALIBRATION,
     MEASHUREMENT,
@@ -46,6 +48,8 @@ protected:
     process_params_t process_params_;          //parameters obtained by machine vision algorithm 
     calc_params_t calc_params_;                //parameters obtained by processing cv parameters inside events
     size_t global_tick_ = 0;
+    Iir::Butterworth::LowPass<4> btFilter_;
+
 public:
     enum class state {
         WORKING,

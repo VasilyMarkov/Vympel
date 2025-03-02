@@ -91,13 +91,12 @@ IProcessing::state NetProcessUnit::process()
         process_params_.brightness = net_value.value().value; 
         process_params_.filtered = filter_.filter(process_params_.brightness);
 
+        ++global_tick_;
         return IProcessing::state::WORKING;
     }
     else {
         return IProcessing::state::NODATA;
     }
-    ++global_tick_;
-    
 }
 
 TestProcessUnit::TestProcessUnit():
@@ -109,14 +108,18 @@ TestProcessUnit::TestProcessUnit():
             "log1"
         )
     ), 
-    filter_(filter::cutoff_frequency, filter::sample_rate) {}
+    filter_(filter::cutoff_frequency, filter::sample_rate) {
+        btFilter_.setup (ConfigReader::getInstance().get("parameters", "sampling_rate_filter_freq_Hz").toInt(), 
+            ConfigReader::getInstance().get("parameters", "filter_cutoff_freq_Hz").toInt());
+    }
 
 IProcessing::state TestProcessUnit::process() 
 {
     if(global_tick_ == test_data_.size()) return IProcessing::state::DONE;
 
     process_params_.brightness = test_data_[global_tick_];
-    process_params_.filtered = filter_.filter(process_params_.brightness);
+    // process_params_.filtered = filter_.filter(process_params_.brightness);
+    process_params_.filtered = btFilter_.filter(process_params_.brightness);
 
     ++global_tick_;
     return IProcessing::state::WORKING;
