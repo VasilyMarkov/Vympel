@@ -50,7 +50,7 @@ private:
     void offFSM();
     /************************/
     CoreStatement statement_ = CoreStatement::halt;
-    EventType mode_ = EventType::IDLE;
+    EventType mode_ = EventType::NO_STATE;
     std::shared_ptr<IProcessing> process_unit_;
     std::unique_ptr<Event> active_event_;
     QJsonObject json_;

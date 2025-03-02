@@ -24,8 +24,8 @@ namespace app {
 
 namespace constants {
     namespace filter {
-        constexpr double cutoff_frequency = 50.0; //Hz
-        constexpr double cutoff_frequency1 = 50.0; //Hz
+        constexpr double cutoff_frequency = 20.0; //Hz
+        constexpr double cutoff_frequency1 = 20.0; //Hz
         constexpr double sample_rate = 1000.0; //Hz
     }
 }

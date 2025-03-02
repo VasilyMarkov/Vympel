@@ -75,11 +75,11 @@ void Application::runCore() {
         udp_handler_.get(), &app::CommandHandler::receiveData, Qt::QueuedConnection);
 
     connect(core_.get(), &app::Core::runOptimizationProcess, 
-        &optimizationScript_, &OptimizationScript::start);
+        &optimizationScript_, &OptimizationScript::start, Qt::QueuedConnection);
 
-    connect(udp_handler_.get(), &app::CommandHandler::closeApp, [this]() {
-        QCoreApplication::quit();
-    });
+    connect(udp_handler_.get(), &app::CommandHandler::closeApp, 
+        &q_core_app_, &QCoreApplication::quit, Qt::QueuedConnection);
+
 
 #ifndef NOT_BLE
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
@@ -113,14 +113,16 @@ void Application::runBle() {
 
 Application::~Application()
 {
-    if (camera_python_.state() == QProcess::Running) {
-        camera_python_.terminate();
+    core_thread_.requestInterruption();
+    core_thread_.quit();
+    camera_python_.terminate();
+#ifndef NOT_BLE
+    ble_thread_.quit();
+#endif
+    if (!camera_python_.waitForFinished(3000)) { // Wait for 5 seconds
+        qDebug() << "Process did not terminate gracefully, killing it.";
+        camera_python_.kill();
     }
-
-    core_thread_.terminate();
-    core_thread_.wait(); 
-    ble_thread_.terminate();
-    ble_thread_.wait(); 
 }
 
 OptimizationScript::OptimizationScript(): 

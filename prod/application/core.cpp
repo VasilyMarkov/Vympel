@@ -8,8 +8,7 @@ namespace app
 {
  
 Core::Core(std::shared_ptr<IProcessing> processModule): 
-    process_unit_(processModule),
-    active_event_(std::make_unique<Idle>(process_unit_)) {}
+    process_unit_(processModule) {}
 
 void Core::receiveTemperature(double temperature) noexcept
 {
@@ -20,42 +19,47 @@ bool Core::process()
 {
     static bool isLoggerCreated = false;
 
-    while(process_unit_->process() != IProcessing::state::DONE || 
-          !QThread::currentThread()->isInterruptionRequested()) 
+    while(process_unit_->process() != IProcessing::state::DONE) 
     {
-        Q_EMIT requestTemperature();
-        if(statement_ == CoreStatement::halt) {
-            offFSM();
-
-            if(isLoggerCreated) {
-                Logger::getInstance().log(global_data_, temperature_data_);
-                global_data_.clear();
-                isLoggerCreated = false;
-            }
+        if(QThread::currentThread()->isInterruptionRequested()) {
+            qDebug() << "Core is closed";
+            return true;
         }
-        else {
+
+        auto processParams = process_unit_->getProcessParams();
+        json_["brightness"] = processParams.brightness;
+        json_["filtered"] = processParams.filtered;
+        json_["temperature"] = temperature_;
+        json_["mode"] = static_cast<int>(mode_);
+        json_["statement"] = static_cast<int>(statement_);
+        Q_EMIT sendData(QJsonDocument(json_));
+
+        Q_EMIT requestTemperature();
+
+        if(statement_ == CoreStatement::work) {
             if(!isLoggerCreated) {
                 Logger::getInstance().createLog();
                 isLoggerCreated = true;
             }
             onFSM();
             callEvent();
-            auto processParams = process_unit_->getProcessParams();
-            json_["brightness"] = processParams.brightness;
-            json_["filtered"] = processParams.filtered;
-            json_["temperature"] = temperature_;
             global_data_.push_back(processParams.filtered);
             temperature_data_.push_back(temperature_);
         }
-        json_["mode"] = static_cast<int>(mode_);
-        json_["statement"] = static_cast<int>(statement_);
-        Q_EMIT sendData(QJsonDocument(json_));
+        else {
+            offFSM();
+            if(isLoggerCreated) {
+                Logger::getInstance().log(global_data_, temperature_data_);
+                global_data_.clear();
+                isLoggerCreated = false;
+            }
+        }
         QThread::msleep(20);
 
 
         QCoreApplication::processEvents();
     }
-
+    
     return true;
 }
 
@@ -104,13 +108,16 @@ void Core::dispatchEvent()
     active_event_.reset(nullptr);
     switch (mode_)
     {
+    case EventType::NO_STATE:
+        return;
+    break;    
     case EventType::IDLE:
-        active_event_ = std::make_unique<Idle>(process_unit_);
+        active_event_ = std::make_unique<Idle>(process_unit_, temperature_);
+        Q_EMIT setRateTemprature(1);
     break;
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
-        Q_EMIT setRateTemprature(-1.5);
     break;
 
     case EventType::MEASHUREMENT:
@@ -118,21 +125,23 @@ void Core::dispatchEvent()
         {
             active_event_ = std::make_unique<Meashurement>(process_unit_);
         }
+        Q_EMIT setRateTemprature(-1);
     break;
 
     case EventType::CONDENSATION:
-        active_event_ = std::make_unique<Сondensation>(process_unit_);
+        active_event_ = std::make_unique<Сondensation>(process_unit_, temperature_);
         Q_EMIT setRateTemprature(1.5);
+        std::cout << "COND POINT: " << process_unit_->getTick() << std::endl;
     break;
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
         // emit runOptimizationProcess(std::vector<double>(std::next(std::begin(global_data_), 800), std::end(global_data_)));
-        emit runOptimizationProcess(std::vector<double>(std::begin(global_data_), std::end(global_data_)));
+        // emit runOptimizationProcess(std::vector<double>(std::begin(global_data_), std::end(global_data_)));
     break;
     
     default:
-        active_event_ = std::make_unique<Idle>(process_unit_);
+        return;
     break;
     }
 }
@@ -140,7 +149,7 @@ void Core::dispatchEvent()
 void Core::onFSM()
 {
     if(!isOnFSM) {
-        toggle(EventType::CALIBRATION);
+        toggle(EventType::IDLE);
         isOnFSM = true;
     }
 }
@@ -148,7 +157,7 @@ void Core::onFSM()
 void Core::offFSM()
 {
     if(isOnFSM) {
-        toggle(EventType::IDLE);
+        toggle(EventType::NO_STATE);
         isOnFSM = false;
     }
 }

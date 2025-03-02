@@ -7,8 +7,9 @@ Event::Event(std::weak_ptr<IProcessing> cv):
     process_unit_(cv), 
     start_tick_(process_unit_.lock()->getTick()) {}
 
-Idle::Idle(std::weak_ptr<IProcessing> cv): 
-    Event(cv)
+Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature): 
+    Event(cv),
+    temperature_(temperature)
 {  
     std::cout << "idle" << std::endl;
     global_data_.clear();
@@ -16,6 +17,8 @@ Idle::Idle(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> Idle::operator()()
 {
+    if(temperature_ < 52.0) return std::nullopt;
+
     return EventType::CALIBRATION;
 }
 
@@ -39,7 +42,7 @@ std::optional<EventType> Calibration::operator()()
         auto [mean, std_deviation] = meanVar(data_);
         process_unit_.lock()->getCalcParams().mean_filtered = mean;
         process_unit_.lock()->getCalcParams().std_dev_filtered = std_deviation;
-        std::cout << mean << ' ' << std_deviation << std::endl;
+        
         return EventType::MEASHUREMENT;    
     }
     data_.push_back(filtered);
@@ -48,7 +51,7 @@ std::optional<EventType> Calibration::operator()()
 }
 
 Meashurement::Meashurement(std::weak_ptr<IProcessing> cv): 
-    Event(cv), mean_data_(15, 0)
+    Event(cv), mean_data_(60, 0)
 {
     std::cout << "measure" << std::endl;
     coeffs.resize(5);
@@ -62,16 +65,14 @@ std::optional<EventType> Meashurement::operator()()
 
     auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
     auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
-    // auto std = 20000;
-    auto threshold = mean + std*ConfigReader::getInstance().get("parameters", "sigma_threshold").toInt();
-        
+    auto threshold = mean + std*4;
     mean_data_.pop_front();
     mean_data_.push_back(filtered);
 
     if(local_tick_ == mean_data_.size() - 1) {
         auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
         if(mean_window > threshold) {
-            std::cout << "COND POINT: " << process_unit_.lock()->getTick() << std::endl;
+            // std::cout << "COND POINT: " << process_unit_.lock()->getTick() << std::endl;
             return EventType::CONDENSATION;   
         }
         local_tick_ = 0;
@@ -81,30 +82,47 @@ std::optional<EventType> Meashurement::operator()()
     return std::nullopt;
 }
 
-app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv): 
-    Event(cv)
+app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& temperature): 
+    Event(cv), mean_data_(15, 0),
+    temperature_(temperature)
 {
     std::cout << "condensation" << std::endl;
-    mean_data.reserve(100);
     coeffs.resize(5);
 }
 
 std::optional<EventType> app::Сondensation::operator()()
-{
-    if(process_unit_.lock()->getTick() >= 2000) {
-        return EventType::END;
-    }
+{   
+    // auto filtered = process_unit_.lock()->getProcessParams().filtered;
+
+    // auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
+    // auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
+    // auto threshold = mean + std*4;
+
+    // mean_data_.pop_front();
+    // mean_data_.push_back(filtered);
+
+    // if(local_tick_ == mean_data_.size() - 1) {
+    //     auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
+    //     if(mean_window < threshold) {
+    //         std::cout << "END POINT: " << process_unit_.lock()->getTick() << std::endl;
+    //         return EventType::END;   
+    //     }
+    //     local_tick_ = 0;
+    // }
+    if(temperature_ > 50.0) return EventType::END;
+
     return std::nullopt;
 }
 
-End::End(std::weak_ptr<IProcessing> cv):Event(cv)
+End::End(std::weak_ptr<IProcessing> cv):
+    Event(cv)
 {
     std::cout << "End" << std::endl;
 }
 
 std::optional<EventType> End::operator()()
 {
-    return std::nullopt;
+    return EventType::IDLE;    
 }
 
 } // namespace app

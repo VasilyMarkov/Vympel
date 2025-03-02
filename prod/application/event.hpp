@@ -37,8 +37,10 @@ protected:
 
 class Idle final: public Event {
 public:
-    Idle(std::weak_ptr<IProcessing>);
+    Idle(std::weak_ptr<IProcessing>, const double&);
     std::optional<EventType> operator()() override;
+private:
+    const double& temperature_;
 };
 
 class Calibration final: public Event {
@@ -57,11 +59,12 @@ public:
 };
 
 class Сondensation final: public Event {
-    std::vector<double> mean_data;
+    std::deque<double> mean_data_;
     std::deque<bool> coeffs;
+    const double& temperature_;
     size_t local_tick_ = 0;
 public:
-    Сondensation(std::weak_ptr<IProcessing>);
+    Сondensation(std::weak_ptr<IProcessing>, const double&);
     std::optional<EventType> operator()() override;
 };
 

@@ -14,18 +14,9 @@
 #include "bluetoothDevice.hpp"
 #include "logger.hpp"
 #include "configReader.hpp"
-#include <csignal>
-#include <unistd.h>
 
 namespace app
 {
-
-inline std::array<int, 2> sigintFd_ = {0,0};
-
-static inline void handleSigint(int) {
-    char a = 1;
-    write(sigintFd_[0], &a, sizeof(a));
-}
 
 class OptimizationScript final: public QObject {
     Q_OBJECT
