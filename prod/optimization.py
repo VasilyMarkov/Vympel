@@ -4,6 +4,8 @@ import sys
 import struct
 from scipy.signal import butter, filtfilt
 
+
+
 def polynomial(x, coeffs):
     return np.polyval(coeffs, x)
 
@@ -76,6 +78,8 @@ def findOptimum(x_data, y_data):
 
     minStdDevIndex = np.argmin(stdDevList)
     return resultsCoefficients[minStdDevIndex]
+
+
 
 if __name__ == "__main__":
     try:

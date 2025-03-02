@@ -8,6 +8,11 @@ import sys
 import ipaddress
 from picamera2 import Picamera2
 
+# def handle_sigterm(signum, frame):
+#     print("Received SIGTERM, exiting...")
+#     sys.exit(0)
+
+# signal.signal(signal.SIGTERM, handle_sigterm)
 
 dirname = os.path.dirname(os.path.dirname(__file__))
 video_file = os.path.join(dirname, './application/video.mp4')
@@ -41,8 +46,10 @@ data = []
 
 encode_params = [cv.IMWRITE_JPEG_QUALITY, 70]  
 
+WORK = True
+
 if __name__ == "__main__":
-    while True:
+    while WORK:
         frame = picam2.capture_array()
         _, buffer = cv.imencode('.jpg', frame, encode_params)
         video_sock.sendto(buffer.tobytes(), service_address)
@@ -60,5 +67,6 @@ if __name__ == "__main__":
         json_data = json.dumps(jdata)
         bytes_data = json_data.encode('utf-8')
         sock.sendto(bytes_data, server_address) 
+    print("Camera is closed")
     cap.release()
     cv.destroyAllWindows()
