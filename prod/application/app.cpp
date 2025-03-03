@@ -113,16 +113,23 @@ void Application::runBle() {
 
 Application::~Application()
 {
+    #ifndef NOT_BLE
+        ble_thread_.quit();
+    #endif
+
     core_thread_.requestInterruption();
     core_thread_.quit();
-    camera_python_.terminate();
-#ifndef NOT_BLE
-    ble_thread_.quit();
-#endif
-    if (!camera_python_.waitForFinished(3000)) { // Wait for 5 seconds
-        qDebug() << "Process did not terminate gracefully, killing it.";
-        camera_python_.kill();
-    }
+
+
+    // camera_python_.terminate();
+    // if (!camera_python_.waitForFinished(3000)) { // Wait for 5 seconds
+    //     qDebug() << "Process did not terminate gracefully, killing it.";
+    //     camera_python_.kill();
+    // }
+
+    camera_python_.kill();
+    // wait for the process to actually stop
+    camera_python_.waitForFinished();
 }
 
 OptimizationScript::OptimizationScript(): 
@@ -190,6 +197,8 @@ OptimizationScript::~OptimizationScript() {
     if (process_->state() == QProcess::Running) {
         process_->kill();
     }
+
+
 }
 
 } //namespace app

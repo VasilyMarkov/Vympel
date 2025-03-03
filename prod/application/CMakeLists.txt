@@ -30,6 +30,7 @@ target_include_directories(application PRIVATE
     ${CAMERA_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS} 
     ${LIBCAMERA_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
 )
 
 target_link_libraries(application PRIVATE 

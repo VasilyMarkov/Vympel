@@ -54,9 +54,9 @@ bool Core::process()
                 isLoggerCreated = false;
             }
         }
+
+
         QThread::msleep(20);
-
-
         QCoreApplication::processEvents();
     }
     
@@ -106,6 +106,9 @@ void Core::callEvent()
 void Core::dispatchEvent()
 {
     active_event_.reset(nullptr);
+
+    int start_point{};
+
     switch (mode_)
     {
     case EventType::NO_STATE:
@@ -131,13 +134,14 @@ void Core::dispatchEvent()
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_, temperature_);
         Q_EMIT setRateTemprature(1.5);
+        start_point = process_unit_->getTick();
         std::cout << "COND POINT: " << process_unit_->getTick() << std::endl;
     break;
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
         // emit runOptimizationProcess(std::vector<double>(std::next(std::begin(global_data_), 800), std::end(global_data_)));
-        // emit runOptimizationProcess(std::vector<double>(std::begin(global_data_), std::end(global_data_)));
+        emit runOptimizationProcess(std::vector<double>(std::begin(global_data_) + start_point, std::end(global_data_)));
     break;
     
     default:

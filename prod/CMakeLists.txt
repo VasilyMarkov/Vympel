@@ -13,6 +13,7 @@ find_package(Qt6 REQUIRED COMPONENTS
 )
 
 find_package(iir)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 add_subdirectory(application)
 
