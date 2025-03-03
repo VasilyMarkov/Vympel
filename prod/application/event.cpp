@@ -1,5 +1,7 @@
 #include "event.hpp"
 #include "logger.hpp"
+#include "math.hpp"
+#include <Eigen/Dense>
 namespace app
 {
 
@@ -17,7 +19,7 @@ Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature):
 
 std::optional<EventType> Idle::operator()()
 {
-    if(temperature_ < 52.0) return std::nullopt;
+    // if(temperature_ < 52.0) return std::nullopt;
 
     return EventType::CALIBRATION;
 }
@@ -51,7 +53,7 @@ std::optional<EventType> Calibration::operator()()
 }
 
 Meashurement::Meashurement(std::weak_ptr<IProcessing> cv): 
-    Event(cv), mean_data_(60, 0)
+    Event(cv), mean_data_(30, 0)
 {
     std::cout << "measure" << std::endl;
     coeffs.resize(5);
@@ -72,14 +74,32 @@ std::optional<EventType> Meashurement::operator()()
     if(local_tick_ == mean_data_.size() - 1) {
         auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
         if(mean_window > threshold) {
-            // std::cout << "COND POINT: " << process_unit_.lock()->getTick() << std::endl;
             return EventType::CONDENSATION;   
         }
+        // if(positiveTrendDetection(std::vector<double>(std::begin(mean_data_), std::end(mean_data_)))) {
+            // return EventType::CONDENSATION;   
+        // }
+
         local_tick_ = 0;
     }
 
     ++local_tick_;
     return std::nullopt;
+}
+
+bool Meashurement::positiveTrendDetection(const std::vector<double>& data) {
+    static uint8_t cnt = 0;
+    double slope = linearRegression(data);
+    std::cout << "Slope: " << slope << std::endl;
+    if(slope > 0.1) {
+        ++cnt;
+    }
+    else {
+        cnt = 0;    
+    }
+    if(cnt == 3) return true;
+
+    return false;
 }
 
 app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& temperature): 
@@ -92,6 +112,11 @@ app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& t
 
 std::optional<EventType> app::Сondensation::operator()()
 {   
+    qDebug() << process_unit_.lock()->getTick();
+    if (process_unit_.lock()->getTick() > 2500) {
+        return EventType::END;
+    }
+
     // auto filtered = process_unit_.lock()->getProcessParams().filtered;
 
     // auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
@@ -109,7 +134,7 @@ std::optional<EventType> app::Сondensation::operator()()
     //     }
     //     local_tick_ = 0;
     // }
-    if(temperature_ > 50.0) return EventType::END;
+    // if(temperature_ > 50.0) return EventType::END;
 
     return std::nullopt;
 }
@@ -122,7 +147,8 @@ End::End(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> End::operator()()
 {
-    return EventType::IDLE;    
+    return EventType::NO_STATE;    
+    // return EventType::IDLE;    
 }
 
 } // namespace app
