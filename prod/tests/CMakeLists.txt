@@ -14,6 +14,8 @@ target_include_directories(test_main
 target_include_directories(test_main PRIVATE ${CMAKE_SOURCE_DIR}/application)
 
 target_link_libraries(test_main PRIVATE 
-    Qt5::Core 
-    Qt5::Network
+    ${OpenCV_LIBS} 
+    Qt6::Core 
+    Qt6::Bluetooth
+    Qt6::Network
 )

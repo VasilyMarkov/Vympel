@@ -5,13 +5,18 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Qt5 REQUIRED COMPONENTS 
+find_package(Qt6 REQUIRED COMPONENTS 
     Core 
     Bluetooth 
     Network
+    Concurrent
 )
 
+find_package(iir)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+
 add_subdirectory(application)
+
 
 if(TESTS)
     add_subdirectory(tests)

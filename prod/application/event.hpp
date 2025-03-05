@@ -7,13 +7,14 @@
 #include <iostream>
 #include "interface.hpp"
 #include "utility.hpp"
+#include <functional>
 
 namespace app
 {
 
 namespace constants {
     namespace buffer {
-        constexpr size_t CALIB_SIZE = 500; 
+        constexpr size_t CALIB_SIZE = 100; 
         constexpr size_t MEASUR_SIZE = 100; 
     }
     constexpr size_t WAITING_TICKS = 100; 
@@ -24,8 +25,9 @@ namespace constants {
 class Event {
 public:
     Event(std::weak_ptr<IProcessing>);
-    virtual std::optional<core_mode_t> operator()() = 0;
+    virtual std::optional<EventType> operator()() = 0;
     virtual ~Event(){}
+    size_t v_tick = 0;
 protected:
     std::weak_ptr<IProcessing> process_unit_;
     std::vector<double> data_;
@@ -35,38 +37,43 @@ protected:
 
 class Idle final: public Event {
 public:
-    Idle(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    Idle(std::weak_ptr<IProcessing>, const double&);
+    std::optional<EventType> operator()() override;
+private:
+    const double& temperature_;
 };
 
 class Calibration final: public Event {
 public:
     Calibration(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    std::optional<EventType> operator()() override;
 };
 
-class Measurement final: public Event {
-    std::vector<double> mean_data;
+class Meashurement final: public Event {
+    std::deque<double> mean_data_;
     std::deque<bool> coeffs;
     size_t local_tick_ = 0;
+private:
+    bool positiveTrendDetection(const std::vector<double>&);
 public:
-    Measurement(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    Meashurement(std::weak_ptr<IProcessing>);
+    std::optional<EventType> operator()() override;
 };
 
 class Сondensation final: public Event {
-    std::vector<double> mean_data;
+    std::deque<double> mean_data_;
     std::deque<bool> coeffs;
+    const double& temperature_;
     size_t local_tick_ = 0;
 public:
-    Сondensation(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    Сondensation(std::weak_ptr<IProcessing>, const double&);
+    std::optional<EventType> operator()() override;
 };
 
 class End final: public Event {
 public:
     End(std::weak_ptr<IProcessing>);
-    std::optional<core_mode_t> operator()() override;
+    std::optional<EventType> operator()() override;
 };
 
 } //namespace app

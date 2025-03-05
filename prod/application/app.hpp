@@ -4,24 +4,60 @@
 #include <QUdpSocket>
 #include <QCoreApplication>
 #include <QThread>
+#include <QProcess>
+#include <QTimer>
+#include <QSocketNotifier>
 #include "core.hpp"
-#include "udp.hpp"
+#include "network.hpp"
 #include "cv.hpp"
 #include "utility.hpp"
 #include "bluetoothDevice.hpp"
+#include "logger.hpp"
+#include "configReader.hpp"
 
 namespace app
 {
+
+class OptimizationScript final: public QObject {
+    Q_OBJECT
+public:
+    OptimizationScript();
+    ~OptimizationScript();
+public Q_SLOTS:
+    void start(const std::vector<double>&);
+Q_SIGNALS:
+    void sendCoefficients(const std::vector<double>&);
+private:    
+    QByteArray serializeVector(const std::vector<double>&);
+    std::vector<double> deserializeResult(const QByteArray&);
+private:
+    std::unique_ptr<QProcess> process_;
+    QString processPath_;
+    std::vector<double> data_;
+    std::vector<double> coefficents_;
+};
+
 class Application final: public QObject {
     Q_OBJECT
 public:
     Application(const QCoreApplication&);
+    ~Application();
 private:
-    std::unique_ptr<UdpSocket> socket_;
+    void runCore();
+    void runBle();
+private:
+    std::unique_ptr<CommandHandler> udp_handler_;
+    std::unique_ptr<UdpHandler> ble_socket_;
+    std::unique_ptr<Network> network_;
     std::unique_ptr<Core> core_;
     std::unique_ptr<ble::BLEInterface> bluetoothDevice_;
     QThread core_thread_;
+    QThread ble_thread_;
+    QProcess camera_python_;
+    OptimizationScript optimizationScript_;
+    const QCoreApplication& q_core_app_;
 };
+
 
 } // namespace app
 

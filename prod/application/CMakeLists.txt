@@ -21,29 +21,32 @@ add_executable(application
     core.cpp 
     cv.cpp
     event.cpp
-    fsm.cpp
     LibCamera.cpp
     main.cpp
-    udp.cpp
+    network.cpp
 )
 
 target_include_directories(application PRIVATE 
     ${CAMERA_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS} 
     ${LIBCAMERA_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
 )
 
 target_link_libraries(application PRIVATE 
     ${LIBCAMERA_BASE_LIBRARY}
     ${LIBCAMERA_LIBRARY}
     ${OpenCV_LIBS} 
-<<<<<<< HEAD
     Qt6::Core 
     Qt6::Bluetooth
     Qt6::Network
-=======
-    Qt5::Core 
-    Qt5::Bluetooth
-    Qt5::Network
->>>>>>> 14272fd620a5c29b364613ba1d1419a743e12ef2
+    Qt6::Concurrent
+    iir::iir
 )
+
+if(NOT_BLE)
+    target_compile_definitions(application PRIVATE NOT_BLE)
+    message("NOT_BLE: ON")
+else()
+    message("NOT_BLE: OFF")
+endif()

@@ -13,14 +13,14 @@ class BlService final: public QObject {
   Q_OBJECT
 public:
   BlService();
+signals:
+  void temperature();
 private Q_SLOTS:
   void process();
 public Q_SLOTS:
   void run();
 private:
   QTimer* timer_;
-  std::unique_ptr<app::ble::BLEInterface> bluetoothDevice_;
-  std::unique_ptr<app::network::UdpSocket> socket_;
 };
 
 #endif //BLE_SERVICE_H

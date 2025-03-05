@@ -2,20 +2,16 @@
 #define IO_INTERFACE_H
 
 #include <QByteArray>
+#include <QJsonDocument>
+#include "Iir.h"
 
 namespace app {
 
-namespace constants {
-    namespace port {
-        constexpr quint16 SENDER_PORT = 65000;
-        constexpr quint16 RECEIVER_PORT = 65001;
-    }
-}
-
-enum class core_mode_t {
+enum class EventType {
+    NO_STATE,
     IDLE,
     CALIBRATION,
-    MEASUREMENT,
+    MEASHUREMENT,
     CONDENSATION,
     END
 };
@@ -31,7 +27,7 @@ struct calc_params_t {
 
     struct event_completeness_t {
         bool calibration = false;
-        bool measurement = false;
+        bool MEASHUREMENT = false;
     };
     event_completeness_t event_completeness;
 
@@ -52,19 +48,31 @@ protected:
     process_params_t process_params_;          //parameters obtained by machine vision algorithm 
     calc_params_t calc_params_;                //parameters obtained by processing cv parameters inside events
     size_t global_tick_ = 0;
+    Iir::Butterworth::LowPass<4> btFilter_;
+
 public:
-    virtual bool process() = 0;
+    enum class state {
+        WORKING,
+        NODATA,
+        DONE
+    };
+    virtual state process() = 0;
     size_t getTick() const noexcept {return global_tick_;}
     process_params_t getProcessParams() const noexcept {return process_params_;}
     calc_params_t& getCalcParams() noexcept {return calc_params_;}
     virtual ~IProcessing(){}
 };
 
-class ICommunication {
+class IReceiver {
 public:
-    virtual void receiveData(const QString&) = 0;
-    virtual void sendData(const process_params_t&) const = 0;;
-    virtual ~ICommunication(){}
+    virtual void receiveData(const QJsonDocument&) = 0;
+    virtual ~IReceiver(){}
+};
+
+class ISender {
+public:
+    virtual void sendData(const QJsonDocument&) const = 0;;
+    virtual ~ISender(){}
 };
 
 }

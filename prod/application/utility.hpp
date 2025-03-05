@@ -3,7 +3,9 @@
 
 #include <chrono>
 #include <vector>
+#include <deque>
 #include <unordered_map>
+#include <map>
 #include <iostream>
 #include <concepts>
 #include <numeric>
@@ -12,13 +14,18 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QDebug>
+#include <QVariant>
+#include <filesystem>
+#include <fstream>
+#include <string_view>
+#include "configReader.hpp"
 
 namespace app {
 
 namespace constants {
     namespace filter {
-        constexpr double cutoff_frequency = 10.0; //Hz
-        constexpr double cutoff_frequency1 = 50.0; //Hz
+        constexpr double cutoff_frequency = 20.0; //Hz
+        constexpr double cutoff_frequency1 = 20.0; //Hz
         constexpr double sample_rate = 1000.0; //Hz
     }
 }
@@ -31,10 +38,26 @@ void print(const std::vector<T>& vector) {
     std::cout << std::endl;
 }
 
+template <typename T>
+void print(const std::deque<T>& deque) {
+    for(auto&& el:deque) {
+        std::cout << el << ' ';
+    }
+    std::cout << std::endl;
+}
+
 template <typename T, typename U>
 void print(const std::unordered_map<T, U>& map) {
-    for(auto&& el:map) {
-        std::cout << el << ' ';
+    for(auto&& [key, el]:map) {
+        std::cout << key << ' ' << el << ' ';
+    }
+    std::cout << std::endl;
+}
+
+template <typename T, typename U>
+void print(const std::map<T, U>& map) {
+    for(auto&& [key, el]:map) {
+        std::cout << key << ' ' << el << ' ';
     }
     std::cout << std::endl;
 }
@@ -52,7 +75,42 @@ inline std::vector<double> readInputData() {
     return data;
 }
 
-inline std::optional<std::pair<QString, int>> parseJsonFile(const QString &filePath) {
+inline std::vector<double> readJsonLog(std::string file_path, QString file_name) {
+    auto path = file_path + ConfigReader::getInstance().get("log_files", file_name).toString().toStdString();
+    std::fstream jsonLogfile(path);
+    
+    std::vector<double> data;
+
+    if(!jsonLogfile.is_open()) {
+        throw std::runtime_error(std::string("Could not open file: ") 
+        + std::string(path));
+    }
+    std::string fileData((std::istreambuf_iterator<char>(jsonLogfile)), 
+        std::istreambuf_iterator<char>());
+    jsonLogfile.close();
+    
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(QByteArray::fromStdString(fileData));
+
+    if (jsonDoc.isNull()) {
+        std::cerr << "Failed to create JSON document." << std::endl;
+        return data;
+    }
+    if (!jsonDoc.isArray()) {
+        std::cerr << "JSON document is not an array." << std::endl;
+        return data;
+    }
+    QJsonArray jsonArray = jsonDoc.array();
+    for (const auto& value : jsonArray) {
+        if (value.isDouble()) {
+            data.push_back(value.toDouble());
+        } else {
+            std::cerr << "Non-double value found in JSON array." << std::endl;
+        }
+    }
+    return data;
+}
+
+inline std::optional<QVariantMap> parseJsonFile(const QString &filePath) {
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -77,9 +135,19 @@ inline std::optional<std::pair<QString, int>> parseJsonFile(const QString &fileP
 
     auto clientIp = networkObj.value("clientIp").toString();
     auto clientPort = networkObj.value("clientPort").toInt();
+    auto hostIp = networkObj.value("hostIp").toString();
+    auto hostPort = networkObj.value("hostPort").toInt();
 
-    return std::pair<QString, int> (clientIp, clientPort);
+    QVariantMap config;
+
+    config["clientIp"].setValue(clientIp);
+    config["clientPort"].setValue(clientPort);
+    config["hostIp"].setValue(hostIp);
+    config["hostPort"].setValue(hostPort);
+
+    return config;
 }
+
 
 inline uint16_t crc16(const std::vector<uint8_t>& buf, size_t len) {
     uint16_t nCRC16 = 0xFFFF;
@@ -158,7 +226,7 @@ public:
     LowPassFilter(double cutoff_frequency, double sample_rate, double q = 0.707): 
         alpha_(std::sin(2 * M_PI * cutoff_frequency / sample_rate) / (2 * q)) {}
 
-    double Process(double x) {
+    double filter(double x) {
         y_ = alpha_ * (x - y_) + y_;
         return y_;
     }

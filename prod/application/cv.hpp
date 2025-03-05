@@ -10,14 +10,15 @@
 #include "LibCamera.h"
 #include "interface.hpp"
 #include "utility.hpp"
+#include "network.hpp"
+#include <queue>
 
 namespace app {
 
-class CVision: public IProcessing {
+class CameraProcessingModule: public IProcessing {
 public:
-    explicit CVision(const std::string&);
-    ~CVision();
-    bool process() override;
+    explicit CameraProcessingModule();
+    state process() override;
 private:
     cv::VideoCapture capture_;
     cv::Mat frame_;
@@ -33,6 +34,41 @@ private:
     int window_height = 480;
     LibcameraOutData frameData;
     ControlList controls_;
+};
+
+struct dataCV {
+    double value;
+    bool valid;
+};
+
+class NetLogic: public QObject, IReceiver {
+    Q_OBJECT
+public:
+    NetLogic();
+    std::optional<dataCV> getValue();
+public Q_SLOTS:
+    void receiveData(const QJsonDocument&) override;
+private:
+    std::queue<dataCV> receiveBuffer_;
+    std::unique_ptr<UdpHandler> cameraSocket_;
+};
+
+
+class NetProcessUnit: public IProcessing {
+public:
+    NetProcessUnit();
+private:
+    state process() override;
+    NetLogic netLogic;
+    LowPassFilter filter_;
+};
+
+class TestProcessUnit final: public IProcessing {
+    std::vector<double> test_data_;
+    LowPassFilter filter_;
+public:
+    TestProcessUnit();
+    state process() override;
 };
 
 } //namespace app

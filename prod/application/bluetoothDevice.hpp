@@ -16,6 +16,9 @@ namespace app
 {
 
 static QByteArray createModbusPacket(uint16_t, uint16_t);
+constexpr uint16_t TEMPERATURE_REGISTER = 68;
+constexpr uint16_t IR  = 75;
+constexpr uint16_t HR = 13;
 
 namespace ble 
 {
@@ -47,12 +50,17 @@ class BLEInterface final : public QObject
     Q_OBJECT
 public:
     explicit BLEInterface(QObject *parent = 0);
-    void write(const QByteArray&);
+    ~BLEInterface();
+    void writeDataToCharachteristic(const QByteArray&);
+    void temperature();
 public Q_SLOTS:
     void requestTemperature();
+    void run();
+    void changeRateTemprature(double);
 Q_SIGNALS:
     void sendTemperature(double);
     void deviceConnected();
+    void isReady();
 private Q_SLOTS:
 /*******************QBluetothDeviceDiscoveryAgent********************/
     void addDevice(const QBluetoothDeviceInfo&);

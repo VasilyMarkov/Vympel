@@ -16,22 +16,27 @@ int main(int argc, char *argv[])
 
     QCoreApplication app(argc, argv);
 
-    // app::ble::BLEInterface bleDevice;
-    // auto [clientIp, clientPort] = app::parseJsonFile(
-    //     "/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
+    app::ble::BLEInterface bleDevice;
+    auto [clientIp, clientPort] = app::parseJsonFile(
+        "/home/vasily/usr/phystech/vympel/prod/conf/config.json").value();
 
-    // app::network::UdpSocket socket(QHostAddress(clientIp), clientPort);
+    app::network::UdpSocket socket(QHostAddress(clientIp), clientPort);
 
     QThread thread;
 
     BlService blService;
     blService.moveToThread(&thread);
   
-    // QObject::connect(&thread, &QThread::started, &blService, &BlService::run, Qt::QueuedConnection);
+    QObject::connect(&thread, &QThread::started, &blService, &BlService::run, Qt::QueuedConnection);
+
+    QObject::connect(&blService, &BlService::temperature, 
+        &bleDevice, &app::ble::BLEInterface::temperature, Qt::QueuedConnection);
+
+    QObject::connect(&bleDevice, &app::ble::BLEInterface::sendTemperature, 
+        &socket, &app::network::UdpSocket::receiveData, Qt::QueuedConnection);
 
     thread.start();
-    // QTimer timer;
-    // timer.setInterval(500);
+
     
     // QObject::connect(&timer, &QTimer::timeout, [&bleDevice]() 
     // {
@@ -40,10 +45,6 @@ int main(int argc, char *argv[])
     //       bleDevice.temperature();
     //     });
     // });
-
-    // QObject::connect(&bleDevice, &app::ble::BLEInterface::sendTemperature, 
-    //     &socket, &app::network::UdpSocket::receiveData, Qt::QueuedConnection);
-
 
     return app.exec();
   }

@@ -1,11 +1,17 @@
 #include <numeric>
 #include "cv.hpp"
+#include "configReader.hpp"
+#include <filesystem>
 
-using namespace cv;
+namespace app
+{
+    
+using namespace constants;
+namespace fs = std::filesystem;
 
-app::CVision::CVision(const std::string& filename): 
-    // capture_(0), 
-    filter_(app::constants::filter::cutoff_frequency, app::constants::filter::sample_rate)
+CameraProcessingModule::CameraProcessingModule():
+    capture_((fs::current_path().parent_path() / ConfigReader::getInstance().get("files", "videoFile").toString().toStdString())), 
+    filter_(filter::cutoff_frequency, filter::sample_rate)
 {
 
     // if(!capture_.isOpened()) throw std::runtime_error("file open error");
@@ -29,29 +35,94 @@ app::CVision::CVision(const std::string& filename):
     cam.VideoStream(&width, &height, &stride);
 }
 
-bool app::CVision::process()
+IProcessing::state CameraProcessingModule::process()
 {
-    std::cout << "process: " << global_tick_ << std::endl;
-    if (cam.readFrame(&frameData)) {
-        Mat im(height, width, CV_8UC3, frameData.imageData, stride);
-
-        // // imshow("libcamera-demo", im);
-        // key = waitKey(1);
-
-        std::vector<uint8_t> v(im.begin<uint8_t>(), im.end<uint8_t>());
+        capture_ >> frame_;
+        
+        if(frame_.empty()) return IProcessing::state::NODATA;
+        // cv::imshow("w", frame_);
+        cv::cvtColor(frame_, frame_, cv::COLOR_BGR2GRAY, 0);
+        
+        std::vector<uint8_t> v(frame_.begin<uint8_t>(), frame_.end<uint8_t>());
         process_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
+        
+        process_params_.filtered = filter_.filter(process_params_.brightness);
+        std::cout << process_params_.brightness << std::endl;
+        // if(calc_params_.event_completeness.calibration) {
+        //     process_params_.filtered -= calc_params_.mean_filtered;
+        //     process_params_.brightness -= calc_params_.mean_filtered;
+        // }
 
-        process_params_.filtered = filter_.Process(process_params_.brightness);
-        std::cout << process_params_.brightness  << std::endl;
-        // cam.returnFrameBuffer(frameData);
-    }
-    ++global_tick_;
-    return true;
+        ++global_tick_;
+        
+        return IProcessing::state::WORKING;
         
 }
 
-app::CVision::~CVision() {
-    destroyAllWindows();
-    cam.stopCamera();
-    cam.closeCamera();
+NetLogic::NetLogic():
+    cameraSocket_(std::make_unique<UdpHandler>())
+{
+    connect(cameraSocket_.get(), &UdpHandler::sendData, this, &NetLogic::receiveData, Qt::QueuedConnection);
+
+    cameraSocket_->setReceiverParameters(QHostAddress(ConfigReader::getInstance().get("network", "clientIp").toString()), 
+                                         ConfigReader::getInstance().get("network", "videoPort").toInt());
 }
+
+void NetLogic::receiveData(const QJsonDocument& json) {
+    receiveBuffer_.push({json["brightness"].toDouble(), json["valid"].toBool()});
+}
+
+std::optional<dataCV> NetLogic::getValue()
+{
+    if(receiveBuffer_.empty()) return std::nullopt;
+
+    auto value = receiveBuffer_.front();
+    receiveBuffer_.pop();
+    return value;
+}
+
+NetProcessUnit::NetProcessUnit(): filter_(filter::cutoff_frequency, filter::sample_rate) {}
+
+IProcessing::state NetProcessUnit::process()
+{   
+    if(auto net_value = netLogic.getValue(); net_value.has_value()) {
+        if(!net_value.value().valid) return IProcessing::state::DONE;
+
+        process_params_.brightness = net_value.value().value; 
+        process_params_.filtered = filter_.filter(process_params_.brightness);
+
+        ++global_tick_;
+        return IProcessing::state::WORKING;
+    }
+    else {
+        return IProcessing::state::NODATA;
+    }
+}
+
+TestProcessUnit::TestProcessUnit():
+    test_data_(
+        readJsonLog(
+            fs::path(
+                fs::current_path().parent_path() / "scripts" / "data/"
+            ),
+            "log1"
+        )
+    ), 
+    filter_(filter::cutoff_frequency, filter::sample_rate) {
+        btFilter_.setup (ConfigReader::getInstance().get("parameters", "sampling_rate_filter_freq_Hz").toInt(), 
+            ConfigReader::getInstance().get("parameters", "filter_cutoff_freq_Hz").toInt());
+    }
+
+IProcessing::state TestProcessUnit::process() 
+{
+    if(global_tick_ == test_data_.size()) return IProcessing::state::DONE;
+
+    process_params_.brightness = test_data_[global_tick_];
+    // process_params_.filtered = filter_.filter(process_params_.brightness);
+    process_params_.filtered = btFilter_.filter(process_params_.brightness);
+
+    ++global_tick_;
+    return IProcessing::state::WORKING;
+}
+
+} // namespace app
