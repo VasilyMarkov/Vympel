@@ -2,10 +2,11 @@
 #include <QDebug>
 #include <QBluetoothAddress>
 #include <QBluetoothUuid>
-#include <QtConcurrent>
 #include <unordered_set>
 #include "bluetoothDevice.hpp"
 #include "utility.hpp"
+#include <bit>
+
 
 void print(const QByteArray& bytearray) {
     for(auto&& el : bytearray) {
@@ -111,11 +112,13 @@ QByteArray setTempratureSpeed(float value)
     uint16_t registers_size = 2;
 
 
-    union {
-        uint8_t c[4];
-        float f;
-    } u;
-    u.f = value;
+    // union {
+    //     uint8_t c[4];
+    //     float f;
+    // } u;
+    // u.f = value;
+
+    auto bytes = std::bit_cast<std::array<uint8_t, 4>>(value);
 
     modbus_pdu[0] = cnt++; //modbus address
     modbus_pdu[1] = 1; //modbus address
@@ -125,10 +128,10 @@ QByteArray setTempratureSpeed(float value)
     modbus_pdu[5] = 0;
     modbus_pdu[6] = registers_size;
     modbus_pdu[7] = sizeof(float);
-    modbus_pdu[8] = u.c[1];
-    modbus_pdu[9] = u.c[0];
-    modbus_pdu[10] = u.c[3];
-    modbus_pdu[11] = u.c[2]; 
+    modbus_pdu[8] = bytes[1];
+    modbus_pdu[9] = bytes[0];
+    modbus_pdu[10] = bytes[3];
+    modbus_pdu[11] = bytes[2]; 
 
     std::vector<uint8_t> v_data(std::begin(modbus_pdu)+1, std::end(modbus_pdu));
 
@@ -177,6 +180,18 @@ BLEInterface::BLEInterface(QObject *parent) : QObject(parent),
             this, &BLEInterface::onDeviceScanError);
     connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::canceled,
             this, &BLEInterface::onScanFinished);
+
+
+    connect(&msgTimer_, &QTimer::timeout, [this](){
+        static uint8_t cnt = 0;
+        if(cnt > 5) {
+            emit sendError(BleErrors::setRateTemprature);
+            cnt = 0;
+            return;    
+        }
+        changeRateTemprature(tempTempratureRate_);
+        ++cnt;
+    });
 }
 
 void BLEInterface::run() {
@@ -329,6 +344,12 @@ void BLEInterface::onCharacteristicChanged(
         return;
     }   
     if(value[0] == 0x0A && value.size() == 12) {
+
+        if(changeRateTempratureIsSended_) {
+            msgTimer_.stop();
+        }
+
+
         auto tmp = value.mid(2, 3+value[3]);
         std::vector<uint8_t> dat(std::begin(tmp), std::end(tmp));
 
@@ -406,8 +427,11 @@ void BLEInterface::searchCharacteristic(){
 }
 
 void BLEInterface::changeRateTemprature(double rate) {
+    msgTimer_.start(100);
     writeDataToCharachteristic(setTempratureSpeed(rate));
-    std::cout << rate << std::endl;
+    tempTempratureRate_ = rate;
+    changeRateTempratureIsSended_ = true;
+    qDebug() << "Temprature rate: " << rate;
     // writeDataToCharachteristic(QByteArray());
 }
 

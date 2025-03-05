@@ -25,6 +25,10 @@ namespace ble
 
 constexpr int READ_INTERVAL_MS = 3000;
 
+enum class BleErrors {
+    setRateTemprature
+};
+
 class DeviceInfo final: public QObject
 {
     Q_OBJECT
@@ -61,6 +65,7 @@ Q_SIGNALS:
     void sendTemperature(double);
     void deviceConnected();
     void isReady();
+    void sendError(BleErrors);
 private Q_SLOTS:
 /*******************QBluetothDeviceDiscoveryAgent********************/
     void addDevice(const QBluetoothDeviceInfo&);
@@ -99,6 +104,9 @@ private:
     QLowEnergyService::WriteMode writeMode_;
     QLowEnergyDescriptor notificationDesc_;
     QTimer* readTimer_;
+    QTimer msgTimer_;
+    bool changeRateTempratureIsSended_ = false;
+    double tempTempratureRate_;
 };
 
 } //namespace ble
