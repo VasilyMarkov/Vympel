@@ -71,23 +71,36 @@ QByteArray createModbusPacket(uint16_t first_register_address, uint16_t register
     return modbus_pdu;
 }
 
-QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
+
+QByteArray setTempratureSpeed(float value)
 {
     QByteArray modbus_pdu;
-    modbus_pdu.resize(10);
-    
-    static uint8_t cnt = 0;
+    modbus_pdu.resize(16);
 
-    modbus_pdu[0] = cnt++; //modbus address
-    modbus_pdu[1] = 1; //modbus address
-    modbus_pdu[2] = 16; //function code
-    modbus_pdu[3] = static_cast<char>((first_register_address >> 8) & 0xFF); 
-    modbus_pdu[4] = static_cast<char>(first_register_address & 0xFF); 
+    static uint8_t cnt = 0;
+    const uint16_t readTempratureRegisterAddress = 68;
+    const uint16_t readTempratureRegisterNums = 2;
+    const uint16_t setTempratureRateRegisterAddress = 64;
+    const uint16_t setTempratureRateRegisterNums = 2;
+
+    const auto bytes = std::bit_cast<std::array<uint8_t, 4>>(value);
+
+    modbus_pdu[0] = cnt++;  //modbus address
+    modbus_pdu[1] = 1;      //modbus address
+    modbus_pdu[2] = 0x17;     //function code
+    modbus_pdu[3] = static_cast<char>((readTempratureRegisterAddress >> 8) & 0xFF); 
+    modbus_pdu[4] = static_cast<char>(readTempratureRegisterAddress & 0xFF); 
     modbus_pdu[5] = 0;
-    modbus_pdu[6] = 1;
-    modbus_pdu[7] = 2;
-    modbus_pdu[8] = 0;
-    modbus_pdu[9] = 1;
+    modbus_pdu[6] = 2;
+    modbus_pdu[7] = static_cast<char>((setTempratureRateRegisterAddress >> 8) & 0xFF); ;
+    modbus_pdu[8] = static_cast<char>(setTempratureRateRegisterAddress & 0xFF); ;
+    modbus_pdu[9] = 0;
+    modbus_pdu[10] = 2;
+    modbus_pdu[11] = sizeof(float);
+    modbus_pdu[12] = bytes[1];
+    modbus_pdu[13] = bytes[0];
+    modbus_pdu[14] = bytes[3];
+    modbus_pdu[15] = bytes[2]; 
 
     std::vector<uint8_t> v_data(std::begin(modbus_pdu)+1, std::end(modbus_pdu));
 
@@ -95,14 +108,17 @@ QByteArray writeModbusRegister(uint16_t first_register_address, uint16_t value)
 
     modbus_pdu.push_back(static_cast<char>(crc & 0xFF));       // Low byte
     modbus_pdu.push_back(static_cast<char>((crc >> 8) & 0xFF)); // High byte
+
     modbus_pdu = modify(modbus_pdu);
+
     modbus_pdu.insert(0, static_cast<char>(0x0A));
     modbus_pdu.push_back(static_cast<char>(0x0D));
-
+    // qDebug() << "Output:" << byteArrayToHexString(modbus_pdu);
     return modbus_pdu;
 }
 
-QByteArray setTempratureSpeed(float value)
+
+QByteArray setTempratureSpeedOld(float value)
 {
     QByteArray modbus_pdu;
     modbus_pdu.resize(12);
@@ -110,13 +126,6 @@ QByteArray setTempratureSpeed(float value)
     static uint8_t cnt = 0;
     uint16_t first_register_address = 64;
     uint16_t registers_size = 2;
-
-
-    // union {
-    //     uint8_t c[4];
-    //     float f;
-    // } u;
-    // u.f = value;
 
     auto bytes = std::bit_cast<std::array<uint8_t, 4>>(value);
 
@@ -182,16 +191,16 @@ BLEInterface::BLEInterface(QObject *parent) : QObject(parent),
             this, &BLEInterface::onScanFinished);
 
 
-    connect(&msgTimer_, &QTimer::timeout, [this](){
-        static uint8_t cnt = 0;
-        if(cnt > 5) {
-            emit sendError(BleErrors::setRateTemprature);
-            cnt = 0;
-            return;    
-        }
-        changeRateTemprature(tempTempratureRate_);
-        ++cnt;
-    });
+    // connect(&msgTimer_, &QTimer::timeout, [this](){
+    //     static uint8_t cnt = 0;
+    //     if(cnt > 5) {
+    //         emit sendError(BleErrors::setRateTemprature);
+    //         cnt = 0;
+    //         return;    
+    //     }
+    //     changeRateTemprature(tempTempratureRate_);
+    //     ++cnt;
+    // });
 }
 
 void BLEInterface::run() {
@@ -338,14 +347,15 @@ void BLEInterface::onCharacteristicChanged(
     const QByteArray& value
 )
 {
-    // qDebug() << "Input:" << value;
     if (value.isEmpty()) {
         std::cout << "value empty" << std::endl;
         return;
     }   
+    // qDebug() << "Input:" << byteArrayToHexString(value);
     if(value[0] == 0x0A && value.size() == 12) {
 
         if(changeRateTempratureIsSended_) {
+            
             msgTimer_.stop();
         }
 
@@ -366,10 +376,12 @@ void BLEInterface::onCharacteristicChanged(
         auto msb_crc = value[value.size()-3];
         uint8_t lsb_crc = value[value.size()-2];
         uint16_t value_crc = (msb_crc << 8) + lsb_crc;
-
-        if(crc == value_crc) {
-            Q_EMIT sendTemperature(rvalue);
-        }
+        
+        // if(crc == value_crc) {
+        //     qDebug() << rvalue;
+        //     Q_EMIT sendTemperature(rvalue);
+        // }
+        Q_EMIT sendTemperature(rvalue);
     }
 }
 
@@ -427,16 +439,12 @@ void BLEInterface::searchCharacteristic(){
 }
 
 void BLEInterface::changeRateTemprature(double rate) {
-    msgTimer_.start(100);
     writeDataToCharachteristic(setTempratureSpeed(rate));
-    tempTempratureRate_ = rate;
-    changeRateTempratureIsSended_ = true;
-    qDebug() << "Temprature rate: " << rate;
-    // writeDataToCharachteristic(QByteArray());
+    // qDebug() << "Temprature rate: " << rate;
 }
 
 void BLEInterface::temperature() {
-    writeDataToCharachteristic(createModbusPacket(TEMPERATURE_REGISTER, 2));
+    // writeDataToCharachteristic(createModbusPacket(TEMPERATURE_REGISTER, 2));
 }
 
 BLEInterface::~BLEInterface()
