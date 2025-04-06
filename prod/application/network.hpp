@@ -68,6 +68,7 @@ private Q_SLOTS:
     void handlingIncomingTcpPackets();
 public Q_SLOTS:
     void receiveFuncCoefficients(const std::vector<double>&);
+    void receiveCompressedImage(const std::vector<uint8_t>&);
 private:
     std::unique_ptr<CameraConnector> cameraConnector_;
     QUdpSocket udpSocket_;

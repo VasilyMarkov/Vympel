@@ -33,7 +33,7 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
             QStringList args;
             args << QString::fromStdString(camera_python_process_path.string());
             args << network_->getHostIp().toString();
-            camera_python_.start ("python3", args);
+            // camera_python_.start ("python3", args);
             
             runCore();
         });
@@ -54,7 +54,7 @@ void Application::runCore() {
         throw std::runtime_error("The core can only be started after the startup BLE");
     }
 #endif
-    core_ = std::make_unique<Core>(std::make_shared<app::TestProcessUnit>());
+    core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
     core_->moveToThread(&core_thread_);
 
     connect(&core_thread_, &QThread::started, 
@@ -79,6 +79,9 @@ void Application::runCore() {
 
     connect(udp_handler_.get(), &app::CommandHandler::closeApp, 
         &q_core_app_, &QCoreApplication::quit, Qt::QueuedConnection);
+
+    connect(core_.get(), &app::Core::sendCompressedImage, 
+        network_.get(), &Network::receiveCompressedImage, Qt::QueuedConnection);
 
 
 #ifndef NOT_BLE
@@ -105,8 +108,9 @@ void Application::runBle() {
         bluetoothDevice_.get(), &ble::BLEInterface::run, Qt::QueuedConnection);
 
     connect(&ble_thread_, &QThread::finished, bluetoothDevice_.get(),  &QObject::deleteLater);
-    // connect(udp_handler_.get(), &app::CommandHandler::setRateTemprature, 
-    //     bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
+
+    connect(udp_handler_.get(), &app::CommandHandler::setRateTemprature, 
+        bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
 
     ble_thread_.start();
 }

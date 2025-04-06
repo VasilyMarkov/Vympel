@@ -12,6 +12,9 @@
 #include "utility.hpp"
 #include "network.hpp"
 #include <queue>
+#include <lccv.hpp>
+#include <libcamera_app.hpp>
+
 
 namespace app {
 
@@ -19,6 +22,9 @@ class CameraProcessingModule: public IProcessing {
 public:
     explicit CameraProcessingModule();
     state process() override;
+    const std::vector<uint8_t>& getBuffer() const noexcept {
+        return buffer_;
+    }
 private:
     cv::VideoCapture capture_;
     cv::Mat frame_;
@@ -32,9 +38,26 @@ private:
     char key;
     int window_width = 640;
     int window_height = 480;
-    LibcameraOutData frameData;
+    LibcameraOutData frameData_;
     ControlList controls_;
+
+    lccv::PiCamera cam_;
+    std::vector<uint8_t> buffer_;
 };
+
+class TestCameraProcessingModule: public IProcessing {
+public:
+    explicit TestCameraProcessingModule();
+    state process() override;
+private:
+    std::unique_ptr<CameraManager> camera_manager_;
+    
+    // std::unique_ptr<CameraConfiguration> camera_configuration_;
+    // FrameBufferAllocator allocator_;
+    // std::vector<std::unique_ptr<Request>> requests_;
+    // std::unique_ptr<Request> request_;
+};
+    
 
 struct dataCV {
     double value;

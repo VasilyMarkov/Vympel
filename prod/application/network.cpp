@@ -62,6 +62,7 @@ void CommandHandler::receivePortData()
         break;
         case 3:
             Q_EMIT setRateTemprature(QJsonDocument::fromJson(datagram, nullptr)["tempratureRate"].toDouble());
+        break;
         case 4:
             Q_EMIT closeApp();
         break;
@@ -139,6 +140,22 @@ void Network::receiveFuncCoefficients(const std::vector<double>& coefficents) {
     }
 
     socket_->write(QJsonDocument(jsonArray).toJson());
+}
+
+void Network::receiveCompressedImage(const std::vector<uint8_t>& data) {
+    QByteArray datagram = QByteArray::fromRawData(
+        reinterpret_cast<const char*>(data.data()), 
+        static_cast<int>(data.size())
+    );
+    const int maxPacketSize = 65507; // Max safe UDP payload size
+    auto receiverAddress = QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString());
+    auto receiverPort = 12345;
+    for (int i = 0; i < datagram.size(); i += maxPacketSize) {
+        QByteArray chunk = datagram.mid(i, maxPacketSize);
+        qint64 bytesSent = udpSocket_.writeDatagram(
+            chunk, receiverAddress, receiverPort
+        );
+    }
 }
 
 } // namespace app

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QProcess>
+#include <QTimer>
 #include <iostream>
 #include <memory>
 #include <list>
@@ -13,6 +14,7 @@
 #include "interface.hpp"
 #include "event.hpp"
 #include "fsm.hpp"
+
 
 namespace app {
 
@@ -28,6 +30,7 @@ class Core final: public QObject, IReceiver, ISender {
 public:
     explicit Core(std::shared_ptr<IProcessing>);
     std::shared_ptr<IProcessing> getProcessUnit() const noexcept;
+    
 public Q_SLOTS:
     void receiveData(const QJsonDocument&) override;
     void receiveTemperature(double) noexcept;
@@ -41,6 +44,7 @@ Q_SIGNALS:
     void requestTemperature();
     void setRateTemprature(double);
     void runOptimizationProcess(const std::vector<double>&);
+    void sendCompressedImage(const std::vector<uint8_t>&);
 private:
     /**********FSM***********/
     void callEvent();
@@ -60,6 +64,10 @@ private:
     bool bleIsReady_ = false;
     bool isOnFSM = false;
     double temperatureRate_;
+    double setRate = 0.0;
+    QTimer timer_;
+    size_t start_mark_{};
+    size_t end_mark_{};
 };
 
 } //namespace app

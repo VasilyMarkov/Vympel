@@ -1,14 +1,26 @@
 #include <QThread>
 #include <QCoreApplication>
+#include <QtConcurrent>
 #include "core.hpp"
 #include "utility.hpp"
 #include "logger.hpp"
+#include "cv.hpp"
+
 
 namespace app
 {
  
 Core::Core(std::shared_ptr<IProcessing> processModule): 
-    process_unit_(processModule) {}
+    process_unit_(processModule) 
+{
+    connect(&timer_, &QTimer::timeout, [this](){
+        QtConcurrent::run([this](){
+            Q_EMIT setRateTemprature(setRate);
+        });
+    });
+
+    timer_.start(200);
+}
 
 void Core::receiveTemperature(double temperature) noexcept
 {
@@ -33,8 +45,8 @@ bool Core::process()
         json_["mode"] = static_cast<int>(mode_);
         json_["statement"] = static_cast<int>(statement_);
         Q_EMIT sendData(QJsonDocument(json_));
-
-        Q_EMIT requestTemperature();
+        Q_EMIT sendCompressedImage(std::static_pointer_cast<CameraProcessingModule>(process_unit_)->getBuffer());
+        // qDebug() << processParams.filtered;
 
         if(statement_ == CoreStatement::work) {
             if(!isLoggerCreated) {
@@ -44,6 +56,7 @@ bool Core::process()
             onFSM();
             callEvent();
             global_data_.push_back(processParams.filtered);
+
             temperature_data_.push_back(temperature_);
         }
         else {
@@ -54,7 +67,7 @@ bool Core::process()
                 isLoggerCreated = false;
             }
         }
-
+        
 
         QThread::msleep(20);
         QCoreApplication::processEvents();
@@ -78,10 +91,6 @@ void Core::setCoreStatement(int state) noexcept {
 
 void Core::receiveRateTemprature(double temperatureRate) noexcept {
     temperatureRate_ = temperatureRate;
-}
-
-std::shared_ptr<IProcessing> Core::getProcessUnit() const noexcept {
-    return process_unit_;
 }
 
 void Core::toggle(EventType mode)
@@ -116,7 +125,8 @@ void Core::dispatchEvent()
     break;    
     case EventType::IDLE:
         active_event_ = std::make_unique<Idle>(process_unit_, temperature_);
-        Q_EMIT setRateTemprature(1);
+        // Q_EMIT setRateTemprature(1.7);
+        setRate = 1.7;
     break;
 
     case EventType::CALIBRATION:
@@ -128,20 +138,25 @@ void Core::dispatchEvent()
         {
             active_event_ = std::make_unique<Meashurement>(process_unit_);
         }
-        Q_EMIT setRateTemprature(-1);
+        // Q_EMIT setRateTemprature(-1.7);
+        
+        setRate = -1.7;
     break;
 
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_, temperature_);
-        Q_EMIT setRateTemprature(1.5);
-        start_point = process_unit_->getTick();
-        std::cout << "COND POINT: " << process_unit_->getTick() << std::endl;
+        setRate = 1.7;
+        // Q_EMIT setRateTemprature(1.7);
+        start_mark_ = process_unit_->getTick();
+        std::cout << "COND POINT: " << start_mark_ - 250 << std::endl;
     break;
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
         // emit runOptimizationProcess(std::vector<double>(std::next(std::begin(global_data_), 800), std::end(global_data_)));
-        emit runOptimizationProcess(std::vector<double>(std::begin(global_data_) + start_point, std::end(global_data_)));
+        Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + start_mark_, std::end(global_data_)));
+        end_mark_ = process_unit_->getTick();
+        std::cout << "END POINT: " << end_mark_ << std::endl;
     break;
     
     default:
