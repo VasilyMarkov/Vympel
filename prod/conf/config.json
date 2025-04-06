@@ -25,7 +25,7 @@
         "camera_python_script": "scripts/run_video.py"
     },
     "log_files": {
-        "log1": "video.mp4.json"
+        "log1": "gauss.json"
     },
     "parameters": {
         "filter_cutoff_freq_Hz": 3,

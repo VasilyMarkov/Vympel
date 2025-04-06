@@ -33,6 +33,10 @@ protected:
     std::vector<double> data_;
     inline static std::vector<double> global_data_;
     size_t start_tick_ = 0;
+
+    std::deque<double> mean_data_;
+    std::deque<double> mean_deque_;
+    size_t local_tick_ = 0;
 };
 
 class Idle final: public Event {
@@ -50,9 +54,6 @@ public:
 };
 
 class Meashurement final: public Event {
-    std::deque<double> mean_data_;
-    std::deque<bool> coeffs;
-    size_t local_tick_ = 0;
 private:
     bool positiveTrendDetection(const std::vector<double>&);
 public:
@@ -61,10 +62,9 @@ public:
 };
 
 class Сondensation final: public Event {
-    std::deque<double> mean_data_;
-    std::deque<bool> coeffs;
+
     const double& temperature_;
-    size_t local_tick_ = 0;
+    
 public:
     Сondensation(std::weak_ptr<IProcessing>, const double&);
     std::optional<EventType> operator()() override;

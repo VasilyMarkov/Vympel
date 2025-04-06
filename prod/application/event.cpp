@@ -7,7 +7,8 @@ namespace app
 
 Event::Event(std::weak_ptr<IProcessing> cv):
     process_unit_(cv), 
-    start_tick_(process_unit_.lock()->getTick()) {}
+    start_tick_(process_unit_.lock()->getTick()),
+    mean_data_(50, 0), mean_deque_(5,0) {}
 
 Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature): 
     Event(cv),
@@ -53,10 +54,12 @@ std::optional<EventType> Calibration::operator()()
 }
 
 Meashurement::Meashurement(std::weak_ptr<IProcessing> cv): 
-    Event(cv), mean_data_(30, 0)
+    Event(cv)
 {
     std::cout << "measure" << std::endl;
-    coeffs.resize(5);
+    qDebug() << process_unit_.lock()->getCalcParams().mean_filtered << process_unit_.lock()->getCalcParams().std_dev_filtered;
+
+    // coeffs.resize(5);
 }
 
 std::optional<EventType> Meashurement::operator()()
@@ -67,23 +70,36 @@ std::optional<EventType> Meashurement::operator()()
 
     auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
     auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
-    auto threshold = mean + std*4;
+    auto threshold = mean + std*20;
     mean_data_.pop_front();
     mean_data_.push_back(filtered);
+    static int d_cnt = 0;
+    static int grow_cnt = 0;
 
+    double diff{};
     if(local_tick_ == mean_data_.size() - 1) {
         auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
-        if(mean_window > threshold) {
-            return EventType::CONDENSATION;   
-        }
-        // if(positiveTrendDetection(std::vector<double>(std::begin(mean_data_), std::end(mean_data_)))) {
-            // return EventType::CONDENSATION;   
-        // }
+        mean_deque_.push_back(mean_window);
+        if (d_cnt > 4) {
+            diff = *(std::end(mean_deque_)-1) - *(std::begin(mean_deque_));
 
+            mean_deque_.pop_front();
+        }
+        if (diff > threshold) {
+            ++grow_cnt;
+        } else {
+            grow_cnt = 0;
+        }
+        if (grow_cnt > 3) {
+            return EventType::CONDENSATION; 
+        }
+        qDebug() << grow_cnt;
+        ++d_cnt;
         local_tick_ = 0;
     }
 
     ++local_tick_;
+
     return std::nullopt;
 }
 
@@ -103,38 +119,50 @@ bool Meashurement::positiveTrendDetection(const std::vector<double>& data) {
 }
 
 app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& temperature): 
-    Event(cv), mean_data_(15, 0),
-    temperature_(temperature)
+    Event(cv),  temperature_(temperature)
 {
     std::cout << "condensation" << std::endl;
-    coeffs.resize(5);
 }
 
 std::optional<EventType> app::Сondensation::operator()()
 {   
-    qDebug() << process_unit_.lock()->getTick();
-    if (process_unit_.lock()->getTick() > 2500) {
-        return EventType::END;
+    auto filtered = process_unit_.lock()->getProcessParams().filtered;
+
+    global_data_.push_back(filtered);
+
+    auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
+    auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
+    auto threshold = mean + std*20;
+    mean_data_.pop_front();
+    mean_data_.push_back(filtered);
+    static int d_cnt = 0;
+    static int non_grow_cnt = 0;
+
+    double diff{};
+    if(local_tick_ == mean_data_.size() - 1) {
+        auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
+        mean_deque_.push_back(mean_window);
+        diff = *(std::end(mean_deque_)-1) - *(std::begin(mean_deque_));
+        mean_deque_.pop_front();
+
+        if (process_unit_.lock()->getTick() > 2200) {
+            return EventType::END; 
+        }
+
+        // if (diff < threshold) {
+        //     ++non_grow_cnt;
+        // } else {
+        //     non_grow_cnt = 0;
+        // }
+        // if (non_grow_cnt > 3) {
+        //     return EventType::END; 
+        // }
+        // qDebug() << non_grow_cnt;
+        // ++d_cnt;
+        local_tick_ = 0;
     }
 
-    // auto filtered = process_unit_.lock()->getProcessParams().filtered;
-
-    // auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
-    // auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
-    // auto threshold = mean + std*4;
-
-    // mean_data_.pop_front();
-    // mean_data_.push_back(filtered);
-
-    // if(local_tick_ == mean_data_.size() - 1) {
-    //     auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
-    //     if(mean_window < threshold) {
-    //         std::cout << "END POINT: " << process_unit_.lock()->getTick() << std::endl;
-    //         return EventType::END;   
-    //     }
-    //     local_tick_ = 0;
-    // }
-    // if(temperature_ > 50.0) return EventType::END;
+    ++local_tick_;
 
     return std::nullopt;
 }
