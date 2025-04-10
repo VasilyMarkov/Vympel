@@ -33,7 +33,9 @@ char * LibCamera::getCameraId(){
 
 void LibCamera::configureStill(int width, int height, PixelFormat format, int buffercount, int rotation) {
     printf("Configuring still capture...\n");
+
     config_ = camera_->generateConfiguration({ StreamRole::StillCapture });
+
     if (width && height) {
         libcamera::Size size(width, height);
         config_->at(0).size = size;
@@ -43,13 +45,13 @@ void LibCamera::configureStill(int width, int height, PixelFormat format, int bu
         config_->at(0).bufferCount = buffercount;
     Transform transform = Transform::Identity;
     bool ok;
-    Transform rot = transformFromRotation(rotation, &ok);
+    Orientation  rot = orientationFromRotation(rotation, &ok);
     if (!ok)
         throw std::runtime_error("illegal rotation value, Please use 0 or 180");
-    transform = rot * transform;
-    if (!!(transform & Transform::Transpose))
-        throw std::runtime_error("transforms requiring transpose not supported");
-    // config_->transform = transform;
+    // transform = rot * transform;
+    // if (!!(transform & Transform::Transpose))
+    //     throw std::runtime_error("transforms requiring transpose not supported");
+    config_->orientation = rot;
 
     CameraConfiguration::Status validation = config_->validate();
 	if (validation == CameraConfiguration::Invalid)
