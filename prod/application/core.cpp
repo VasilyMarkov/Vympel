@@ -93,6 +93,11 @@ void Core::receiveRateTemprature(double temperatureRate) noexcept {
     temperatureRate_ = temperatureRate;
 }
 
+void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
+{
+    std::static_pointer_cast<End>(active_event_)->setCoeffs(coeffs);
+}
+
 void Core::toggle(EventType mode)
 {
     if (mode_ == mode) return;
@@ -148,7 +153,7 @@ void Core::dispatchEvent()
         setRate = 1.7;
         // Q_EMIT setRateTemprature(1.7);
         start_mark_ = process_unit_->getTick();
-        std::cout << "COND POINT: " << start_mark_ - 250 << std::endl;
+        std::cout << "COND POINT: " << start_mark_ << std::endl;
     break;
 
     case EventType::END:

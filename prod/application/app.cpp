@@ -83,6 +83,8 @@ void Application::runCore() {
     connect(core_.get(), &app::Core::sendCompressedImage, 
         network_.get(), &Network::receiveCompressedImage, Qt::QueuedConnection);
 
+    connect(&optimizationScript_, &OptimizationScript::sendCoefficients, core_.get(), &QCoreApplication::receiveFitCoefficients);
+
 
 #ifndef NOT_BLE
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,

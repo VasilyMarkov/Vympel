@@ -38,6 +38,7 @@ public Q_SLOTS:
     void setBlEStatus() noexcept;
     void setCoreStatement(int) noexcept;
     void receiveRateTemprature(double) noexcept;
+    void receiveFitCoefficients(const std::vector<double>&);
 Q_SIGNALS:
     void sendData(const QJsonDocument&) const override;
     void exit();
