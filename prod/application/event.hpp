@@ -125,7 +125,7 @@ std::pair<std::vector<double>,std::vector<double>>  applyFunc(
 
 } //namespace app
 
-bool almostEqual(double lhs, double rhs, double eps) {
+inline bool almostEqual(double lhs, double rhs, double eps) {
     return std::fabs(lhs-rhs) < eps;
 }
 

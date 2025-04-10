@@ -95,7 +95,7 @@ void Core::receiveRateTemprature(double temperatureRate) noexcept {
 
 void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
 {
-    std::static_pointer_cast<End>(active_event_)->setCoeffs(coeffs);
+    static_cast<End*>(active_event_.get())->setCoeffs(coeffs);
 }
 
 void Core::toggle(EventType mode)

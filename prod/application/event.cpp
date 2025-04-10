@@ -175,18 +175,18 @@ End::End(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> End::operator()()
 {
-    if(is_coeffs_ready_) {
-        auto fitData = applyFunc(
-            std::vector<double>(std::begin(coeffs_), std::end(coeffs_)),
-            0,
-            fitData.size(),
-            fitData.size(),
-            gaussPolyVal
-        );
+    // if(is_coeffs_ready_) {
+    //     auto fitData = applyFunc(
+    //         std::vector<double>(std::begin(coeffs_), std::end(coeffs_)),
+    //         0,
+    //         fitData.size(),
+    //         fitData.size(),
+    //         gaussPolyVal
+    //     );
 
-        auto max_el_it = std::max_element(std::crbegin(fitData), std::crend(fitData));
-        auto vapor_point = std::find_if(std::crbegin(fitData), max_el_it, [](auto val){return almostEqual(val, 0.95, 0.01);});
-    }
+    //     auto max_el_it = std::max_element(std::crbegin(fitData), std::crend(fitData));
+    //     auto vapor_point = std::find_if(std::crbegin(fitData), max_el_it, [](auto val){return almostEqual(val, 0.95, 0.01);});
+    // }
 
     return EventType::NO_STATE;    
 }
