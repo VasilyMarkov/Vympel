@@ -18,6 +18,9 @@ sudo apt install qt6-connectivity-dev
 ```bash
 sudo apt-get install -y libopencv-dev
 ```
+```bash
+sudo apt install libeigen3-dev
+```
 Проект камеры libcamera:
 ```
 https://github.com/kbarni/LCCV
