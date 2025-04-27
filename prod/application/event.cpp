@@ -8,7 +8,7 @@ namespace app
 Event::Event(std::weak_ptr<IProcessing> cv):
     process_unit_(cv), 
     start_tick_(process_unit_.lock()->getTick()),
-    mean_data_(50, 0), mean_deque_(5,0) {}
+    mean_data_(40, 0), mean_deque_(5,0) {}
 
 Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature): 
     Event(cv),
@@ -20,8 +20,9 @@ Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature):
 
 std::optional<EventType> Idle::operator()()
 {
-    // if(temperature_ < 52.0) return std::nullopt;
-
+#ifndef NOT_BLE
+    if(temperature_ < 52.0) return std::nullopt;
+#endif
     return EventType::CALIBRATION;
 }
 
@@ -46,7 +47,7 @@ std::optional<EventType> Calibration::operator()()
         process_unit_.lock()->getCalcParams().mean_filtered = mean;
         process_unit_.lock()->getCalcParams().std_dev_filtered = std_deviation;
         
-        return EventType::MEASHUREMENT;    
+        return EventType::MEASHUREMENT;
     }
     data_.push_back(filtered);
 
@@ -111,7 +112,7 @@ bool Meashurement::positiveTrendDetection(const std::vector<double>& data) {
         ++cnt;
     }
     else {
-        cnt = 0;    
+        cnt = 0;
     }
     if(cnt == 3) return true;
 
@@ -126,28 +127,33 @@ app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& t
 
 std::optional<EventType> app::Сondensation::operator()()
 {   
-    auto filtered = process_unit_.lock()->getProcessParams().filtered;
+// #ifndef NOT_BLE
+//     if(temperature_ > 0.0) return EventType::END;
+// #endif
+    // auto filtered = process_unit_.lock()->getProcessParams().filtered;
 
-    global_data_.push_back(filtered);
+    // global_data_.push_back(filtered);
 
-    auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
-    auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
-    auto threshold = mean + std*20;
-    mean_data_.pop_front();
-    mean_data_.push_back(filtered);
-    static int d_cnt = 0;
-    static int non_grow_cnt = 0;
+    // auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
+    // auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
+    // auto threshold = mean + std*20;
+    // mean_data_.pop_front();
+    // mean_data_.push_back(filtered);
+    // static int d_cnt = 0;
+    // static int non_grow_cnt = 0;
 
-    double diff{};
+    // double diff{};
     if(local_tick_ == mean_data_.size() - 1) {
-        auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
-        mean_deque_.push_back(mean_window);
-        diff = *(std::end(mean_deque_)-1) - *(std::begin(mean_deque_));
-        mean_deque_.pop_front();
+        // auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
+        // mean_deque_.push_back(mean_window);
+        // diff = *(std::end(mean_deque_)-1) - *(std::begin(mean_deque_));
+        // mean_deque_.pop_front();
 
-        if (process_unit_.lock()->getTick() > 2200) {
-            return EventType::END; 
-        }
+
+
+        // if (process_unit_.lock()->getTick() > 2200) {
+        //     return EventType::END; 
+        // }
 
         // if (diff < threshold) {
         //     ++non_grow_cnt;
@@ -159,10 +165,10 @@ std::optional<EventType> app::Сondensation::operator()()
         // }
         // qDebug() << non_grow_cnt;
         // ++d_cnt;
-        local_tick_ = 0;
+        // local_tick_ = 0;
     }
 
-    ++local_tick_;
+    // ++local_tick_;
 
     return std::nullopt;
 }
@@ -175,18 +181,18 @@ End::End(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> End::operator()()
 {
-    // if(is_coeffs_ready_) {
-    //     auto fitData = applyFunc(
-    //         std::vector<double>(std::begin(coeffs_), std::end(coeffs_)),
-    //         0,
-    //         fitData.size(),
-    //         fitData.size(),
-    //         gaussPolyVal
-    //     );
+    if(is_coeffs_ready_) {
+        auto fitData = applyFunc(
+            std::vector<double>(std::begin(coeffs_), std::end(coeffs_)),
+            0,
+            fitData.size(),
+            fitData.size(),
+            gaussPolyVal
+        );
 
-    //     auto max_el_it = std::max_element(std::crbegin(fitData), std::crend(fitData));
-    //     auto vapor_point = std::find_if(std::crbegin(fitData), max_el_it, [](auto val){return almostEqual(val, 0.95, 0.01);});
-    // }
+        auto max_el_it = std::max_element(std::crbegin(fitData), std::crend(fitData));
+        auto vapor_point = std::find_if(std::crbegin(fitData), max_el_it, [](auto val){return almostEqual(val, 0.95, 0.01);});
+    }
 
     return EventType::NO_STATE;    
 }

@@ -54,7 +54,7 @@ void Application::runCore() {
         throw std::runtime_error("The core can only be started after the startup BLE");
     }
 #endif
-    core_ = std::make_unique<Core>(std::make_shared<app::TestProcessUnit>());
+    core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
     core_->moveToThread(&core_thread_);
 
     connect(&core_thread_, &QThread::started, 

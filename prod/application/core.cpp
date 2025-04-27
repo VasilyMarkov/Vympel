@@ -38,13 +38,7 @@ bool Core::process()
             return true;
         }
 
-        auto processParams = process_unit_->getProcessParams();
-        json_["brightness"] = processParams.brightness;
-        json_["filtered"] = processParams.filtered;
-        json_["temperature"] = temperature_;
-        json_["mode"] = static_cast<int>(mode_);
-        json_["statement"] = static_cast<int>(statement_);
-        Q_EMIT sendData(QJsonDocument(json_));
+
         Q_EMIT sendCompressedImage(std::static_pointer_cast<CameraProcessingModule>(process_unit_)->getBuffer());
         // qDebug() << processParams.filtered;
 
@@ -53,14 +47,25 @@ bool Core::process()
                 Logger::getInstance().createLog();
                 isLoggerCreated = true;
             }
+
+            auto processParams = process_unit_->getProcessParams();
+            json_["brightness"] = processParams.brightness;
+            json_["filtered"] = processParams.filtered;
+            json_["temperature"] = temperature_;
+            json_["mode"] = static_cast<int>(mode_);
+            json_["statement"] = static_cast<int>(statement_);
+            Q_EMIT sendData(QJsonDocument(json_));
+
             onFSM();
             callEvent();
             global_data_.push_back(processParams.filtered);
 
             temperature_data_.push_back(temperature_);
+            work_tick_++;
         }
         else {
             offFSM();
+            work_tick_ = 0;
             if(isLoggerCreated) {
                 Logger::getInstance().log(global_data_, temperature_data_);
                 global_data_.clear();
@@ -95,7 +100,24 @@ void Core::receiveRateTemprature(double temperatureRate) noexcept {
 
 void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
 {
-    static_cast<End*>(active_event_.get())->setCoeffs(coeffs);
+    // static_cast<End*>(active_event_.get())->setCoeffs(coeffs);
+    print(coeffs);
+    qDebug() << "Size: " <<  end_mark_ - start_mark_;
+    auto fitData = applyFunc(
+            std::vector<double>(std::begin(coeffs), std::end(coeffs)),
+            0,
+            end_mark_ - start_mark_,
+            end_mark_ - start_mark_,
+            gaussPolyVal
+    ).second;
+
+    auto max_el_it = std::max_element(std::begin(fitData), std::end(fitData));
+    std::cout << "MAX: " << std::distance(std::begin(fitData), max_el_it)+start_mark_ << std::endl;
+    auto vapor_point = std::find_if(max_el_it, std::end(fitData), [](auto val){return almostEqual(val, 0.95, 0.01);});
+    std::cout << "VAPOR: " << std::distance(std::begin(fitData), vapor_point)+start_mark_ << std::endl;
+    std::cout << "COND TEMP: " << temperature_data_[start_mark_] << std::endl;
+    std::cout << "VAPOR TEMP: " << temperature_data_[std::distance(std::begin(fitData), vapor_point)+start_mark_] << std::endl;
+
 }
 
 void Core::toggle(EventType mode)
@@ -136,6 +158,7 @@ void Core::dispatchEvent()
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
+        setRate = -1.7;
     break;
 
     case EventType::MEASHUREMENT:
@@ -150,7 +173,7 @@ void Core::dispatchEvent()
 
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_, temperature_);
-        setRate = 1.7;
+        setRate = -1.7;
         // Q_EMIT setRateTemprature(1.7);
         start_mark_ = process_unit_->getTick();
         std::cout << "COND POINT: " << start_mark_ << std::endl;
@@ -158,10 +181,11 @@ void Core::dispatchEvent()
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
+        setRate = 1.7;
         // emit runOptimizationProcess(std::vector<double>(std::next(std::begin(global_data_), 800), std::end(global_data_)));
-        Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + start_mark_, std::end(global_data_)));
-        end_mark_ = process_unit_->getTick();
-        std::cout << "END POINT: " << end_mark_ << std::endl;
+        // Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + start_mark_, std::end(global_data_)));
+        // end_mark_ = process_unit_->getTick();
+        // std::cout << "END POINT: " << end_mark_ << std::endl;
     break;
     
     default:
