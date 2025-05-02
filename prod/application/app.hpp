@@ -56,6 +56,7 @@ private:
     QProcess camera_python_;
     OptimizationScript optimizationScript_;
     const QCoreApplication& q_core_app_;
+    bool ble_enable_ = true;
 };
 
 

@@ -13,6 +13,13 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
     qRegisterMetaType<app::EventType>();
 
     try {
+        
+        auto configBleStatus = ConfigReader::getInstance().get("parameters", "bluetooth_enable").toString().toStdString();
+
+        ble_enable_ = (configBleStatus == "true") ? true : false;
+
+        std::cout << "Bluetooth status: " << std::boolalpha << ble_enable_ << std::endl;
+
         network_ = std::make_unique<Network>();
 
         udp_handler_ = std::make_unique<CommandHandler>();
@@ -38,9 +45,9 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
             runCore();
         });
 
-#ifndef NOT_BLE
+        if(ble_enable_) {
         runBle();
-#endif
+        }
     }
     catch (const std::exception& ex) {
         std::cout << ex.what() << std::endl;
@@ -86,7 +93,7 @@ void Application::runCore() {
     connect(&optimizationScript_, &OptimizationScript::sendCoefficients, core_.get(), &app::Core::receiveFitCoefficients);
 
 
-#ifndef NOT_BLE
+    if(ble_enable_) {
     connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
         core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);
 
@@ -98,7 +105,7 @@ void Application::runCore() {
 
     connect(core_.get(), &app::Core::setRateTemprature, 
         bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
-#endif
+    }
     core_thread_.start();
 }
 
@@ -119,9 +126,9 @@ void Application::runBle() {
 
 Application::~Application()
 {
-    #ifndef NOT_BLE
+    if(ble_enable_) {
         ble_thread_.quit();
-    #endif
+    }
 
     core_thread_.requestInterruption();
     core_thread_.quit();

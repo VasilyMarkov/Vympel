@@ -31,6 +31,6 @@
         "filter_cutoff_freq_Hz": 3,
         "sampling_rate_filter_freq_Hz": 200,
         "calibration_size_buffer": 200,
-        "sigma_threshold": 4
+        "bluetooth_enable": "false"
     }
 }
