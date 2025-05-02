@@ -19,6 +19,7 @@ enum class EventType {
 struct process_params_t {
     double brightness = 0;
     double filtered = 0;    
+    double temperature = 0;    
 };
 
 struct calc_params_t {

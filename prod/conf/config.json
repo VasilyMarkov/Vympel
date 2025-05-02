@@ -25,14 +25,16 @@
         "camera_python_script": "scripts/run_video.py"
     },
     "log_files": {
-        "log1": "gauss.json"
+        "log_folder": "logs/",
+        "log1": "2025-04-10_16:28:04.json"
     },
     "parameters": {
-        "filter_cutoff_freq_Hz": 3,
-        "sampling_rate_filter_freq_Hz": 200,
+        "filter_cutoff_freq_Hz": 10,
+        "sampling_rate_filter_freq_Hz": 84,
         "calibration_size_buffer": 200,
         "sigma_threshold": 4,
         "process_module": "test",
-        "bluetooth_enable": "false"
+        "bluetooth_enable": "false",
+        "first_sample": 17000
     }
 }

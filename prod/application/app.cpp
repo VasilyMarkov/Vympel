@@ -13,20 +13,13 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
     qRegisterMetaType<app::EventType>();
 
     try {
-        
-        auto configBleStatus = ConfigReader::getInstance().get("parameters", "bluetooth_enable").toString().toStdString();
-
-        ble_enable_ = (configBleStatus == "true") ? true : false;
-
-        std::cout << "Bluetooth status: " << std::boolalpha << ble_enable_ << std::endl;
 
         network_ = std::make_unique<Network>();
 
         udp_handler_ = std::make_unique<CommandHandler>();
 
-        connect(&camera_python_, &QProcess::readyReadStandardOutput, [this](){qDebug() << camera_python_.readAllStandardOutput();});
+        // connect(&camera_python_, &QProcess::readyReadStandardOutput, [this](){qDebug() << camera_python_.readAllStandardOutput();});
         connect(&optimizationScript_, &OptimizationScript::sendCoefficients, network_.get(), &Network::receiveFuncCoefficients);
-        // connect(&camera_python_, &QProcess::readyReadStandardError, [this](){qDebug() << camera_python_.readAllStandardError();});
 
         connect(network_.get(), &Network::ready, [this](){
 
@@ -45,13 +38,12 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
             runCore();
         });
 
-        if(ble_enable_) {
+        if(ConfigReader::getInstance().isBleEnable()) {
             runBle();
         }
     }
     catch (const std::exception& ex) {
         std::cout << ex.what() << std::endl;
-        throw;
     }
 }
 
@@ -59,7 +51,6 @@ void Application::runCore() {
 
     auto module_type = ConfigReader::getInstance().get("parameters", "process_module").toString().toStdString();
 
-    // core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
     core_ = std::make_unique<Core>(moduleFactory_[module_type]());
     core_->moveToThread(&core_thread_);
 
@@ -86,13 +77,13 @@ void Application::runCore() {
     connect(udp_handler_.get(), &app::CommandHandler::closeApp, 
         &q_core_app_, &QCoreApplication::quit, Qt::QueuedConnection);
 
-    connect(core_.get(), &app::Core::sendCompressedImage, 
-        network_.get(), &Network::receiveCompressedImage, Qt::QueuedConnection);
+    // connect(core_.get(), &app::Core::sendCompressedImage, 
+    //     network_.get(), &Network::receiveCompressedImage, Qt::QueuedConnection);
 
     connect(&optimizationScript_, &OptimizationScript::sendCoefficients, core_.get(), &app::Core::receiveFitCoefficients);
 
 
-    if(ble_enable_) {
+    if(ConfigReader::getInstance().isBleEnable()) {
         connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
             core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);
 
@@ -105,6 +96,7 @@ void Application::runCore() {
         connect(core_.get(), &app::Core::setRateTemprature, 
             bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
     }
+
     core_thread_.start();
 }
 

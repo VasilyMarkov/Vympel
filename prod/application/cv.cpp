@@ -260,7 +260,7 @@ TestProcessModule::TestProcessModule():
     test_data_(
         readJsonLog(
             fs::path(
-                fs::current_path().parent_path() / "scripts" / "data/"
+                fs::current_path().parent_path() / ConfigReader::getInstance().get("log_files", "log_folder").toString().toStdString()
             ),
             "log1"
         )
@@ -269,16 +269,24 @@ TestProcessModule::TestProcessModule():
         btFilter_.setup (ConfigReader::getInstance().get("parameters", "sampling_rate_filter_freq_Hz").toInt(), 
             ConfigReader::getInstance().get("parameters", "filter_cutoff_freq_Hz").toInt());
 
+        auto sample_begin = ConfigReader::getInstance().get("parameters", "first_sample").toInt();
+        std::cout << test_data_.size() << std::endl;
+        // std::cout << test_data_[17000].second << std::endl;
+        // std::cout << test_data_[1000].second << std::endl;
+        // std::cout << test_data_[10000].second << std::endl;
+        // std::cout << test_data_[15000].second << std::endl;
+        // auto newv = decltype(test_data_)(std::begin(test_data_) + sample_begin, std::end(test_data_));
+        // std::cout << newv[0].second << std::endl;
         std::cout << "Test Module is started" << std::endl;
     }
 
 IProcessing::state TestProcessModule::process() 
 {
     if(global_tick_ == test_data_.size()) return IProcessing::state::DONE;
-
-    process_params_.brightness = test_data_[global_tick_];
-    // process_params_.filtered = filter_.filter(process_params_.brightness);
+    
+    process_params_.brightness = test_data_[global_tick_].first;
     process_params_.filtered = btFilter_.filter(process_params_.brightness);
+    process_params_.temperature = test_data_[global_tick_].second;
 
     ++global_tick_;
     return IProcessing::state::WORKING;

@@ -13,13 +13,23 @@ namespace app
 Core::Core(std::shared_ptr<IProcessing> processModule): 
     process_unit_(processModule) 
 {
+    // connect(&timer_, &QTimer::timeout, [this](){
+    //     QtConcurrent::run([this](){
+    //         Q_EMIT setRateTemprature(setRate);
+    //     });
+    // });
+
+    connect(&timer_, &QTimer::timeout, this, &Core::process);
     connect(&timer_, &QTimer::timeout, [this](){
-        QtConcurrent::run([this](){
+        static size_t cnt = 0;
+        if(cnt % 10 == 0) {
             Q_EMIT setRateTemprature(setRate);
-        });
+            cnt = 0;
+        }
+        ++cnt;
     });
 
-    timer_.start(200);
+    timer_.start(25);
 }
 
 void Core::receiveTemperature(double temperature) noexcept
@@ -31,52 +41,56 @@ bool Core::process()
 {
     static bool isLoggerCreated = false;
 
-    while(process_unit_->process() != IProcessing::state::DONE) 
-    {
-        if(QThread::currentThread()->isInterruptionRequested()) {
-            qDebug() << "Core is closed";
-            return true;
+    if(QThread::currentThread()->isInterruptionRequested()) {
+        qDebug() << "Core is closed";
+        return true;
+    }
+
+    process_unit_->process();
+    // Q_EMIT sendCompressedImage(std::static_pointer_cast<CameraProcessingModule>(process_unit_)->getBuffer());
+    
+
+    if(statement_ == CoreStatement::work) {
+        if(!isLoggerCreated) {
+            Logger::getInstance().createLog();
+            isLoggerCreated = true;
         }
 
+        auto processParams = process_unit_->getProcessParams();
+        json_["brightness"] = processParams.brightness;
+        json_["filtered"] = processParams.filtered;
+        json_["mode"] = static_cast<int>(mode_);
+        json_["statement"] = static_cast<int>(statement_);
 
-        Q_EMIT sendCompressedImage(std::static_pointer_cast<CameraProcessingModule>(process_unit_)->getBuffer());
-        // qDebug() << processParams.filtered;
-
-        if(statement_ == CoreStatement::work) {
-            if(!isLoggerCreated) {
-                Logger::getInstance().createLog();
-                isLoggerCreated = true;
-            }
-
-            auto processParams = process_unit_->getProcessParams();
-            json_["brightness"] = processParams.brightness;
-            json_["filtered"] = processParams.filtered;
+        if(ConfigReader::getInstance().isBleEnable()) {
             json_["temperature"] = temperature_;
-            json_["mode"] = static_cast<int>(mode_);
-            json_["statement"] = static_cast<int>(statement_);
-            Q_EMIT sendData(QJsonDocument(json_));
-
-            onFSM();
-            callEvent();
-            global_data_.push_back(processParams.filtered);
-
-            temperature_data_.push_back(temperature_);
-            work_tick_++;
         }
         else {
-            offFSM();
-            work_tick_ = 0;
-            if(isLoggerCreated) {
-                Logger::getInstance().log(global_data_, temperature_data_);
-                global_data_.clear();
-                isLoggerCreated = false;
-            }
+            json_["temperature"] = processParams.temperature;
         }
-        
 
-        QThread::msleep(20);
-        QCoreApplication::processEvents();
+        Q_EMIT sendData(QJsonDocument(json_));
+
+        onFSM();
+        callEvent();
+        global_data_.push_back(processParams.filtered);
+
+        temperature_data_.push_back(temperature_);
+        work_tick_++;
     }
+    else {
+        offFSM();
+        work_tick_ = 0;
+        if(isLoggerCreated) {
+            Logger::getInstance().log(global_data_, temperature_data_);
+            global_data_.clear();
+            isLoggerCreated = false;
+        }
+    }
+    
+
+    QCoreApplication::processEvents();
+    
     
     return true;
 }

@@ -102,7 +102,6 @@ void Network::newTcpConnection() {
     connect(socket_, &QTcpSocket::readyRead, this, &Network::handlingIncomingTcpPackets);
 
     QString clientInfo = QString("%1:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
-    // qDebug() << "New client connected from:" << clientInfo;
     hostIp_ = socket_->peerAddress();
     
     cameraConnector_.reset();

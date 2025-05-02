@@ -75,11 +75,11 @@ inline std::vector<double> readInputData() {
     return data;
 }
 
-inline std::vector<double> readJsonLog(std::string file_path, QString file_name) {
+inline std::vector<std::pair<double,double>> readJsonLog(std::string file_path, QString file_name) {
     auto path = file_path + ConfigReader::getInstance().get("log_files", file_name).toString().toStdString();
     std::fstream jsonLogfile(path);
     
-    std::vector<double> data;
+    std::vector<std::pair<double,double>> result;
 
     if(!jsonLogfile.is_open()) {
         throw std::runtime_error(std::string("Could not open file: ") 
@@ -93,21 +93,22 @@ inline std::vector<double> readJsonLog(std::string file_path, QString file_name)
 
     if (jsonDoc.isNull()) {
         std::cerr << "Failed to create JSON document." << std::endl;
-        return data;
+        return result;
     }
     if (!jsonDoc.isArray()) {
         std::cerr << "JSON document is not an array." << std::endl;
-        return data;
+        return result;
     }
     QJsonArray jsonArray = jsonDoc.array();
     for (const auto& value : jsonArray) {
-        if (value.isDouble()) {
-            data.push_back(value.toDouble());
+        if (value.isObject()) {
+            auto object = value.toObject();
+            result.push_back({object["brightness"].toDouble(), object["temperature"].toDouble()});
         } else {
             std::cerr << "Non-double value found in JSON array." << std::endl;
         }
     }
-    return data;
+    return result;
 }
 
 inline std::optional<QVariantMap> parseJsonFile(const QString &filePath) {

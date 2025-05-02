@@ -87,7 +87,7 @@ private:
 };
 
 class TestProcessModule final: public IProcessing {
-    std::vector<double> test_data_;
+    std::vector<std::pair<double, double>> test_data_;
     LowPassFilter filter_;
 public:
     TestProcessModule();
