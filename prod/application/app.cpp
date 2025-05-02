@@ -46,22 +46,21 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
         });
 
         if(ble_enable_) {
-        runBle();
+            runBle();
         }
     }
     catch (const std::exception& ex) {
         std::cout << ex.what() << std::endl;
+        throw;
     }
 }
 
 void Application::runCore() {
 
-#ifndef NOT_BLE
-    if(!ble_thread_.isRunning()) {
-        throw std::runtime_error("The core can only be started after the startup BLE");
-    }
-#endif
-    core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
+    auto module_type = ConfigReader::getInstance().get("parameters", "process_module").toString().toStdString();
+
+    // core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
+    core_ = std::make_unique<Core>(moduleFactory_[module_type]());
     core_->moveToThread(&core_thread_);
 
     connect(&core_thread_, &QThread::started, 
@@ -94,17 +93,17 @@ void Application::runCore() {
 
 
     if(ble_enable_) {
-    connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
-        core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);
+        connect(bluetoothDevice_.get(), &ble::BLEInterface::sendTemperature,
+            core_.get(), &app::Core::receiveTemperature, Qt::QueuedConnection);
 
-    connect(core_.get(), &app::Core::requestTemperature, 
-        bluetoothDevice_.get(), &ble::BLEInterface::temperature, Qt::QueuedConnection);
+        connect(core_.get(), &app::Core::requestTemperature, 
+            bluetoothDevice_.get(), &ble::BLEInterface::temperature, Qt::QueuedConnection);
 
-    connect(bluetoothDevice_.get(), &ble::BLEInterface::isReady,
-        core_.get(), &app::Core::setBlEStatus, Qt::QueuedConnection);
+        connect(bluetoothDevice_.get(), &ble::BLEInterface::isReady,
+            core_.get(), &app::Core::setBlEStatus, Qt::QueuedConnection);
 
-    connect(core_.get(), &app::Core::setRateTemprature, 
-        bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
+        connect(core_.get(), &app::Core::setRateTemprature, 
+            bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
     }
     core_thread_.start();
 }

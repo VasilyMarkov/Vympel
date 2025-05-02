@@ -86,11 +86,11 @@ private:
     LowPassFilter filter_;
 };
 
-class TestProcessUnit final: public IProcessing {
+class TestProcessModule final: public IProcessing {
     std::vector<double> test_data_;
     LowPassFilter filter_;
 public:
-    TestProcessUnit();
+    TestProcessModule();
     state process() override;
 };
 

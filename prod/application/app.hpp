@@ -7,6 +7,8 @@
 #include <QProcess>
 #include <QTimer>
 #include <QSocketNotifier>
+#include <unordered_map>
+#include <functional>
 #include "core.hpp"
 #include "network.hpp"
 #include "cv.hpp"
@@ -56,6 +58,11 @@ private:
     QProcess camera_python_;
     OptimizationScript optimizationScript_;
     const QCoreApplication& q_core_app_;
+    std::unordered_map<std::string, std::function<std::shared_ptr<IProcessing>()>> moduleFactory_ = 
+        {
+            {"camera", [](){return std::make_shared<app::CameraProcessingModule>();}},
+            {"test", [](){return std::make_shared<app::TestProcessModule>();}}
+        };
     bool ble_enable_ = true;
 };
 

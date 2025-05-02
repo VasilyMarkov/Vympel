@@ -53,6 +53,8 @@ CameraProcessingModule::CameraProcessingModule():
     
     // cam.startCamera();
     // cam.VideoStream(&width, &height, &stride);
+
+    std::cout << "Camera Module is started" << std::endl;
 }
 
 IProcessing::state CameraProcessingModule::process()
@@ -73,7 +75,7 @@ IProcessing::state CameraProcessingModule::process()
         process_params_.brightness = std::accumulate(std::begin(v), std::end(v), 0);
         
         process_params_.filtered = filter_.filter(process_params_.brightness);
-        qDebug() << process_params_.filtered;
+        // qDebug() << process_params_.filtered;
 
         ++global_tick_;
         
@@ -254,7 +256,7 @@ IProcessing::state NetProcessUnit::process()
     }
 }
 
-TestProcessUnit::TestProcessUnit():
+TestProcessModule::TestProcessModule():
     test_data_(
         readJsonLog(
             fs::path(
@@ -266,9 +268,11 @@ TestProcessUnit::TestProcessUnit():
     filter_(filter::cutoff_frequency, filter::sample_rate) {
         btFilter_.setup (ConfigReader::getInstance().get("parameters", "sampling_rate_filter_freq_Hz").toInt(), 
             ConfigReader::getInstance().get("parameters", "filter_cutoff_freq_Hz").toInt());
+
+        std::cout << "Test Module is started" << std::endl;
     }
 
-IProcessing::state TestProcessUnit::process() 
+IProcessing::state TestProcessModule::process() 
 {
     if(global_tick_ == test_data_.size()) return IProcessing::state::DONE;
 
