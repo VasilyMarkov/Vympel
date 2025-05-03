@@ -27,16 +27,17 @@ public:
     Event(std::weak_ptr<IProcessing>);
     virtual std::optional<EventType> operator()() = 0;
     virtual ~Event(){}
-    size_t v_tick = 0;
+    int start_time_mark_{};
+    int end_time_mark_{};
 protected:
     std::weak_ptr<IProcessing> process_unit_;
     std::vector<double> data_;
     inline static std::vector<double> global_data_;
-    size_t start_tick_ = 0;
+    size_t start_tick_{};
 
     std::deque<double> mean_data_;
     std::deque<double> mean_deque_;
-    size_t local_tick_ = 0;
+    size_t local_tick_{};
 };
 
 class Idle final: public Event {
@@ -56,6 +57,7 @@ public:
 class Meashurement final: public Event {
 private:
     bool positiveTrendDetection(const std::vector<double>&);
+    size_t start_grow_time_mark_{};
 public:
     Meashurement(std::weak_ptr<IProcessing>);
     std::optional<EventType> operator()() override;

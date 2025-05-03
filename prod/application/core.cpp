@@ -114,14 +114,13 @@ void Core::receiveRateTemprature(double temperatureRate) noexcept {
 
 void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
 {
-    // static_cast<End*>(active_event_.get())->setCoeffs(coeffs);
     print(coeffs);
-    qDebug() << "Size: " <<  end_mark_ - start_mark_;
+    qDebug() << "Size: " <<  active_event_->end_time_mark_ - active_event_->start_time_mark_;
     auto fitData = applyFunc(
             std::vector<double>(std::begin(coeffs), std::end(coeffs)),
             0,
-            end_mark_ - start_mark_,
-            end_mark_ - start_mark_,
+            active_event_->end_time_mark_ - active_event_->start_time_mark_,
+            active_event_->end_time_mark_ - active_event_->start_time_mark_,
             gaussPolyVal
     ).second;
 
@@ -131,7 +130,6 @@ void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
     std::cout << "VAPOR: " << std::distance(std::begin(fitData), vapor_point)+start_mark_ << std::endl;
     std::cout << "COND TEMP: " << temperature_data_[start_mark_] << std::endl;
     std::cout << "VAPOR TEMP: " << temperature_data_[std::distance(std::begin(fitData), vapor_point)+start_mark_] << std::endl;
-
 }
 
 void Core::toggle(EventType mode)
@@ -166,7 +164,6 @@ void Core::dispatchEvent()
     break;    
     case EventType::IDLE:
         active_event_ = std::make_unique<Idle>(process_unit_, temperature_);
-        // Q_EMIT setRateTemprature(1.7);
         setRate = 1.7;
     break;
 
@@ -180,7 +177,6 @@ void Core::dispatchEvent()
         {
             active_event_ = std::make_unique<Meashurement>(process_unit_);
         }
-        // Q_EMIT setRateTemprature(-1.7);
         
         setRate = -1.7;
     break;
@@ -188,18 +184,13 @@ void Core::dispatchEvent()
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_, temperature_);
         setRate = -1.7;
-        // Q_EMIT setRateTemprature(1.7);
         start_mark_ = process_unit_->getTick();
-        std::cout << "COND POINT: " << start_mark_ << std::endl;
     break;
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
         setRate = 1.7;
-        // emit runOptimizationProcess(std::vector<double>(std::next(std::begin(global_data_), 800), std::end(global_data_)));
-        // Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + start_mark_, std::end(global_data_)));
-        // end_mark_ = process_unit_->getTick();
-        // std::cout << "END POINT: " << end_mark_ << std::endl;
+        Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + active_event_->start_time_mark_, std::end(global_data_)));
     break;
     
     default:

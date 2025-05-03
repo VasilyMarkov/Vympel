@@ -8,7 +8,7 @@ namespace app
 Event::Event(std::weak_ptr<IProcessing> cv):
     process_unit_(cv), 
     start_tick_(process_unit_.lock()->getTick()),
-    mean_data_(40, 0), mean_deque_(5,0) {}
+    mean_data_(20, 0), mean_deque_(4,0) {}
 
 Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature): 
     Event(cv),
@@ -20,9 +20,9 @@ Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature):
 
 std::optional<EventType> Idle::operator()()
 {
-#ifndef NOT_BLE
-    if(temperature_ < 52.0) return std::nullopt;
-#endif
+    if(ConfigReader::getInstance().isBleEnable()) {
+        if(temperature_ < 52.0) return std::nullopt;
+    }
     return EventType::CALIBRATION;
 }
 
@@ -71,7 +71,7 @@ std::optional<EventType> Meashurement::operator()()
 
     auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
     auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
-    auto threshold = mean + std*20;
+    auto threshold = mean + std*5;
     mean_data_.pop_front();
     mean_data_.push_back(filtered);
     static int d_cnt = 0;
@@ -91,10 +91,15 @@ std::optional<EventType> Meashurement::operator()()
         } else {
             grow_cnt = 0;
         }
-        if (grow_cnt > 3) {
+        if (grow_cnt > 2) {
+            std::cout << "COND POINT: " << start_grow_time_mark_ << std::endl;
+            start_time_mark_ = start_grow_time_mark_;
             return EventType::CONDENSATION; 
         }
-        qDebug() << grow_cnt;
+        if(grow_cnt == 1) {
+            start_grow_time_mark_ = process_unit_.lock()->getTick();
+        }
+        qDebug() << grow_cnt << process_unit_.lock()->getTick();
         ++d_cnt;
         local_tick_ = 0;
     }
@@ -127,48 +132,34 @@ app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& t
 
 std::optional<EventType> app::Сondensation::operator()()
 {   
-// #ifndef NOT_BLE
-//     if(temperature_ > 0.0) return EventType::END;
-// #endif
-    // auto filtered = process_unit_.lock()->getProcessParams().filtered;
 
-    // global_data_.push_back(filtered);
+    auto filtered = process_unit_.lock()->getProcessParams().filtered;
 
-    // auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
-    // auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
-    // auto threshold = mean + std*20;
-    // mean_data_.pop_front();
-    // mean_data_.push_back(filtered);
-    // static int d_cnt = 0;
-    // static int non_grow_cnt = 0;
+    global_data_.push_back(filtered);
 
-    // double diff{};
+    auto mean = process_unit_.lock()->getCalcParams().mean_filtered;
+    auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
+    auto threshold = mean + std*20;
+    mean_data_.pop_front();
+    mean_data_.push_back(filtered);
+    static int d_cnt = 0;
+    static int non_grow_cnt = 0;
+
     if(local_tick_ == mean_data_.size() - 1) {
-        // auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
-        // mean_deque_.push_back(mean_window);
-        // diff = *(std::end(mean_deque_)-1) - *(std::begin(mean_deque_));
-        // mean_deque_.pop_front();
+        auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
+        mean_deque_.push_back(mean_window);
+        mean_deque_.pop_front();
 
+        if (std::all_of(std::begin(mean_deque_), std::end(mean_deque_), [threshold](const auto& val){ return val < threshold;})) {
+            end_time_mark_ = process_unit_.lock()->getTick();
+            std::cout << "END POINT: " << end_time_mark_ << std::endl;
+            return EventType::END; 
+        }
 
-
-        // if (process_unit_.lock()->getTick() > 2200) {
-        //     return EventType::END; 
-        // }
-
-        // if (diff < threshold) {
-        //     ++non_grow_cnt;
-        // } else {
-        //     non_grow_cnt = 0;
-        // }
-        // if (non_grow_cnt > 3) {
-        //     return EventType::END; 
-        // }
-        // qDebug() << non_grow_cnt;
-        // ++d_cnt;
-        // local_tick_ = 0;
+        local_tick_ = 0;
     }
 
-    // ++local_tick_;
+    ++local_tick_;
 
     return std::nullopt;
 }
@@ -181,20 +172,7 @@ End::End(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> End::operator()()
 {
-    if(is_coeffs_ready_) {
-        auto fitData = applyFunc(
-            std::vector<double>(std::begin(coeffs_), std::end(coeffs_)),
-            0,
-            fitData.size(),
-            fitData.size(),
-            gaussPolyVal
-        );
-
-        auto max_el_it = std::max_element(std::crbegin(fitData), std::crend(fitData));
-        auto vapor_point = std::find_if(std::crbegin(fitData), max_el_it, [](auto val){return almostEqual(val, 0.95, 0.01);});
-    }
-
-    return EventType::NO_STATE;    
+    return EventType::NO_STATE;
 }
 
 void End::setCoeffs(const std::vector<double>& coeffs)
