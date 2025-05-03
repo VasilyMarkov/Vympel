@@ -5,9 +5,9 @@
 #include <deque>
 #include <vector>
 #include <iostream>
+#include <functional>
 #include "interface.hpp"
 #include "utility.hpp"
-#include <functional>
 
 namespace app
 {
@@ -22,13 +22,21 @@ namespace constants {
     constexpr size_t FRAME_DELAY_MS = 10;
 }
 
-class Event {
+class Event: public QObject {
+    Q_OBJECT
 public:
     Event(std::weak_ptr<IProcessing>);
     virtual std::optional<EventType> operator()() = 0;
     virtual ~Event(){}
     int start_time_mark_{};
     int end_time_mark_{};
+    bool is_start_mark_ready_ = false;
+    bool is_end_mark_ready_ = false;
+
+Q_SIGNALS:
+    void sendStartMark(int);
+    void sendEndMark(int);
+
 protected:
     std::weak_ptr<IProcessing> process_unit_;
     std::vector<double> data_;
@@ -59,17 +67,17 @@ private:
     bool positiveTrendDetection(const std::vector<double>&);
     size_t start_grow_time_mark_{};
 public:
-    Meashurement(std::weak_ptr<IProcessing>);
+    Meashurement(std::weak_ptr<IProcessing>, int&);
     std::optional<EventType> operator()() override;
+    int& start_time_mark_;
 };
 
 class Сondensation final: public Event {
-
     const double& temperature_;
-    
 public:
-    Сondensation(std::weak_ptr<IProcessing>, const double&);
+    Сondensation(std::weak_ptr<IProcessing>, const double&, int&);
     std::optional<EventType> operator()() override;
+    int& end_time_mark_;
 };
 
 class End final: public Event {

@@ -1,6 +1,7 @@
 #include "event.hpp"
 #include "logger.hpp"
 #include "math.hpp"
+
 #include <Eigen/Dense>
 namespace app
 {
@@ -54,13 +55,11 @@ std::optional<EventType> Calibration::operator()()
     return std::nullopt;
 }
 
-Meashurement::Meashurement(std::weak_ptr<IProcessing> cv): 
-    Event(cv)
+Meashurement::Meashurement(std::weak_ptr<IProcessing> cv, int& time_mark): 
+    Event(cv), start_time_mark_(time_mark)
 {
     std::cout << "measure" << std::endl;
     qDebug() << process_unit_.lock()->getCalcParams().mean_filtered << process_unit_.lock()->getCalcParams().std_dev_filtered;
-
-    // coeffs.resize(5);
 }
 
 std::optional<EventType> Meashurement::operator()()
@@ -109,24 +108,10 @@ std::optional<EventType> Meashurement::operator()()
     return std::nullopt;
 }
 
-bool Meashurement::positiveTrendDetection(const std::vector<double>& data) {
-    static uint8_t cnt = 0;
-    double slope = linearRegression(data);
-    std::cout << "Slope: " << slope << std::endl;
-    if(slope > 0.1) {
-        ++cnt;
-    }
-    else {
-        cnt = 0;
-    }
-    if(cnt == 3) return true;
-
-    return false;
-}
-
-app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& temperature): 
-    Event(cv),  temperature_(temperature)
+app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& temperature, int& time_mark): 
+    Event(cv),  temperature_(temperature), end_time_mark_(time_mark)
 {
+    is_start_mark_ready_ = false;
     std::cout << "condensation" << std::endl;
 }
 
@@ -152,6 +137,7 @@ std::optional<EventType> app::Сondensation::operator()()
 
         if (std::all_of(std::begin(mean_deque_), std::end(mean_deque_), [threshold](const auto& val){ return val < threshold;})) {
             end_time_mark_ = process_unit_.lock()->getTick();
+            end_time_mark_ = end_time_mark_;
             std::cout << "END POINT: " << end_time_mark_ << std::endl;
             return EventType::END; 
         }
@@ -167,6 +153,7 @@ std::optional<EventType> app::Сondensation::operator()()
 End::End(std::weak_ptr<IProcessing> cv):
     Event(cv)
 {
+    is_end_mark_ready_ = false;
     std::cout << "End" << std::endl;
 }
 

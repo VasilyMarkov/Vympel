@@ -18,7 +18,6 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
 
         udp_handler_ = std::make_unique<CommandHandler>();
 
-        // connect(&camera_python_, &QProcess::readyReadStandardOutput, [this](){qDebug() << camera_python_.readAllStandardOutput();});
         connect(&optimizationScript_, &OptimizationScript::sendCoefficients, network_.get(), &Network::receiveFuncCoefficients);
 
         connect(network_.get(), &Network::ready, [this](){
@@ -28,13 +27,6 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
             udp_handler_->setSenderParameters(QHostAddress(network_->getHostIp().toIPv4Address()), 
                 ConfigReader::getInstance().get("network", "serviceProgramPort").toInt());
 
-            auto camera_python_process_path = fs::current_path().parent_path() / 
-                ConfigReader::getInstance().get("files", "camera_python_script").toString().toStdString();
-            QStringList args;
-            args << QString::fromStdString(camera_python_process_path.string());
-            args << network_->getHostIp().toString();
-            // camera_python_.start ("python3", args);
-            
             runCore();
         });
 
@@ -123,17 +115,6 @@ Application::~Application()
 
     core_thread_.requestInterruption();
     core_thread_.quit();
-
-
-    // camera_python_.terminate();
-    // if (!camera_python_.waitForFinished(3000)) { // Wait for 5 seconds
-    //     qDebug() << "Process did not terminate gracefully, killing it.";
-    //     camera_python_.kill();
-    // }
-
-    camera_python_.kill();
-    // wait for the process to actually stop
-    camera_python_.waitForFinished();
 }
 
 OptimizationScript::OptimizationScript(): 
@@ -153,7 +134,6 @@ OptimizationScript::OptimizationScript():
         if (exitStatus == QProcess::NormalExit && exitCode == 0) {
             QByteArray resultData = process_->readAllStandardOutput();
             coefficents_ = deserializeResult(resultData);
-            print(coefficents_);
             Q_EMIT sendCoefficients(coefficents_);
             process_->terminate();
         } else {

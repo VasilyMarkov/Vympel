@@ -5,7 +5,7 @@
 #include "utility.hpp"
 #include "logger.hpp"
 #include "cv.hpp"
-
+#include "math.hpp"
 
 namespace app
 {
@@ -13,12 +13,6 @@ namespace app
 Core::Core(std::shared_ptr<IProcessing> processModule): 
     process_unit_(processModule) 
 {
-    // connect(&timer_, &QTimer::timeout, [this](){
-    //     QtConcurrent::run([this](){
-    //         Q_EMIT setRateTemprature(setRate);
-    //     });
-    // });
-
     connect(&timer_, &QTimer::timeout, this, &Core::process);
     connect(&timer_, &QTimer::timeout, [this](){
         static size_t cnt = 0;
@@ -29,7 +23,8 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
         ++cnt;
     });
 
-    timer_.start(25);
+    double process_freq = ConfigReader::getInstance().get("parameters", "process_freq_Hz").toInt();
+    timer_.start(1000./process_freq);
 }
 
 void Core::receiveTemperature(double temperature) noexcept
@@ -114,22 +109,23 @@ void Core::receiveRateTemprature(double temperatureRate) noexcept {
 
 void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
 {
+    qDebug() << "Coeffs: ";
     print(coeffs);
-    qDebug() << "Size: " <<  active_event_->end_time_mark_ - active_event_->start_time_mark_;
-    auto fitData = applyFunc(
-            std::vector<double>(std::begin(coeffs), std::end(coeffs)),
-            0,
-            active_event_->end_time_mark_ - active_event_->start_time_mark_,
-            active_event_->end_time_mark_ - active_event_->start_time_mark_,
-            gaussPolyVal
-    ).second;
-
-    auto max_el_it = std::max_element(std::begin(fitData), std::end(fitData));
-    std::cout << "MAX: " << std::distance(std::begin(fitData), max_el_it)+start_mark_ << std::endl;
-    auto vapor_point = std::find_if(max_el_it, std::end(fitData), [](auto val){return almostEqual(val, 0.95, 0.01);});
-    std::cout << "VAPOR: " << std::distance(std::begin(fitData), vapor_point)+start_mark_ << std::endl;
-    std::cout << "COND TEMP: " << temperature_data_[start_mark_] << std::endl;
-    std::cout << "VAPOR TEMP: " << temperature_data_[std::distance(std::begin(fitData), vapor_point)+start_mark_] << std::endl;
+    // auto fitData = applyFunc(
+    //         std::vector<double>(std::begin(coeffs), std::end(coeffs)),
+    //         0,
+    //         end_time_mark_ - start_time_mark_,
+    //         end_time_mark_ - start_time_mark_,
+    //         gaussPolyVal
+    // ).second;
+    auto m = maxima(coeffs, 0, end_time_mark_-start_time_mark_);
+    print(m);
+    // auto max_el_it = std::max_element(std::begin(fitData), std::end(fitData));
+    // std::cout << "MAX: " << std::distance(std::begin(fitData), max_el_it)+start_mark_ << std::endl;
+    // auto vapor_point = std::find_if(max_el_it, std::end(fitData), [](auto val){return almostEqual(val, 0.95, 0.01);});
+    // std::cout << "VAPOR: " << std::distance(std::begin(fitData), vapor_point)+start_mark_ << std::endl;
+    // std::cout << "COND TEMP: " << temperature_data_[start_mark_] << std::endl;
+    // std::cout << "VAPOR TEMP: " << temperature_data_[std::distance(std::begin(fitData), vapor_point)+start_mark_] << std::endl;
 }
 
 void Core::toggle(EventType mode)
@@ -175,21 +171,20 @@ void Core::dispatchEvent()
     case EventType::MEASHUREMENT:
         if(process_unit_->getCalcParams().event_completeness.calibration) 
         {
-            active_event_ = std::make_unique<Meashurement>(process_unit_);
+            active_event_ = std::make_unique<Meashurement>(process_unit_, start_time_mark_);
         }
-        
         setRate = -1.7;
     break;
 
     case EventType::CONDENSATION:
-        active_event_ = std::make_unique<Сondensation>(process_unit_, temperature_);
+        active_event_ = std::make_unique<Сondensation>(process_unit_, temperature_, end_time_mark_);
         setRate = -1.7;
-        start_mark_ = process_unit_->getTick();
     break;
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
         setRate = 1.7;
+        // qDebug() << "Start mark: " << active_event_->start_time_mark_;
         Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + active_event_->start_time_mark_, std::end(global_data_)));
     break;
     

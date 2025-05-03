@@ -270,13 +270,8 @@ TestProcessModule::TestProcessModule():
             ConfigReader::getInstance().get("parameters", "filter_cutoff_freq_Hz").toInt());
 
         auto sample_begin = ConfigReader::getInstance().get("parameters", "first_sample").toInt();
-        std::cout << test_data_.size() << std::endl;
-        // std::cout << test_data_[17000].second << std::endl;
-        // std::cout << test_data_[1000].second << std::endl;
-        // std::cout << test_data_[10000].second << std::endl;
-        // std::cout << test_data_[15000].second << std::endl;
-        // auto newv = decltype(test_data_)(std::begin(test_data_) + sample_begin, std::end(test_data_));
-        // std::cout << newv[0].second << std::endl;
+
+        test_data_ = decltype(test_data_)(std::begin(test_data_) + sample_begin, std::end(test_data_));
         std::cout << "Test Module is started" << std::endl;
     }
 

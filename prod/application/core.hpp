@@ -68,6 +68,8 @@ private:
     double setRate{};
     QTimer timer_;
     size_t work_tick_{};
+    int start_time_mark_{};
+    int end_time_mark_{};
 };
 
 
