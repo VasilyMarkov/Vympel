@@ -99,20 +99,19 @@ inline std::vector<double> derivative(const std::vector<double>& data) {
     return result;
 }
 
-inline std::vector<int> argMaxima(const std::vector<double>& data) {
-    std::vector<int> maxima;
+inline std::vector<int> argmaximum(const std::vector<double>& data) {
+    std::vector<int> maximum;
     for(size_t i = 0; i < data.size()-1; ++i) {
         if (data[i] >= 0 && data[i+1] < 0) {
-            maxima.push_back(i);
+            maximum.push_back(i);
         }
     }
-    return maxima;
+    return maximum;
 }
 
-inline std::vector<int> maxima(const std::vector<double>& coeffs, int begin, int end) {
-    auto fit_data = applyFunc(coeffs, begin, end, end-begin, gaussPolyVal);
-    auto der = derivative(fit_data);
-    return argMaxima(der);
+inline std::vector<int> maximum(const std::vector<double>& data) {
+    // auto fit_data = applyFunc(coeffs, begin, end, end-begin, gaussPolyVal);
+    return argmaximum(derivative(data));
 }
 
 }

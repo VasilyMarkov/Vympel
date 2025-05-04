@@ -22,7 +22,6 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
         }
         ++cnt;
     });
-
     double process_freq = ConfigReader::getInstance().get("parameters", "process_freq_Hz").toInt();
     timer_.start(1000./process_freq);
 }
@@ -41,13 +40,15 @@ bool Core::process()
         return true;
     }
 
-    process_unit_->process();
-    // Q_EMIT sendCompressedImage(std::static_pointer_cast<CameraProcessingModule>(process_unit_)->getBuffer());
+    
+
     
 
     if(statement_ == CoreStatement::work) {
+        process_unit_->process();
+        // Q_EMIT sendCompressedImage(std::static_pointer_cast<CameraProcessingModule>(process_unit_)->getBuffer());
         if(!isLoggerCreated) {
-            Logger::getInstance().createLog();
+            
             isLoggerCreated = true;
         }
 
@@ -59,26 +60,23 @@ bool Core::process()
 
         if(ConfigReader::getInstance().isBleEnable()) {
             json_["temperature"] = temperature_;
+            temperature_data_.push_back(temperature_);
         }
         else {
             json_["temperature"] = processParams.temperature;
+            temperature_data_.push_back(processParams.temperature);
         }
 
         Q_EMIT sendData(QJsonDocument(json_));
-
-        onFSM();
-        callEvent();
         global_data_.push_back(processParams.filtered);
 
-        temperature_data_.push_back(temperature_);
+        callEvent();
         work_tick_++;
     }
     else {
-        offFSM();
-        work_tick_ = 0;
+
         if(isLoggerCreated) {
-            Logger::getInstance().log(global_data_, temperature_data_);
-            global_data_.clear();
+
             isLoggerCreated = false;
         }
     }
@@ -101,6 +99,16 @@ void Core::receiveData(const QJsonDocument& json)
 
 void Core::setCoreStatement(int state) noexcept {
     statement_ = static_cast<CoreStatement>(state);
+    if(statement_ == CoreStatement::work) {
+        Logger::getInstance().createLog();
+        onFSM();
+    }
+    else {
+        Logger::getInstance().log(global_data_, temperature_data_);
+        global_data_.clear();
+        offFSM();
+        work_tick_ = 0;
+    }
 }
 
 void Core::receiveRateTemprature(double temperatureRate) noexcept {
@@ -111,15 +119,27 @@ void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
 {
     qDebug() << "Coeffs: ";
     print(coeffs);
-    // auto fitData = applyFunc(
-    //         std::vector<double>(std::begin(coeffs), std::end(coeffs)),
-    //         0,
-    //         end_time_mark_ - start_time_mark_,
-    //         end_time_mark_ - start_time_mark_,
-    //         gaussPolyVal
-    // ).second;
-    auto m = maxima(coeffs, 0, end_time_mark_-start_time_mark_);
-    print(m);
+    int begin = start_time_mark_;
+    int end = end_time_mark_;
+
+    auto fit_data = applyFunc(coeffs, 0, end-begin, end-begin, gaussPolyVal);
+
+    auto maximum_points = maximum(fit_data);
+    print(maximum_points);
+    int second_maximum = *std::prev(std::end(maximum_points));
+
+    double maximum_value = fit_data[second_maximum];
+
+    auto vapor_point_it = std::find_if(std::begin(fit_data) + second_maximum, std::end(fit_data), [maximum_value](double val){return val < maximum_value * 0.95;});
+
+    auto vapor_point = std::distance(std::begin(fit_data), vapor_point_it) + start_time_mark_;
+
+    qDebug() << "Second maximum: " << second_maximum;
+    qDebug() << "Vapor point: " << vapor_point;
+    qDebug() << "Temp size: " << temperature_data_.size();
+    qDebug() << "First temp: " << temperature_data_[start_time_mark_];
+    qDebug() << "Second temp: " << temperature_data_[vapor_point];
+    qDebug() << "Temperature: " << (temperature_data_[vapor_point] + temperature_data_[start_time_mark_]) / 2;
     // auto max_el_it = std::max_element(std::begin(fitData), std::end(fitData));
     // std::cout << "MAX: " << std::distance(std::begin(fitData), max_el_it)+start_mark_ << std::endl;
     // auto vapor_point = std::find_if(max_el_it, std::end(fitData), [](auto val){return almostEqual(val, 0.95, 0.01);});
@@ -184,8 +204,7 @@ void Core::dispatchEvent()
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
         setRate = 1.7;
-        // qDebug() << "Start mark: " << active_event_->start_time_mark_;
-        Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + active_event_->start_time_mark_, std::end(global_data_)));
+        Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + start_time_mark_, std::end(global_data_)));
     break;
     
     default:
