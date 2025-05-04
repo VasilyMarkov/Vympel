@@ -312,7 +312,6 @@ void BLEInterface::onServiceScanDone()
 
 void BLEInterface::onControllerError(QLowEnergyController::Error error)
 {
-    std::cout << "Cannot connect to remote device." << std::endl;
     std::cout << "Controller Error: " << error << std::endl;
 }
 

@@ -69,8 +69,8 @@ void Application::runCore() {
     connect(udp_handler_.get(), &app::CommandHandler::closeApp, 
         &q_core_app_, &QCoreApplication::quit, Qt::QueuedConnection);
 
-    // connect(core_.get(), &app::Core::sendCompressedImage, 
-    //     network_.get(), &Network::receiveCompressedImage, Qt::QueuedConnection);
+    connect(core_.get(), &app::Core::sendCompressedImage, 
+        network_.get(), &Network::receiveCompressedImage, Qt::QueuedConnection);
 
     connect(&optimizationScript_, &OptimizationScript::sendCoefficients, core_.get(), &app::Core::receiveFitCoefficients);
 

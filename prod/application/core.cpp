@@ -33,23 +33,17 @@ void Core::receiveTemperature(double temperature) noexcept
 
 bool Core::process()
 {
-    static bool isLoggerCreated = false;
-
     if(QThread::currentThread()->isInterruptionRequested()) {
         qDebug() << "Core is closed";
         return true;
     }
 
-    
-
-    
-
     if(statement_ == CoreStatement::work) {
         process_unit_->process();
-        // Q_EMIT sendCompressedImage(std::static_pointer_cast<CameraProcessingModule>(process_unit_)->getBuffer());
-        if(!isLoggerCreated) {
-            
-            isLoggerCreated = true;
+
+        //FIXME
+        if(auto camera_module = std::dynamic_pointer_cast<CameraProcessingModule>(process_unit_)) {
+            Q_EMIT sendCompressedImage(camera_module->getBuffer());
         }
 
         auto processParams = process_unit_->getProcessParams();
@@ -73,18 +67,9 @@ bool Core::process()
         callEvent();
         work_tick_++;
     }
-    else {
-
-        if(isLoggerCreated) {
-
-            isLoggerCreated = false;
-        }
-    }
     
-
     QCoreApplication::processEvents();
-    
-    
+
     return true;
 }
 
@@ -140,12 +125,6 @@ void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
     qDebug() << "First temp: " << temperature_data_[start_time_mark_];
     qDebug() << "Second temp: " << temperature_data_[vapor_point];
     qDebug() << "Temperature: " << (temperature_data_[vapor_point] + temperature_data_[start_time_mark_]) / 2;
-    // auto max_el_it = std::max_element(std::begin(fitData), std::end(fitData));
-    // std::cout << "MAX: " << std::distance(std::begin(fitData), max_el_it)+start_mark_ << std::endl;
-    // auto vapor_point = std::find_if(max_el_it, std::end(fitData), [](auto val){return almostEqual(val, 0.95, 0.01);});
-    // std::cout << "VAPOR: " << std::distance(std::begin(fitData), vapor_point)+start_mark_ << std::endl;
-    // std::cout << "COND TEMP: " << temperature_data_[start_mark_] << std::endl;
-    // std::cout << "VAPOR TEMP: " << temperature_data_[std::distance(std::begin(fitData), vapor_point)+start_mark_] << std::endl;
 }
 
 void Core::toggle(EventType mode)
