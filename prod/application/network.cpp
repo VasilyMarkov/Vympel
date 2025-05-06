@@ -147,7 +147,7 @@ void Network::receiveCompressedImage(const std::vector<uint8_t>& data) {
         static_cast<int>(data.size())
     );
     const int maxPacketSize = 65507; // Max safe UDP payload size
-    auto receiverAddress = QHostAddress(ConfigReader::getInstance().get("network", "hostIp").toString());
+    auto receiverAddress = hostIp_;
     auto receiverPort = 12345;
     for (int i = 0; i < datagram.size(); i += maxPacketSize) {
         QByteArray chunk = datagram.mid(i, maxPacketSize);

@@ -53,6 +53,7 @@ private:
     void dispatchEvent();
     void onFSM();
     void offFSM();
+    void resetState();
     /************************/
     CoreStatement statement_ = CoreStatement::halt;
     EventType mode_ = EventType::NO_STATE;
@@ -67,9 +68,11 @@ private:
     double temperatureRate_{};
     double setRate{};
     QTimer timer_;
+    QTimer heat_timer_;
     size_t work_tick_{};
     int start_time_mark_{};
     int end_time_mark_{};
+    bool called_once_ = false;
 };
 
 

@@ -24,6 +24,12 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
     });
     double process_freq = ConfigReader::getInstance().get("parameters", "process_freq_Hz").toInt();
     timer_.start(1000./process_freq);
+
+    connect(&heat_timer_, &QTimer::timeout, [this](){
+        heat_timer_.stop();
+        called_once_ = false;
+    });
+
 }
 
 void Core::receiveTemperature(double temperature) noexcept
@@ -33,18 +39,19 @@ void Core::receiveTemperature(double temperature) noexcept
 
 bool Core::process()
 {
-    if(QThread::currentThread()->isInterruptionRequested()) {
-        qDebug() << "Core is closed";
-        return true;
+    //FIXME
+    if(auto camera_module = std::dynamic_pointer_cast<CameraProcessingModule>(process_unit_)) {
+        Q_EMIT sendCompressedImage(camera_module->getBuffer());
     }
 
     if(statement_ == CoreStatement::work) {
-        process_unit_->process();
 
-        //FIXME
-        if(auto camera_module = std::dynamic_pointer_cast<CameraProcessingModule>(process_unit_)) {
-            Q_EMIT sendCompressedImage(camera_module->getBuffer());
+        if(!called_once_ && mode_ == EventType::END && temperature_ > 52.0) {
+            heat_timer_.start(1 * 60 * 1000);
+            called_once_ = true;
         }
+
+        process_unit_->process();
 
         auto processParams = process_unit_->getProcessParams();
         json_["brightness"] = processParams.brightness;
@@ -159,12 +166,12 @@ void Core::dispatchEvent()
     break;    
     case EventType::IDLE:
         active_event_ = std::make_unique<Idle>(process_unit_, temperature_);
-        setRate = 1.7;
+        setRate = ConfigReader::getInstance().get("parameters", "heating_temp_rate").toDouble();
     break;
 
     case EventType::CALIBRATION:
         active_event_ = std::make_unique<Calibration>(process_unit_);
-        setRate = -1.7;
+        setRate = -ConfigReader::getInstance().get("parameters", "cooling_temp_rate").toDouble();
     break;
 
     case EventType::MEASHUREMENT:
@@ -172,24 +179,28 @@ void Core::dispatchEvent()
         {
             active_event_ = std::make_unique<Meashurement>(process_unit_, start_time_mark_);
         }
-        setRate = -1.7;
     break;
 
     case EventType::CONDENSATION:
         active_event_ = std::make_unique<Сondensation>(process_unit_, temperature_, end_time_mark_);
-        setRate = -1.7;
+        setRate = ConfigReader::getInstance().get("parameters", "heating_temp_rate").toDouble();
     break;
 
     case EventType::END:
         active_event_ = std::make_unique<End>(process_unit_);
-        setRate = 1.7;
         Q_EMIT runOptimizationProcess(std::vector<double>(std::begin(global_data_) + start_time_mark_, std::end(global_data_)));
     break;
-    
+
     default:
         return;
     break;
     }
+}
+
+void Core::resetState() {
+    toggle(EventType::IDLE);
+    global_data_.clear();
+    work_tick_ = 0;
 }
 
 void Core::onFSM()

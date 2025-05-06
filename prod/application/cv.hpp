@@ -26,11 +26,7 @@ public:
         return buffer_;
     }
 private:
-    cv::VideoCapture capture_;
     cv::Mat frame_;
-    LowPassFilter filter_;
-
-
     LibCamera cam;
     uint32_t width = 640;
     uint32_t height = 480;
@@ -44,20 +40,6 @@ private:
     lccv::PiCamera cam_;
     std::vector<uint8_t> buffer_;
 };
-
-class TestCameraProcessingModule: public IProcessing {
-public:
-    explicit TestCameraProcessingModule();
-    state process() override;
-private:
-    std::unique_ptr<CameraManager> camera_manager_;
-    
-    // std::unique_ptr<CameraConfiguration> camera_configuration_;
-    // FrameBufferAllocator allocator_;
-    // std::vector<std::unique_ptr<Request>> requests_;
-    // std::unique_ptr<Request> request_;
-};
-    
 
 struct dataCV {
     double value;

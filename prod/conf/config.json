@@ -30,10 +30,14 @@
         "log1": "2025-04-10_16:28:04.json"
     },
     "parameters": {
+        "sigma_threshold": 4,
         "filter_cutoff_freq_Hz": 10,
         "sampling_rate_filter_freq_Hz": 84,
         "calibration_size_buffer": 200,
-        "sigma_threshold": 4,
+        "mean_deque_size": 4,
+        "mean_window_size": 15,
+        "heating_temp_rate": 1.7,
+        "cooling_temp_rate": 1.7,
         "first_sample": 5000,
         "process_freq_Hz": 30,
         "bluetooth_enable": "true",

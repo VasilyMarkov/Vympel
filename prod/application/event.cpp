@@ -9,7 +9,9 @@ namespace app
 Event::Event(std::weak_ptr<IProcessing> cv):
     process_unit_(cv), 
     start_tick_(process_unit_.lock()->getTick()),
-    mean_data_(20, 0), mean_deque_(4,0) {}
+    mean_data_(ConfigReader::getInstance().get("parameters", "mean_window_size").toInt(), 0), 
+    mean_deque_size_(ConfigReader::getInstance().get("parameters", "mean_deque_size").toInt()), 
+    mean_deque_(mean_deque_size_, 0) {}
 
 Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature): 
     Event(cv),
@@ -21,8 +23,8 @@ Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature):
 
 std::optional<EventType> Idle::operator()()
 {
-    if(ConfigReader::getInstance().isBleEnable()) {
-        if(temperature_ < 52.0) return std::nullopt;
+    if(ConfigReader::getInstance().isBleEnable() && temperature_ < 52.0) {
+        return std::nullopt;
     }
     return EventType::CALIBRATION;
 }
@@ -62,6 +64,30 @@ Meashurement::Meashurement(std::weak_ptr<IProcessing> cv, int& time_mark):
     qDebug() << process_unit_.lock()->getCalcParams().mean_filtered << process_unit_.lock()->getCalcParams().std_dev_filtered;
 }
 
+bool Meashurement::detectGrowing(double mean) {
+    static size_t cnt{};
+    static double prev_mean{};
+    static std::deque<bool> window(ConfigReader::getInstance().get("parameters", "mean_deque_size").toInt());
+
+    if(cnt > 0) {
+        if(mean > prev_mean) {
+            window.push_back(true);
+        }
+        else {
+            window.push_back(false);
+        }
+        if (cnt > mean_deque_size_) {
+            window.pop_front();
+            return std::all_of(std::begin(window), std::end(window), [](bool val){return val == true;}) == true;
+        }
+        print(window);
+    }
+
+    prev_mean = mean;
+    ++cnt;
+    return false;
+}
+
 std::optional<EventType> Meashurement::operator()()
 {
     auto filtered = process_unit_.lock()->getProcessParams().filtered;
@@ -79,27 +105,35 @@ std::optional<EventType> Meashurement::operator()()
     double diff{};
     if(local_tick_ == mean_data_.size() - 1) {
         auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
-        mean_deque_.push_back(mean_window);
-        if (d_cnt > 4) {
-            diff = *(std::end(mean_deque_)-1) - *(std::begin(mean_deque_));
 
-            mean_deque_.pop_front();
-        }
-        if (diff > threshold) {
-            ++grow_cnt;
-        } else {
-            grow_cnt = 0;
-        }
-        if (grow_cnt > 2) {
+        if(detectGrowing(mean_window)) {
             std::cout << "COND POINT: " << start_grow_time_mark_ << std::endl;
             start_time_mark_ = start_grow_time_mark_;
             return EventType::CONDENSATION; 
         }
-        if(grow_cnt == 1) {
-            start_grow_time_mark_ = process_unit_.lock()->getTick();
-        }
-        qDebug() << grow_cnt << process_unit_.lock()->getTick();
-        ++d_cnt;
+
+        // mean_deque_.push_back(mean_window);
+        // if (d_cnt > 4) {
+        //     diff = *(std::end(mean_deque_)-1) - *(std::begin(mean_deque_));
+
+        //     mean_deque_.pop_front();
+        // }
+        // if (diff > threshold) {
+        //     ++grow_cnt;
+        // } else {
+        //     grow_cnt = 0;
+        // }
+        // if (grow_cnt > 2) {
+        //     std::cout << "COND POINT: " << start_grow_time_mark_ << std::endl;
+        //     start_time_mark_ = start_grow_time_mark_;
+        //     return EventType::CONDENSATION; 
+        // }
+        // if(grow_cnt == 1) {
+        //     start_grow_time_mark_ = process_unit_.lock()->getTick();
+        // }
+        // qDebug() << grow_cnt << process_unit_.lock()->getTick();
+        // ++d_cnt;
+
         local_tick_ = 0;
     }
 
@@ -159,7 +193,7 @@ End::End(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> End::operator()()
 {
-    return EventType::NO_STATE;
+    return std::nullopt;
 }
 
 void End::setCoeffs(const std::vector<double>& coeffs)

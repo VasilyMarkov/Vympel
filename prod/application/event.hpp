@@ -32,7 +32,7 @@ public:
     int end_time_mark_{};
     bool is_start_mark_ready_ = false;
     bool is_end_mark_ready_ = false;
-
+    size_t mean_deque_size_;
 Q_SIGNALS:
     void sendStartMark(int);
     void sendEndMark(int);
@@ -65,6 +65,7 @@ public:
 class Meashurement final: public Event {
 private:
     bool positiveTrendDetection(const std::vector<double>&);
+    bool detectGrowing(double mean);
     size_t start_grow_time_mark_{};
 public:
     Meashurement(std::weak_ptr<IProcessing>, int&);
