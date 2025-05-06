@@ -67,19 +67,26 @@ Meashurement::Meashurement(std::weak_ptr<IProcessing> cv, int& time_mark):
 bool Meashurement::detectGrowing(double mean) {
     static size_t cnt{};
     static double prev_mean{};
-    static std::deque<bool> window(ConfigReader::getInstance().get("parameters", "mean_deque_size").toInt());
+    static std::deque<bool> window(7);
+
+    auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
+
 
     if(cnt > 0) {
-        if(mean > prev_mean) {
+        qDebug() << "Mean: " << mean << "Prev mean: " << prev_mean;
+        if(mean > prev_mean + std) {
             window.push_back(true);
         }
         else {
             window.push_back(false);
         }
-        if (cnt > mean_deque_size_) {
-            window.pop_front();
-            return std::all_of(std::begin(window), std::end(window), [](bool val){return val == true;}) == true;
+        window.pop_front();
+
+        if(std::all_of(std::begin(window), std::end(window), [](bool val){return val == true;})) {
+            return true;
         }
+        
+        
         print(window);
     }
 
@@ -140,6 +147,33 @@ std::optional<EventType> Meashurement::operator()()
     ++local_tick_;
 
     return std::nullopt;
+}
+
+bool Сondensation::detectStable(double mean) {
+    static size_t cnt{};
+    static double prev_mean{};
+    static std::deque<bool> window(10);
+    auto calib_mean = process_unit_.lock()->getCalcParams().mean_filtered;
+    auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
+    auto threshold = calib_mean + std;
+
+    if(cnt > 0) {
+        if(std::fabs(mean-prev_mean) > std / 4) {
+            window.push_back(false);
+        }
+        else {
+            window.push_back(true);
+        }
+        window.pop_front();
+
+        if(std::all_of(std::begin(window), std::end(window), [](bool val){return val == true;})) {
+            return true;
+        }
+    }
+    print(window);
+    prev_mean = mean;
+    ++cnt;
+    return false;
 }
 
 app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& temperature, int& time_mark): 

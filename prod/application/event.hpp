@@ -75,6 +75,7 @@ public:
 
 class Сondensation final: public Event {
     const double& temperature_;
+    bool detectStable(double mean);
 public:
     Сondensation(std::weak_ptr<IProcessing>, const double&, int&);
     std::optional<EventType> operator()() override;
