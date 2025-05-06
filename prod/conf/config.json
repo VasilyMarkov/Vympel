@@ -35,7 +35,7 @@
         "calibration_size_buffer": 200,
         "sigma_threshold": 4,
         "first_sample": 5000,
-        "process_freq_Hz": 150,
+        "process_freq_Hz": 30,
         "bluetooth_enable": "true",
         "process_module": "camera",
         "_comment": "For enable receiving data from camera, write in process_module field (camera), for test - (test)"

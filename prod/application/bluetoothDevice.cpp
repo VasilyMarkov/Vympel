@@ -189,18 +189,6 @@ BLEInterface::BLEInterface(QObject *parent) : QObject(parent),
             this, &BLEInterface::onDeviceScanError);
     connect(deviceDiscoveryAgent_, &QBluetoothDeviceDiscoveryAgent::canceled,
             this, &BLEInterface::onScanFinished);
-
-
-    // connect(&msgTimer_, &QTimer::timeout, [this](){
-    //     static uint8_t cnt = 0;
-    //     if(cnt > 5) {
-    //         emit sendError(BleErrors::setRateTemprature);
-    //         cnt = 0;
-    //         return;    
-    //     }
-    //     changeRateTemprature(tempTempratureRate_);
-    //     ++cnt;
-    // });
 }
 
 void BLEInterface::run() {

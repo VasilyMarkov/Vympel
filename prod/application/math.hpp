@@ -110,7 +110,6 @@ inline std::vector<int> argmaximum(const std::vector<double>& data) {
 }
 
 inline std::vector<int> maximum(const std::vector<double>& data) {
-    // auto fit_data = applyFunc(coeffs, begin, end, end-begin, gaussPolyVal);
     return argmaximum(derivative(data));
 }
 

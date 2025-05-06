@@ -16,7 +16,7 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
     connect(&timer_, &QTimer::timeout, this, &Core::process);
     connect(&timer_, &QTimer::timeout, [this](){
         static size_t cnt = 0;
-        if(cnt % 10 == 0) {
+        if(cnt % 10 == 0 && statement_ == CoreStatement::work) {
             Q_EMIT setRateTemprature(setRate);
             cnt = 0;
         }

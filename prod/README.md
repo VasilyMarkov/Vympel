@@ -43,7 +43,7 @@ core_ = std::make_unique<Core>(std::make_shared<app::CameraProcessingModule>());
 ```
 Поменять на:
 ```C++
-core_ = std::make_unique<Core>(std::make_shared<app::TestProcessUnit>());
+core_ = std::make_unique<Core>(std::make_shared<app::TestProcessModule>());
 ```
 
 2. В `bld` скрипте поменять `release` на `not_ble`. 
