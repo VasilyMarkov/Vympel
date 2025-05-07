@@ -67,10 +67,9 @@ Meashurement::Meashurement(std::weak_ptr<IProcessing> cv, int& time_mark):
 bool Meashurement::detectGrowing(double mean) {
     static size_t cnt{};
     static double prev_mean{};
-    static std::deque<bool> window(7);
+    static std::deque<bool> window(ConfigReader::getInstance().get("parameters", "detect_growing_deque_size").toInt());
 
     auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
-
 
     if(cnt > 0) {
         qDebug() << "Mean: " << mean << "Prev mean: " << prev_mean;
@@ -85,8 +84,6 @@ bool Meashurement::detectGrowing(double mean) {
         if(std::all_of(std::begin(window), std::end(window), [](bool val){return val == true;})) {
             return true;
         }
-        
-        
         print(window);
     }
 
@@ -152,7 +149,7 @@ std::optional<EventType> Meashurement::operator()()
 bool Сondensation::detectStable(double mean) {
     static size_t cnt{};
     static double prev_mean{};
-    static std::deque<bool> window(10);
+    static std::deque<bool> window(ConfigReader::getInstance().get("parameters", "detect_stable_deque_size").toInt());
     auto calib_mean = process_unit_.lock()->getCalcParams().mean_filtered;
     auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
     auto threshold = calib_mean + std;
@@ -180,6 +177,7 @@ app::Сondensation::Сondensation(std::weak_ptr<IProcessing> cv, const double& t
     Event(cv),  temperature_(temperature), end_time_mark_(time_mark)
 {
     is_start_mark_ready_ = false;
+    mean_data_.resize(20);
     std::cout << "condensation" << std::endl;
 }
 
