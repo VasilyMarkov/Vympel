@@ -72,7 +72,7 @@ bool Meashurement::detectGrowing(double mean) {
     auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
 
     if(cnt > 0) {
-        qDebug() << "Mean: " << mean << "Prev mean: " << prev_mean;
+        std::cout << "Mean: " << mean << ", Prev mean: " << prev_mean << std::endl;
         if(mean > prev_mean + std) {
             window.push_back(true);
         }

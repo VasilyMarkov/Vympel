@@ -96,6 +96,34 @@ Network::Network(): ownIp_(getOwnIp())
     }
 }
 
+bool updateJsonConfig(const QString& newIp) {
+
+    auto configFilePath = fs::current_path().parent_path() / "conf/config.json";
+
+    QFile file(configFilePath);
+    if (!file.open(QIODevice::ReadWrite)) {
+        return false;
+    }
+
+    QByteArray data = file.readAll();
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (doc.isNull()) {
+        return false;
+    }
+
+    QJsonObject root = doc.object();
+
+    QJsonObject network = root["network"].toObject();
+    network["service_program_ip"] = newIp;
+    root["network"] = network;
+
+    file.resize(0);
+    file.write(QJsonDocument(root).toJson());
+    file.close();
+
+    return true;
+}
+
 void Network::newTcpConnection() {
     socket_ = tcpServer_.nextPendingConnection();
     connect(socket_, &QTcpSocket::disconnected, socket_, &QTcpSocket::deleteLater);
@@ -103,7 +131,9 @@ void Network::newTcpConnection() {
 
     QString clientInfo = QString("%1:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
     hostIp_ = socket_->peerAddress();
-    
+
+    updateJsonConfig(hostIp_.toString());
+
     cameraConnector_.reset();
     emit ready();
 }

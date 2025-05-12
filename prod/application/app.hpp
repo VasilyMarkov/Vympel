@@ -61,6 +61,7 @@ private:
     std::unordered_map<std::string, std::function<std::shared_ptr<IProcessing>()>> moduleFactory_ = 
         {
             {"camera", [](){return std::make_shared<app::CameraProcessingModule>();}},
+            {"py_camera", [](){return std::make_shared<app::NetProcessModule>();}},
             {"test", [](){return std::make_shared<app::TestProcessModule>();}}
         };
     bool ble_enable_ = true;

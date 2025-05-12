@@ -35,6 +35,8 @@ CameraProcessingModule::CameraProcessingModule()
     cam_.startVideo();
 }
 
+
+//TODO Currently not working, lccv hassegfault inside.
 IProcessing::state CameraProcessingModule::process()
 {
     if (!cam_.getVideoFrame(frame_,1000)){
@@ -82,9 +84,11 @@ std::optional<dataCV> NetLogic::getValue()
     return value;
 }
 
-NetProcessUnit::NetProcessUnit(): filter_(filter::cutoff_frequency, filter::sample_rate) {}
+NetProcessModule::NetProcessModule(): filter_(filter::cutoff_frequency, filter::sample_rate) {
+    std::cout << "Py camera is active" << std::endl;
+}
 
-IProcessing::state NetProcessUnit::process()
+IProcessing::state NetProcessModule::process()
 {   
     if(auto net_value = netLogic.getValue(); net_value.has_value()) {
         if(!net_value.value().valid) return IProcessing::state::DONE;

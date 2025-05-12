@@ -41,7 +41,7 @@ Application::Application(const QCoreApplication& q_core_app): q_core_app_(q_core
 
 void Application::runCore() {
 
-    auto module_type = ConfigReader::getInstance().get("parameters", "process_module").toString().toStdString();
+    auto module_type = ConfigReader::getInstance().get("module", "type").toString().toStdString();
 
     core_ = std::make_unique<Core>(moduleFactory_[module_type]());
     core_->moveToThread(&core_thread_);

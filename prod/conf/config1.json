@@ -31,7 +31,7 @@
         "receiverPort": 65000,
         "senderPort": 65001,
         "serviceProgramPort": 65005,
-        "service_program_ip": "::ffff:192.168.31.36",
+        "service_program_ip": "192.168.1.100",
         "videoPort": 65004
     },
     "parameters": {

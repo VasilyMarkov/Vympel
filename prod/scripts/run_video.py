@@ -8,12 +8,6 @@ import sys
 import ipaddress
 from picamera2 import Picamera2
 
-# def handle_sigterm(signum, frame):
-#     print("Received SIGTERM, exiting...")
-#     sys.exit(0)
-
-# signal.signal(signal.SIGTERM, handle_sigterm)
-
 dirname = os.path.dirname(os.path.dirname(__file__))
 video_file = os.path.join(dirname, './application/video.mp4')
 config_file = os.path.join(dirname, './conf/config.json')
@@ -33,13 +27,13 @@ picam2.start()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 video_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-host, port = config_data['network']['clientIp'], config_data['network']['videoPort']
-server_address = (host, port)
 
-video_sock_ip = sys.argv[1:]
-ipv4_address = ipaddress.ip_address(video_sock_ip[0]).ipv4_mapped   
-service_port = 12345
-service_address = (str(ipv4_address), service_port)
+service_program_ip, service_port = config_data['network']['service_program_ip'], 12345
+app_ip, app_port = "127.0.0.1", config_data['network']['videoPort']
+
+print(service_program_ip, service_port)
+service_program_address = (service_program_ip, service_port)
+app_address = (app_ip, app_port)
 
 frame_cnt = 0
 data = []
@@ -52,7 +46,7 @@ if __name__ == "__main__":
     while WORK:
         frame = picam2.capture_array()
         _, buffer = cv.imencode('.jpg', frame, encode_params)
-        video_sock.sendto(buffer.tobytes(), service_address)
+        video_sock.sendto(buffer.tobytes(), service_program_address)
 
         mean = 0
         var = 0
@@ -66,7 +60,7 @@ if __name__ == "__main__":
 
         json_data = json.dumps(jdata)
         bytes_data = json_data.encode('utf-8')
-        sock.sendto(bytes_data, server_address) 
+        sock.sendto(bytes_data, app_address) 
     print("Camera is closed")
     cap.release()
     cv.destroyAllWindows()
