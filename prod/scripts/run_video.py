@@ -41,13 +41,16 @@ data = []
 encode_params = [cv.IMWRITE_JPEG_QUALITY, 70]  
 
 WORK = True
-
+kernel = np.ones((5,5),np.float32)/25
 if __name__ == "__main__":
     while WORK:
         frame = picam2.capture_array()
-        _, buffer = cv.imencode('.jpg', frame, encode_params)
+        dst = cv.filter2D(frame,-1,kernel)
+        _, buffer = cv.imencode('.jpg', dst, encode_params)
         video_sock.sendto(buffer.tobytes(), service_program_address)
 
+
+        print(len(buffer))
         mean = 0
         var = 0
 

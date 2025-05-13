@@ -43,7 +43,7 @@ Q_SIGNALS:
     void sendData(const QJsonDocument&) const override;
     void exit();
     void requestTemperature();
-    void setRateTemprature(double);
+    void setRateTemprature(float rate, float brightness, float cond_mark, float vapor_mark, float half_sum_mark);
     void runOptimizationProcess(const std::vector<double>&);
     void sendCompressedImage(const std::vector<uint8_t>&);
 private:
@@ -69,10 +69,13 @@ private:
     double setRate{};
     QTimer timer_;
     QTimer heat_timer_;
-    size_t work_tick_{};
     int start_time_mark_{};
     int end_time_mark_{};
     bool called_once_ = false;
+    size_t work_tick_{};
+    float cond_temp_ = -200.;
+    float vapor_temp_ = -200.;
+    float half_sum_temp_ = -200.;
 };
 
 

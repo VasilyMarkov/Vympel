@@ -33,6 +33,7 @@ public:
     bool is_start_mark_ready_ = false;
     bool is_end_mark_ready_ = false;
     size_t mean_deque_size_;
+    void setTick(size_t);
 Q_SIGNALS:
     void sendStartMark(int);
     void sendEndMark(int);
@@ -46,6 +47,7 @@ protected:
     std::deque<double> mean_data_;
     std::deque<double> mean_deque_;
     size_t local_tick_{};
+    size_t global_tick_{};
 };
 
 class Idle final: public Event {

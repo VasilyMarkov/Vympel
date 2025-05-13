@@ -1,6 +1,6 @@
 {
     "bluetooth": {
-        "deviceName": "RigCom"
+        "deviceName": "HV-BL2"
     },
     "camera": {
         "height": 480,
@@ -31,22 +31,23 @@
         "receiverPort": 65000,
         "senderPort": 65001,
         "serviceProgramPort": 65005,
-        "service_program_ip": "::ffff:192.168.31.36",
+        "service_program_ip": "::ffff:192.168.111.215",
         "videoPort": 65004
     },
     "parameters": {
-        "bluetooth_enable": "false",
+        "bluetooth_enable": "true",
         "calibration_size_buffer": 200,
         "cooling_temp_rate": 1.7,
-        "detect_growing_deque_size": 4,
+        "detect_growing_deque_size": 10,
         "detect_stable_deque_size": 7,
-        "filter_cutoff_freq_Hz": 10,
+        "filter_cutoff_freq_Hz": 5,
         "first_sample": 0,
         "heating_temp_rate": 1.7,
         "mean_deque_size": 4,
         "mean_window_size": 15,
         "process_freq_Hz": 30,
         "sampling_rate_filter_freq_Hz": 84,
-        "sigma_threshold": 4
+        "sigma_threshold": 4,
+        "std_factor": 3
     }
 }

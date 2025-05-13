@@ -13,6 +13,10 @@ Event::Event(std::weak_ptr<IProcessing> cv):
     mean_deque_size_(ConfigReader::getInstance().get("parameters", "mean_deque_size").toInt()), 
     mean_deque_(mean_deque_size_, 0) {}
 
+void Event::setTick(size_t tick) {
+    global_tick_ = tick;
+}
+
 Idle::Idle(std::weak_ptr<IProcessing> cv, const double& temperature): 
     Event(cv),
     temperature_(temperature)
@@ -38,12 +42,12 @@ Calibration::Calibration(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> Calibration::operator()()
 {
-    auto filtered = process_unit_.lock()->getProcessParams().filtered;
-    global_data_.push_back(filtered);
+    auto brightness = process_unit_.lock()->getProcessParams().brightness;
+    global_data_.push_back(brightness);
 
     auto calib_size = ConfigReader::getInstance().get("parameters", "calibration_size_buffer").toInt();
 
-    if(process_unit_.lock()->getTick() - start_tick_ >= calib_size) 
+    if(local_tick_ >= calib_size) 
     {
         process_unit_.lock()->getCalcParams().event_completeness.calibration = true;
         auto [mean, std_deviation] = meanVar(data_);
@@ -52,8 +56,8 @@ std::optional<EventType> Calibration::operator()()
         
         return EventType::MEASHUREMENT;
     }
-    data_.push_back(filtered);
-
+    data_.push_back(brightness);
+    ++local_tick_;
     return std::nullopt;
 }
 
@@ -70,10 +74,11 @@ bool Meashurement::detectGrowing(double mean) {
     static std::deque<bool> window(ConfigReader::getInstance().get("parameters", "detect_growing_deque_size").toInt());
 
     auto std = process_unit_.lock()->getCalcParams().std_dev_filtered;
+    auto std_factor = ConfigReader::getInstance().get("parameters", "std_factor").toInt();
 
     if(cnt > 0) {
         std::cout << "Mean: " << mean << ", Prev mean: " << prev_mean << std::endl;
-        if(mean > prev_mean + std) {
+        if(mean > prev_mean + std*std_factor) {
             window.push_back(true);
         }
         else {
@@ -111,32 +116,10 @@ std::optional<EventType> Meashurement::operator()()
         auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
 
         if(detectGrowing(mean_window)) {
-            std::cout << "COND POINT: " << start_grow_time_mark_ << std::endl;
-            start_time_mark_ = start_grow_time_mark_;
+            std::cout << "COND POINT: " << global_tick_ << std::endl;
+            start_time_mark_ = global_tick_;
             return EventType::CONDENSATION; 
         }
-
-        // mean_deque_.push_back(mean_window);
-        // if (d_cnt > 4) {
-        //     diff = *(std::end(mean_deque_)-1) - *(std::begin(mean_deque_));
-
-        //     mean_deque_.pop_front();
-        // }
-        // if (diff > threshold) {
-        //     ++grow_cnt;
-        // } else {
-        //     grow_cnt = 0;
-        // }
-        // if (grow_cnt > 2) {
-        //     std::cout << "COND POINT: " << start_grow_time_mark_ << std::endl;
-        //     start_time_mark_ = start_grow_time_mark_;
-        //     return EventType::CONDENSATION; 
-        // }
-        // if(grow_cnt == 1) {
-        //     start_grow_time_mark_ = process_unit_.lock()->getTick();
-        // }
-        // qDebug() << grow_cnt << process_unit_.lock()->getTick();
-        // ++d_cnt;
 
         local_tick_ = 0;
     }
@@ -202,8 +185,7 @@ std::optional<EventType> app::Сondensation::operator()()
         mean_deque_.pop_front();
 
         if (std::all_of(std::begin(mean_deque_), std::end(mean_deque_), [threshold](const auto& val){ return val < threshold;})) {
-            end_time_mark_ = process_unit_.lock()->getTick();
-            end_time_mark_ = end_time_mark_;
+            end_time_mark_ = global_tick_;
             std::cout << "END POINT: " << end_time_mark_ << std::endl;
             return EventType::END; 
         }

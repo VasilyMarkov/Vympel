@@ -50,12 +50,13 @@ class NetLogic: public QObject, IReceiver {
     Q_OBJECT
 public:
     NetLogic();
-    std::optional<dataCV> getValue();
+    size_t getValue();
 public Q_SLOTS:
     void receiveData(const QJsonDocument&) override;
 private:
     std::queue<dataCV> receiveBuffer_;
     std::unique_ptr<UdpHandler> cameraSocket_;
+    double value_;
 };
 
 

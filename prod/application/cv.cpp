@@ -72,36 +72,39 @@ NetLogic::NetLogic():
 }
 
 void NetLogic::receiveData(const QJsonDocument& json) {
-    receiveBuffer_.push({json["brightness"].toDouble(), json["valid"].toBool()});
+    // receiveBuffer_.push({json["brightness"].toDouble(), json["valid"].toBool()});
+    value_ = json["brightness"].toDouble();
 }
 
-std::optional<dataCV> NetLogic::getValue()
+size_t NetLogic::getValue()
 {
-    if(receiveBuffer_.empty()) return std::nullopt;
+    // if(receiveBuffer_.empty()) return std::nullopt;
 
-    auto value = receiveBuffer_.front();
-    receiveBuffer_.pop();
-    return value;
+    // auto value = receiveBuffer_.front();
+    // receiveBuffer_.pop();
+    return value_;
 }
 
 NetProcessModule::NetProcessModule(): filter_(filter::cutoff_frequency, filter::sample_rate) {
+    btFilter_.setup (ConfigReader::getInstance().get("parameters", "sampling_rate_filter_freq_Hz").toInt(), 
+        ConfigReader::getInstance().get("parameters", "filter_cutoff_freq_Hz").toInt());
     std::cout << "Py camera is active" << std::endl;
 }
 
 IProcessing::state NetProcessModule::process()
 {   
-    if(auto net_value = netLogic.getValue(); net_value.has_value()) {
-        if(!net_value.value().valid) return IProcessing::state::DONE;
+    // if(auto net_value = netLogic.getValue(); net_value.has_value()) {
+    //     if(!net_value.value().valid) return IProcessing::state::DONE;
 
-        process_params_.brightness = net_value.value().value; 
-        process_params_.filtered = filter_.filter(process_params_.brightness);
+        process_params_.brightness = netLogic.getValue(); 
+        process_params_.filtered = btFilter_.filter(process_params_.brightness);
 
-        ++global_tick_;
         return IProcessing::state::WORKING;
-    }
-    else {
-        return IProcessing::state::NODATA;
-    }
+    // }
+    // else {
+    //     return IProcessing::state::NODATA;
+    // }
+    // ++global_tick_;
 }
 
 TestProcessModule::TestProcessModule():

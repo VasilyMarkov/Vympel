@@ -17,7 +17,7 @@ Core::Core(std::shared_ptr<IProcessing> processModule):
     connect(&timer_, &QTimer::timeout, [this](){
         static size_t cnt = 0;
         if(cnt % 10 == 0 && statement_ == CoreStatement::work) {
-            Q_EMIT setRateTemprature(setRate);
+            Q_EMIT setRateTemprature(setRate, process_unit_->getProcessParams().filtered, cond_temp_, vapor_temp_, half_sum_temp_);
             cnt = 0;
         }
         ++cnt;
@@ -72,6 +72,10 @@ bool Core::process()
         global_data_.push_back(processParams.filtered);
 
         callEvent();
+
+        if(active_event_) {
+            active_event_->setTick(work_tick_);
+        }
         work_tick_++;
     }
     
@@ -99,7 +103,6 @@ void Core::setCoreStatement(int state) noexcept {
         Logger::getInstance().log(global_data_, temperature_data_);
         global_data_.clear();
         offFSM();
-        work_tick_ = 0;
     }
 }
 
@@ -132,6 +135,10 @@ void Core::receiveFitCoefficients(const std::vector<double>& coeffs)
     qDebug() << "First temp: " << temperature_data_[start_time_mark_];
     qDebug() << "Second temp: " << temperature_data_[vapor_point];
     qDebug() << "Temperature: " << (temperature_data_[vapor_point] + temperature_data_[start_time_mark_]) / 2;
+
+    cond_temp_ = temperature_data_[start_time_mark_];
+    vapor_temp_ = temperature_data_[vapor_point];
+    half_sum_temp_ = (temperature_data_[vapor_point] + temperature_data_[start_time_mark_]) / 2;
 }
 
 void Core::toggle(EventType mode)
@@ -216,6 +223,7 @@ void Core::offFSM()
     if(isOnFSM) {
         toggle(EventType::NO_STATE);
         isOnFSM = false;
+        work_tick_ = 0;
     }
 }
 
