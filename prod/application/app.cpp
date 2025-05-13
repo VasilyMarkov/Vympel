@@ -101,8 +101,8 @@ void Application::runBle() {
 
     connect(&ble_thread_, &QThread::finished, bluetoothDevice_.get(),  &QObject::deleteLater);
 
-    connect(udp_handler_.get(), &app::CommandHandler::setRateTemprature, 
-        bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
+    // connect(udp_handler_.get(), &app::CommandHandler::setRateTemprature, 
+    //     bluetoothDevice_.get(), &ble::BLEInterface::changeRateTemprature, Qt::QueuedConnection);
 
     ble_thread_.start();
 }

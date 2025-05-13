@@ -72,18 +72,26 @@ QByteArray createModbusPacket(uint16_t first_register_address, uint16_t register
 }
 
 
-QByteArray setTempratureSpeed(float value)
+QByteArray setTempratureSpeed(float rate, float brightness, float cond_mark, float vapor_mark, float half_sum_mark)
 {
+    static quint32 dbg = 0;
     QByteArray modbus_pdu;
-    modbus_pdu.resize(16);
+    modbus_pdu.resize(32);
 
+    // qDebug() << rate;
     static uint8_t cnt = 0;
     const uint16_t readTempratureRegisterAddress = 68;
     const uint16_t readTempratureRegisterNums = 2;
-    const uint16_t setTempratureRateRegisterAddress = 64;
+    // const uint16_t setTempratureRateRegisterAddress = 64;
+    const uint16_t setTempratureRateRegisterAddress = 24;
     const uint16_t setTempratureRateRegisterNums = 2;
+    brightness/= 1000.f;
 
-    const auto bytes = std::bit_cast<std::array<uint8_t, 4>>(value);
+    const auto rate_r = std::bit_cast<std::array<uint8_t, 4>>(rate);
+    const auto brightness_r = std::bit_cast<std::array<uint8_t, 4>>(brightness);
+    const auto cond_mark_r = std::bit_cast<std::array<uint8_t, 4>>(cond_mark);
+    const auto vapor_mark_r = std::bit_cast<std::array<uint8_t, 4>>(vapor_mark);
+    const auto half_sum_mark_r = std::bit_cast<std::array<uint8_t, 4>>(half_sum_mark);
 
     modbus_pdu[0] = cnt++;  //modbus address
     modbus_pdu[1] = 1;      //modbus address
@@ -95,12 +103,72 @@ QByteArray setTempratureSpeed(float value)
     modbus_pdu[7] = static_cast<char>((setTempratureRateRegisterAddress >> 8) & 0xFF); ;
     modbus_pdu[8] = static_cast<char>(setTempratureRateRegisterAddress & 0xFF); ;
     modbus_pdu[9] = 0;
-    modbus_pdu[10] = 2;
-    modbus_pdu[11] = sizeof(float);
-    modbus_pdu[12] = bytes[1];
-    modbus_pdu[13] = bytes[0];
-    modbus_pdu[14] = bytes[3];
-    modbus_pdu[15] = bytes[2]; 
+    modbus_pdu[10] = 10;
+    modbus_pdu[11] = sizeof(float) * 5;
+    
+    #if 1
+    //reg 24-25 Скорость нагрева
+    modbus_pdu[12] = rate_r[1];
+    modbus_pdu[13] = rate_r[0];
+    modbus_pdu[14] = rate_r[3];
+    modbus_pdu[15] = rate_r[2]; 
+    
+    //reg 26-27 температура конденсации
+    modbus_pdu[16] = brightness_r[1];
+    modbus_pdu[17] = brightness_r[0];
+    modbus_pdu[18] = brightness_r[3];
+    modbus_pdu[19] = brightness_r[2]; 
+
+    //reg 28-29 температура испарения
+    modbus_pdu[20] = vapor_mark_r[1];
+    modbus_pdu[21] = vapor_mark_r[0];
+    modbus_pdu[22] = vapor_mark_r[3];
+    modbus_pdu[23] = vapor_mark_r[2]; 
+
+    //reg 30-31 температура точки росы
+    modbus_pdu[24] = cond_mark_r[1];
+    modbus_pdu[25] = cond_mark_r[0];
+    modbus_pdu[26] = cond_mark_r[3];
+    modbus_pdu[27] = cond_mark_r[2]; 
+
+    //reg 32-33 значение функции обсчета видео для вывода на график
+    modbus_pdu[28] = half_sum_mark_r[1];
+    modbus_pdu[29] = half_sum_mark_r[0];
+    modbus_pdu[30] = half_sum_mark_r[3];
+    modbus_pdu[31] = half_sum_mark_r[2];
+    #else
+    
+        //reg 24-25 Скорость нагрева
+    modbus_pdu[12] = rate_r[1];
+    modbus_pdu[13] = rate_r[0];
+    modbus_pdu[14] = rate_r[3];
+    modbus_pdu[15] = rate_r[2]; 
+    
+    //reg 26-27 температура конденсации
+    modbus_pdu[16] = cond_mark_r[1];
+    modbus_pdu[17] = cond_mark_r[0];
+    modbus_pdu[18] = cond_mark_r[3];
+    modbus_pdu[19] = cond_mark_r[2]; 
+
+    //reg 28-29 температура испарения
+    modbus_pdu[20] = vapor_mark_r[1];
+    modbus_pdu[21] = vapor_mark_r[0];
+    modbus_pdu[22] = vapor_mark_r[3];
+    modbus_pdu[23] = vapor_mark_r[2]; 
+
+    //reg 30-31 температура точки росы
+    modbus_pdu[24] = half_sum_mark_r[1];
+    modbus_pdu[25] = half_sum_mark_r[0];
+    modbus_pdu[26] = half_sum_mark_r[3];
+    modbus_pdu[27] = half_sum_mark_r[2]; 
+
+    //reg 32-33 значение функции обсчета видео для вывода на график
+    modbus_pdu[28] = brightness_r[1];
+    modbus_pdu[29] = brightness_r[0];
+    modbus_pdu[30] = brightness_r[3];
+    modbus_pdu[31] = brightness_r[2]; 
+
+   #endif 
 
     std::vector<uint8_t> v_data(std::begin(modbus_pdu)+1, std::end(modbus_pdu));
 
@@ -116,6 +184,7 @@ QByteArray setTempratureSpeed(float value)
     // qDebug() << "Output:" << byteArrayToHexString(modbus_pdu);
     return modbus_pdu;
 }
+
 
 
 QByteArray setTempratureSpeedOld(float value)
@@ -218,7 +287,7 @@ void BLEInterface::addDevice(const QBluetoothDeviceInfo& device)
 {
     if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
         std::cout << device.name().toStdString() << ' ' << device.address().toString().toStdString() << std::endl;
-        QString DEVICE_NAME("RigCom");
+        auto DEVICE_NAME = ConfigReader::getInstance().get("bluetooth", "deviceName").toString();
         if(device.name() == DEVICE_NAME) {
             std::cout << "Find " << DEVICE_NAME.toStdString() << std::endl;
             device_ = std::make_unique<DeviceInfo>(device);
@@ -341,34 +410,74 @@ void BLEInterface::onCharacteristicChanged(
     // qDebug() << "Input:" << byteArrayToHexString(value);
     if(value[0] == 0x0A && value.size() == 12) {
 
-        if(changeRateTempratureIsSended_) {
+        // if(changeRateTempratureIsSended_) {
             
-            msgTimer_.stop();
+        //     msgTimer_.stop();
+        // }
+
+        //show_packet(value, "[BT-in-value");
+        auto modbus_reply = value.mid(1, value.size() - 2);
+        int N = modbus_reply.size();
+        for (int i=0; i < N; i++) {
+            if (modbus_reply[i] == 0x10) {
+                modbus_reply.remove(i, 1);
+                N--;
+                if (i < N) modbus_reply[i] = 0xFF - modbus_reply[i];
+            }
         }
+        modbus_reply.remove(0,1);
 
+        //modbus_reply.replace("\x10\xEF", 2, "\x10", 1);
+        //modbus_reply.replace("\x10\xF2", 2, "\x0D", 1);
+        //modbus_reply.replace("\x10\xF5", 2, "\x0A", 1);
+        //show_packet(modbus_reply, "[BT--destaff]");
+        bool is_modbus_reply_ok = false;
+        {
+            std::vector<uint8_t> rx(std::begin(modbus_reply), std::end(modbus_reply));
+            uint16_t crc = crc16(rx, rx.size() - 2);
+            uint16_t crc_orig = modbus_reply[modbus_reply.size()-2] | (modbus_reply[modbus_reply.size()-1] << 8);
+            if (crc == crc_orig) { 
+                is_modbus_reply_ok = true;
+                //std::cout << "CRC correct " << std::endl;
+            } else {
+                //std::cout << "CRC in packet: "<< std::hex << crc_orig;
+                //std::cout << "crc calculated: " << std::hex << crc;
+                //std::cout << std::endl;
+            }
+        }
+        //packet specific
+        if (is_modbus_reply_ok && (modbus_reply[0] == 1) && (modbus_reply[1] == 0x17) && (modbus_reply[2] == 4)) {
+            union {
+                float f;
+                uint8_t c[4];
+            } u;
+            u.c[0] = modbus_reply[4]; u.c[1] = modbus_reply[3]; u.c[2] = modbus_reply[6]; u.c[3] = modbus_reply[5];
+            // std::cout << "T = " << u.f << std::endl;
 
-        auto tmp = value.mid(2, 3+value[3]);
-        std::vector<uint8_t> dat(std::begin(tmp), std::end(tmp));
+            Q_EMIT sendTemperature(u.f);
+        }
+        // auto tmp = value.mid(2, 3+value[3]);
+        // std::vector<uint8_t> dat(std::begin(tmp), std::end(tmp));
 
-        std::vector<uint8_t> payload(dat.begin()+3, dat.begin()+7);
-        std::rotate(std::begin(payload), std::begin(payload)+2, std::end(payload));
-        float rvalue{};
-        uint32_t uintvalue{};
-        std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
+        // std::vector<uint8_t> payload(dat.begin()+3, dat.begin()+7);
+        // std::rotate(std::begin(payload), std::begin(payload)+2, std::end(payload));
+        // float rvalue{};
+        // uint32_t uintvalue{};
+        // std::memcpy(&rvalue, std::vector<uint8_t>(payload.rbegin(), payload.rend()).data(), 4);
 
-        auto crc = crc16(dat, dat.size());
-        crc = (crc >> 8) | (crc << 8);
+        // auto crc = crc16(dat, dat.size());
+        // crc = (crc >> 8) | (crc << 8);
         
     
-        auto msb_crc = value[value.size()-3];
-        uint8_t lsb_crc = value[value.size()-2];
-        uint16_t value_crc = (msb_crc << 8) + lsb_crc;
+        // auto msb_crc = value[value.size()-3];
+        // uint8_t lsb_crc = value[value.size()-2];
+        // uint16_t value_crc = (msb_crc << 8) + lsb_crc;
         
         // if(crc == value_crc) {
         //     qDebug() << rvalue;
         //     Q_EMIT sendTemperature(rvalue);
         // }
-        Q_EMIT sendTemperature(rvalue);
+        // Q_EMIT sendTemperature(rvalue);
     }
 }
 
@@ -425,8 +534,8 @@ void BLEInterface::searchCharacteristic(){
     }
 }
 
-void BLEInterface::changeRateTemprature(double rate) {
-    writeDataToCharachteristic(setTempratureSpeed(rate));
+void BLEInterface::changeRateTemprature(float rate, float brightness, float cond_mark, float vapor_mark, float half_sum_mark) {
+    writeDataToCharachteristic(setTempratureSpeed(rate, brightness, cond_mark, vapor_mark, half_sum_mark));
     // qDebug() << "Temprature rate: " << rate;
 }
 

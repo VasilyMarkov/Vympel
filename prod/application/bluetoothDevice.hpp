@@ -60,7 +60,7 @@ public:
 public Q_SLOTS:
     void requestTemperature();
     void run();
-    void changeRateTemprature(double);
+    void changeRateTemprature(float rate, float brightness, float cond_mark, float vapor_mark, float half_sum_mark);
 Q_SIGNALS:
     void sendTemperature(double);
     void deviceConnected();
