@@ -38,8 +38,8 @@
         "bluetooth_enable": "true",
         "calibration_size_buffer": 200,
         "cooling_temp_rate": 1.7,
-        "detect_growing_deque_size": 10,
-        "detect_stable_deque_size": 7,
+        "detect_growing_deque_size": 7,
+        "detect_stable_deque_size": 5,
         "filter_cutoff_freq_Hz": 5,
         "first_sample": 0,
         "heating_temp_rate": 1.7,
@@ -48,6 +48,6 @@
         "process_freq_Hz": 30,
         "sampling_rate_filter_freq_Hz": 84,
         "sigma_threshold": 4,
-        "std_factor": 3
+        "std_factor": 5
     }
 }

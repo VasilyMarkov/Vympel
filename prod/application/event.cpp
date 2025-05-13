@@ -42,8 +42,8 @@ Calibration::Calibration(std::weak_ptr<IProcessing> cv):
 
 std::optional<EventType> Calibration::operator()()
 {
-    auto brightness = process_unit_.lock()->getProcessParams().brightness;
-    global_data_.push_back(brightness);
+    auto filtered = process_unit_.lock()->getProcessParams().filtered;
+    global_data_.push_back(filtered);
 
     auto calib_size = ConfigReader::getInstance().get("parameters", "calibration_size_buffer").toInt();
 
@@ -56,7 +56,7 @@ std::optional<EventType> Calibration::operator()()
         
         return EventType::MEASHUREMENT;
     }
-    data_.push_back(brightness);
+    data_.push_back(filtered);
     ++local_tick_;
     return std::nullopt;
 }
@@ -86,7 +86,7 @@ bool Meashurement::detectGrowing(double mean) {
         }
         window.pop_front();
 
-        if(std::all_of(std::begin(window), std::end(window), [](bool val){return val == true;})) {
+        if(std::count_if(std::begin(window), std::end(window), [](bool val){return val == true;}) > (window.size() - 2)) {
             return true;
         }
         print(window);
@@ -146,7 +146,7 @@ bool Сondensation::detectStable(double mean) {
         }
         window.pop_front();
 
-        if(std::all_of(std::begin(window), std::end(window), [](bool val){return val == true;})) {
+        if(std::count_if(std::begin(window), std::end(window), [](bool val){return val == true;}) > (window.size() - 2)) {
             return true;
         }
     }
@@ -181,10 +181,8 @@ std::optional<EventType> app::Сondensation::operator()()
 
     if(local_tick_ == mean_data_.size() - 1) {
         auto mean_window = std::accumulate(std::begin(mean_data_), std::end(mean_data_), 0.0) / mean_data_.size();
-        mean_deque_.push_back(mean_window);
-        mean_deque_.pop_front();
-
-        if (std::all_of(std::begin(mean_deque_), std::end(mean_deque_), [threshold](const auto& val){ return val < threshold;})) {
+        
+        if(detectStable(mean_window)) {
             end_time_mark_ = global_tick_;
             std::cout << "END POINT: " << end_time_mark_ << std::endl;
             return EventType::END; 
